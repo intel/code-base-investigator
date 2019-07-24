@@ -1,0 +1,9 @@
+codebase:
+    files: [ main.cpp, "headers/*.h" ]
+    platforms: [ CPU, GPU ]
+
+CPU:
+    commands: "cpu_commands.json"
+
+GPU:
+    commands: "gpu_commands.json"

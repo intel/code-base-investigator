@@ -1,0 +1,11 @@
+codebase:
+    files: [ test.f90 ]
+    platforms: [ CPU, GPU ]
+
+CPU:
+    files: [ test.f90 ]
+    defines: [ CPU ]
+
+GPU:
+    files: [ test.f90 ]
+    defines: [ GPU ]

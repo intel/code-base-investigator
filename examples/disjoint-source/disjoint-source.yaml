@@ -1,0 +1,14 @@
+# Copyright (C) 2019 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Example configuration file for a disjoint codebase
+
+codebase:
+    files: [ "cpu/*.cpp", "gpu/*.cpp" ]
+    platforms: [ CPU, GPU ]
+
+CPU:
+    files: [ "cpu/*.cpp" ]
+
+GPU:
+    files: [ "gpu/*.cpp" ]

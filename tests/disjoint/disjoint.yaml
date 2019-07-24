@@ -1,0 +1,11 @@
+codebase:
+    files: [ cpu.cpp, gpu.cpp, "cpu_headers/*", "gpu_headers/*" ]
+    platforms: [ CPU, GPU ]
+
+CPU:
+    files: [ cpu.cpp ]
+    include_paths: [ cpu_headers ]
+
+GPU:
+    files: [ gpu.cpp ]
+    include_paths: [ gpu_headers ]

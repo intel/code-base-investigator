@@ -1,0 +1,6 @@
+[
+{
+  "command": "/usr/bin/c++ -DCPU -DCOMPUTED_INCLUDE=\"headers/cpu.h\" -I headers/ main.cpp",
+  "file": "main.cpp"
+}
+]
