@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # pylint: disable=too-many-lines
 """
-Dontains classes that define:
+Contains classes that define:
 - Nodes from the tree
 - Tokens from lexing a line of code
 - Operators to handle tokens
