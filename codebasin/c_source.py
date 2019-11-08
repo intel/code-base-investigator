@@ -4,6 +4,8 @@
 Contains classes and functions for stripping comments and whitespace from C/C++ files
 """
 
+import itertools as it
+
 global whitespace_dict
 whitespace_dict = dict.fromkeys(' \t\n\r\x0b\x0c\x1c\x1d\x1e\x1f\x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000')
 
@@ -53,6 +55,22 @@ class one_space_line(object):
         self.__init__()
         return res
 
+class iter_keep1(object):
+    def __init__(self, iterator):
+        self.iterator = iter(iterator)
+        self.single = None
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self.single is not None:
+            res, self.single = self.single, None
+            return res
+        else:
+            return next(self.iterator)
+    def putback(self, item):
+        assert self.single is None
+        self.single = item
+
 class c_cleaner(object):
     def __init__(self, outbuf):
         self.state = ["TOPLEVEL"]
@@ -75,91 +93,90 @@ class c_cleaner(object):
             assert self.state[-1] == "IN_BLOCK_COMMENT"
         elif self.state[-1] == "CPP_DIRECTIVE":
             self.state = ["TOPLEVEL"]
-    def process(self, line, start, end):
-        pos = start
-        while pos < end:
+    def process(self, lineiter):
+        inbuffer = iter_keep1(lineiter)
+        for char in inbuffer:
             if self.state[-1] == "TOPLEVEL":
-                if line[pos] == '\\':
+                if char == '\\':
                     self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(line[pos])
-                elif line[pos] == '/':
+                    self.outbuf.append_nonspace(char)
+                elif char == '/':
                     self.state.append("FOUND_SLASH")
-                elif line[pos] == '"':
+                elif char == '"':
                     self.state.append("DOUBLE_QUOTATION")
-                    self.outbuf.append_nonspace(line[pos])
-                elif line[pos] == '\'':
+                    self.outbuf.append_nonspace(char)
+                elif char == '\'':
                     self.state.append("SINGLE_QUOTATION")
-                    self.outbuf.append_nonspace(line[pos])
-                elif line[pos] == '#' and self.outbuf.category() == "BLANK":
+                    self.outbuf.append_nonspace(char)
+                elif char == '#' and self.outbuf.category() == "BLANK":
                     self.state.append("CPP_DIRECTIVE")
-                    self.outbuf.append_nonspace(line[pos])
+                    self.outbuf.append_nonspace(char)
                 else:
-                    self.outbuf.append_char(line[pos])
+                    self.outbuf.append_char(char)
             elif self.state[-1] == "CPP_DIRECTIVE":
-                if line[pos] == '\\':
+                if char == '\\':
                     self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(line[pos])
-                elif line[pos] == '/':
+                    self.outbuf.append_nonspace(char)
+                elif char == '/':
                     self.state.append("FOUND_SLASH")
-                elif line[pos] == '"':
+                elif char == '"':
                     self.state.append("DOUBLE_QUOTATION")
-                    self.outbuf.append_nonspace(line[pos])
-                elif line[pos] == '\'':
+                    self.outbuf.append_nonspace(char)
+                elif char == '\'':
                     self.state.append("SINGLE_QUOTATION")
-                    self.outbuf.append_nonspace(line[pos])
+                    self.outbuf.append_nonspace(char)
                 else:
-                    self.outbuf.append_char(line[pos])
+                    self.outbuf.append_char(char)
             elif self.state[-1] == "DOUBLE_QUOTATION":
-                if line[pos] == '\\':
+                if char == '\\':
                     self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(line[pos])
-                elif line[pos] == '"':
+                    self.outbuf.append_nonspace(char)
+                elif char == '"':
                     self.state.pop()
-                    self.outbuf.append_nonspace(line[pos])
+                    self.outbuf.append_nonspace(char)
                 else:
-                    self.outbuf.append_nonspace(line[pos])
+                    self.outbuf.append_nonspace(char)
             elif self.state[-1] == "SINGLE_QUOTATION":
-                if line[pos] == '\\':
+                if char == '\\':
                     self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(line[pos])
-                elif line[pos] == '/':
+                    self.outbuf.append_nonspace(char)
+                elif char == '/':
                     self.state.append("FOUND_SLASH")
-                elif line[pos] == '\'':
+                elif char == '\'':
                     self.state.pop()
-                    self.outbuf.append_nonspace(line[pos])
+                    self.outbuf.append_nonspace(char)
                 else:
-                    self.outbuf.append_nonspace(line[pos])
+                    self.outbuf.append_nonspace(char)
             elif self.state[-1] == "FOUND_SLASH":
-                if line[pos] == '/':
+                if char == '/':
                     self.state.pop()
                     self.state.append("IN_INLINE_COMMENT")
-                elif line[pos] == '*':
+                elif char == '*':
                     self.state.pop()
                     self.state.append("IN_BLOCK_COMMENT")
                 else:
                     self.state.pop()
                     self.outbuf.append_char('/')
-                    pos -= 1
+                    inbuffer.putback(char)
             elif self.state[-1] == "IN_BLOCK_COMMENT":
-                if line[pos] == '*':
+                if char == '*':
                     self.state.append("IN_BLOCK_COMMENT_FOUND_STAR")
             elif self.state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
-                if line[pos] == '/':
+                if char == '/':
                     self.state.pop()
                     assert self.state[-1] == "IN_BLOCK_COMMENT"
                     self.state.pop()
                     self.outbuf.append_space()
-                elif line[pos] != '*':
+                elif char != '*':
                     self.state.pop()
                     assert self.state[-1] == "IN_BLOCK_COMMENT"
             elif self.state[-1] == "ESCAPING":
-                self.outbuf.append_nonspace(line[pos])
+                self.outbuf.append_nonspace(char)
                 self.state.pop()
             elif self.state[-1] == "IN_INLINE_COMMENT":
                 return
             else:
                 assert None
-            pos += 1
 
 def c_file_source(fp):
 
@@ -187,7 +204,7 @@ def c_file_source(fp):
             end -= 1
         else:
             continued = False
-        cleaner.process(line, 0, end)
+        cleaner.process(it.islice(line, 0, end))
         if not continued:
             cleaner.logical_newline()
 
