@@ -16,7 +16,7 @@ class TestExampleFile(unittest.TestCase):
         parser = file_parser.FileParser(os.path.join(rootdir, "continuation.cpp"))
 
         tree = parser.parse_file()
-        self.assertEqual(tree.root.children[0].num_lines, 25)
+        self.assertEqual(tree.root.total_sloc, 25)
 
 if __name__ == '__main__':
     unittest.main()

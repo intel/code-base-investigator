@@ -86,7 +86,7 @@ class FileParser:
             self._file_extension = None
 
     @staticmethod
-    def handle_directive(out_tree, groups, phys_int, sloc, logical_line):
+    def handle_directive(out_tree, groups, logical_line):
         """
         Handle inserting code and directive nodes, where appropriate.
         Update the file group, and reset the code and directive groups.
@@ -153,7 +153,7 @@ class FileParser:
                         # might not be a directive we count
                         groups['directive'].add_line(phys_int, local_sloc)
 
-                        FileParser.handle_directive(out_tree, groups, phys_int, local_sloc, logical_line)
+                        FileParser.handle_directive(out_tree, groups, logical_line)
 
                         # FallBack is that this line is a simple code line.
                     else:
@@ -162,11 +162,10 @@ class FileParser:
                 total_sloc, physical_loc = it.value
 
             if not groups['code'].empty():
+                groups['code'].add_line((groups['code'].start_line, physical_loc-1), 0)
                 self.insert_code_node(out_tree, groups['code'])
                 groups['file'].merge(groups['code'])
 
-
-            groups['file'].add_line((1, physical_loc-1), total_sloc)
             out_tree.root.num_lines = groups['file'].end_line
             out_tree.root.total_sloc = groups['file'].line_count
             return out_tree
