@@ -45,32 +45,32 @@ class one_space_line(object):
 
 class c_cleaner(object):
     def __init__(self, outbuf):
-        self.state = ["NO_COMMENT"]
+        self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
     def logical_newline(self):
         if self.state[-1] == "IN_INLINE_COMMENT":
             self.state.pop()
-            assert self.state == ["NO_COMMENT"]
+            assert self.state == ["TOPLEVEL"]
             self.outbuf.append_space()
         elif self.state[-1] == "FOUND_SLASH":
             self.state.pop()
-            assert self.state == ["NO_COMMENT"]
+            assert self.state == ["TOPLEVEL"]
             self.outbuf.append_nonspace('/')
         elif self.state[-1] == "SINGLE_QUOTATION":
             # This probably should give a warning
             self.state.pop()
-            assert self.state == ["NO_COMMENT"]
+            assert self.state == ["TOPLEVEL"]
         elif self.state[-1] == "DOUBLE_QUOTATION":
             # This probably should give a warning
             self.state.pop()
-            assert self.state == ["NO_COMMENT"]
+            assert self.state == ["TOPLEVEL"]
         elif self.state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
             self.state.pop()
             assert self.state[-1] == "IN_BLOCK_COMMENT"
     def process(self, line, start, end):
         pos = start
         while pos < end:
-            if self.state[-1] == "NO_COMMENT":
+            if self.state[-1] == "TOPLEVEL":
                 if line[pos] == '\\':
                     self.state.append("ESCAPING")
                     self.outbuf.append_nonspace(line[pos])
@@ -90,7 +90,7 @@ class c_cleaner(object):
                     self.outbuf.append_nonspace(line[pos])
                 elif line[pos] == '"':
                     self.state.pop()
-                    assert self.state == ["NO_COMMENT"]
+                    assert self.state == ["TOPLEVEL"]
                     self.outbuf.append_nonspace(line[pos])
                 else:
                     self.outbuf.append_nonspace(line[pos])
@@ -102,7 +102,7 @@ class c_cleaner(object):
                     self.state.append("FOUND_SLASH")
                 elif line[pos] == '\'':
                     self.state.pop()
-                    assert self.state == ["NO_COMMENT"]
+                    assert self.state == ["TOPLEVEL"]
                     self.outbuf.append_nonspace(line[pos])
                 else:
                     self.outbuf.append_nonspace(line[pos])
@@ -125,7 +125,7 @@ class c_cleaner(object):
                     self.state.pop()
                     assert self.state[-1] == "IN_BLOCK_COMMENT"
                     self.state.pop()
-                    assert self.state == ["NO_COMMENT"]
+                    assert self.state == ["TOPLEVEL"]
                     self.outbuf.append_space()
                 elif line[pos] != '*':
                     self.state.pop()
@@ -189,6 +189,6 @@ def c_file_source(fp):
         yield ((current_physical_start, physical_line_num+1), local_sloc, current_logical_line.flush())
 
     total_sloc += local_sloc
-    assert cleaner.state == ["NO_COMMENT"]
+    assert cleaner.state == ["TOPLEVEL"]
 
     return (total_sloc, total_physical_lines)
