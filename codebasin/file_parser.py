@@ -145,10 +145,9 @@ class FileParser:
             c_source = c_file_source(source_file)
             try:
                 while True:
-                    (phys_int, local_sloc, logical_line) = next(c_source)
-                    in_directive = logical_line[0] == "#" or logical_line[0] == ' ' and logical_line[1] == '#'
+                    (phys_int, local_sloc, logical_line, line_cat) = next(c_source)
                     # Only follow continuation for directives
-                    if in_directive:
+                    if line_cat == 'CPP_DIRECTIVE':
                         # Add this into the directive lines, even if it
                         # might not be a directive we count
                         groups['directive'].add_line(phys_int, local_sloc)

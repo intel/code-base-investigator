@@ -11,9 +11,9 @@ def file_sloc(path, verbose=False):
         walker = c_file_source(source_file)
         try:
             while True:
-                (interval, sloc, line) = next(walker)
+                (interval, sloc, line, line_cat) = next(walker)
                 if verbose:
-                    print(f"{path} [{interval[0]}, {interval[1]}) ({sloc}): {line}")
+                    print(f"{path} [{interval[0]}, {interval[1]}) ({sloc}): {line} {line_cat}")
         except StopIteration as it:
             total_sloc, physical_loc = it.value
 
