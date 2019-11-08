@@ -8,6 +8,7 @@ and building a tree of nodes from it.
 from os.path import splitext
 
 from . import preprocessor  # pylint : disable=no-name-in-module
+from . import language
 
 from codebasin.file_source import get_file_source
 
