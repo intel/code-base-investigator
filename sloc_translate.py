@@ -2,13 +2,14 @@
 # Copyright (C) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-from codebasin.c_source import c_file_source
+from codebasin.c_source import c_file_source, fortran_file_source
+import os
 import sys
 import re
 
 def file_sloc(path, verbose=False):
     with open(path, mode='r', errors='replace') as source_file:
-        walker = c_file_source(source_file)
+        walker = fortran_file_source(source_file, relaxed=False)
         try:
             while True:
                 (interval, sloc, line, line_cat) = next(walker)
@@ -30,10 +31,9 @@ def walk_sloc(root, regexp, verbose=False):
                 except FileNotFoundError:
                     pass
 
-
 if __name__ == '__main__':
-    filename = sys.argv[1]
-    (filename, total_sloc, physical_loc)  = file_sloc(filename, verbose=True)
-    print(f"{filename}, {total_sloc}, {physical_loc}")
+    # filename = sys.argv[1]
+    # (filename, total_sloc, physical_loc)  = file_sloc(filename, verbose=True)
+    # print(f"{filename}, {total_sloc}, {physical_loc}")
 
-#    walk_sloc(sys.argv[1], re.compile(sys.argv[2]))
+    walk_sloc(sys.argv[1], re.compile(sys.argv[2]))

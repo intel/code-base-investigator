@@ -178,7 +178,108 @@ class c_cleaner(object):
             else:
                 assert None
 
-def c_file_source(fp):
+class fortran_cleaner(object):
+    def __init__(self, outbuf):
+        self.state = ["TOPLEVEL"]
+        self.outbuf = outbuf
+        self.verify_continue = []
+    def dir_check(self, inbuffer):
+        self.found=['!']
+        for char in inbuffer:
+            if char == '$':
+                self.found.append('$')
+                for char in self.found:
+                    self.outbuf.append_nonspace(char)
+                break
+            elif char.isalpha():
+                self.found.append(char)
+            else:
+                return
+    def process(self, lineiter):
+        inbuffer = iter_keep1(lineiter)
+        try:
+            while True:
+                char = next(inbuffer)
+                if self.state[-1] == "TOPLEVEL":
+                    if char == '\\':
+                        self.state.append("ESCAPING")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '!':
+                        self.dir_check(inbuffer)
+                        self.state = ["TOPLEVEL"]
+                        break
+                    elif char == '&':
+                        self.verify_continue.append(char)
+                        self.state.append("VERIFY_CONTINUE")
+                    elif char == '"':
+                        self.state.append("DOUBLE_QUOTATION")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '\'':
+                        self.state.append("SINGLE_QUOTATION")
+                        self.outbuf.append_nonspace(char)
+                    else:
+                        self.outbuf.append_char(char)
+                elif self.state[-1] == 'CONTINUING_FROM_SOL':
+                    if is_whitespace(char):
+                        self.outbuf.append_space()
+                    elif char == '&':
+                        self.state.pop()
+                    elif char == '!':
+                        self.dir_check(inbuffer)
+                        break
+                    else:
+                        self.state.pop()
+                        inbuffer.putback(char)
+                        # should complain if we are quoting here, but will ignore for now
+                elif self.state[-1] == "DOUBLE_QUOTATION":
+                    if char == '\\':
+                        self.state.append("ESCAPING")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '"':
+                        self.state.pop()
+                        self.outbuf.append_nonspace(char)
+                    elif char == '&':
+                        self.verify_continue.append(char)
+                        self.state.append("VERIFY_CONTINUE")
+                    else:
+                        self.outbuf.append_nonspace(char)
+                elif self.state[-1] == "SINGLE_QUOTATION":
+                    if char == '\\':
+                        self.state.append("ESCAPING")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '\'':
+                        self.state.pop()
+                        self.outbuf.append_nonspace(char)
+                    elif char == '&':
+                        self.verify_continue.append(char)
+                        self.state.append("VERIFY_CONTINUE")
+                    else:
+                        self.outbuf.append_nonspace(char)
+                elif self.state[-1] == "ESCAPING":
+                    self.outbuf.append_nonspace(char)
+                    self.state.pop()
+                elif self.state[-1] == "VERIFY_CONTINUE":
+                    if char == '!' and self.state[-2] == "TOPLEVEL":
+                        self.dir_check(inbuffer)
+                        break
+                    elif not is_whitespace(char):
+                        for tmp in self.verify_continue:
+                            self.outbuf.append_nonspace(tmp)
+                        self.verify_continue = []
+                        self.state.pop()
+                        inbuffer.putback(char)
+                else:
+                    assert None
+        except StopIteration:
+            pass
+        if self.state[-1] == "CONTINUING_TO_EOL":
+            self.state[-1] = "CONTINUING_FROM_SOL"
+        elif self.state[-1] == "VERIFY_CONTINUE":
+            self.state[-1] = "CONTINUING_FROM_SOL"
+        #print(self.state)
+
+
+def c_file_source(fp, relaxed=True):
 
     current_physical_line = one_space_line()
     cleaner = c_cleaner(current_physical_line)
@@ -232,6 +333,59 @@ def c_file_source(fp):
         yield ((current_physical_start, physical_line_num+1), local_sloc, current_logical_line.flush(), line_cat)
 
     total_sloc += local_sloc
-    assert cleaner.state == ["TOPLEVEL"]
+    if not relaxed:
+        assert cleaner.state == ["TOPLEVEL"]
+
+    return (total_sloc, total_physical_lines)
+
+def fortran_file_source(fp, relaxed=True):
+
+    current_physical_line = one_space_line()
+    cleaner = fortran_cleaner(current_physical_line)
+
+    current_logical_line = one_space_line()
+
+    current_physical_start = None
+    total_sloc = 0
+    local_sloc = 0
+
+    physical_line_num = 0
+    c_walker = c_file_source(fp)
+    try:
+        while True:
+            ((src_physical_start, src_physical_end), src_line_sloc, src_line, _) = next(c_walker)
+            if current_physical_start == None:
+                current_physical_start = src_physical_start
+            current_physical_line.__init__()
+            import pdb
+#            pdb.set_trace()
+            cleaner.process(it.islice(src_line, 0, len(src_line)))
+
+            if not current_physical_line.category() == "BLANK":
+                local_sloc += src_line_sloc
+
+            current_logical_line.join(current_physical_line)
+
+            if cleaner.state[-1] != "CONTINUING_FROM_SOL":
+                line_cat = current_logical_line.category()
+                if line_cat != "BLANK":
+                    yield ((current_physical_start, src_physical_end), local_sloc, current_logical_line.flush(), line_cat)
+                else:
+                    current_logical_line.__init__()
+                    assert local_sloc == 0
+
+                current_physical_start = None
+                total_sloc += local_sloc
+                local_sloc = 0
+    except StopIteration as stopit:
+        _, total_physical_lines = stopit.value
+
+    line_cat = current_logical_line.category()
+    if line_cat != "BLANK":
+        yield ((current_physical_start, total_physical_lines), local_sloc, current_logical_line.flush(), line_cat)
+
+    total_sloc += local_sloc
+    if not relaxed:
+        assert cleaner.state == ["TOPLEVEL"]
 
     return (total_sloc, total_physical_lines)
