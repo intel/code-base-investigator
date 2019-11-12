@@ -202,6 +202,8 @@ class fortran_cleaner(object):
                 self.found.append('$')
                 for char in self.found:
                     self.outbuf.append_nonspace(char)
+                for char in inbuffer:
+                    self.outbuf.append_nonspace(char)
                 break
             elif char.isalpha():
                 self.found.append(char)
@@ -280,6 +282,8 @@ class fortran_cleaner(object):
                         self.verify_continue = []
                         self.state.pop()
                         inbuffer.putback(char)
+                    elif is_whitespace(char):
+                        self.verify_continue.append(char)
                 else:
                     assert None
         except StopIteration:
@@ -287,6 +291,7 @@ class fortran_cleaner(object):
         if self.state[-1] == "CONTINUING_TO_EOL":
             self.state[-1] = "CONTINUING_FROM_SOL"
         elif self.state[-1] == "VERIFY_CONTINUE":
+            self.verify_continue = []
             self.state[-1] = "CONTINUING_FROM_SOL"
 
 def c_file_source(fp, relaxed=False, directives_only=False):
