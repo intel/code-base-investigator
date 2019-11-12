@@ -78,12 +78,6 @@ class FileParser:
     def __init__(self, _filename):
         self._filename = _filename
 
-        split = splitext(_filename)
-        if len(split) == 2:
-            self._file_extension = split[1].lower()
-        else:
-            self._file_extension = None
-
     @staticmethod
     def handle_directive(out_tree, groups, logical_line):
         """
