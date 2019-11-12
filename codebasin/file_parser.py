@@ -127,7 +127,7 @@ class FileParser:
         out_tree = preprocessor.SourceTree(self._filename)
         file_source = get_file_source(self._filename)
         if not file_source:
-            raise RuntimeError(f"{path} doesn't appear to be a language this tool can process")
+            raise RuntimeError(f"{self._filename} doesn't appear to be a language this tool can process")
         with open(self._filename, mode='r', errors='replace') as source_file:
             previous_continue = False
 
