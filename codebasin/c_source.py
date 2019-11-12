@@ -73,9 +73,10 @@ class iter_keep1(object):
         self.single = item
 
 class c_cleaner(object):
-    def __init__(self, outbuf):
+    def __init__(self, outbuf, directives_only=False):
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
+        self.directives_only = directives_only
     def logical_newline(self):
         if self.state[-1] == "IN_INLINE_COMMENT":
             self.state = ["TOPLEVEL"]
@@ -98,22 +99,32 @@ class c_cleaner(object):
         inbuffer = iter_keep1(lineiter)
         for char in inbuffer:
             if self.state[-1] == "TOPLEVEL":
-                if char == '\\':
-                    self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(char)
-                elif char == '/':
-                    self.state.append("FOUND_SLASH")
-                elif char == '"':
-                    self.state.append("DOUBLE_QUOTATION")
-                    self.outbuf.append_nonspace(char)
-                elif char == '\'':
-                    self.state.append("SINGLE_QUOTATION")
-                    self.outbuf.append_nonspace(char)
-                elif char == '#' and self.outbuf.category() == "BLANK":
-                    self.state.append("CPP_DIRECTIVE")
-                    self.outbuf.append_nonspace(char)
+                if self.directives_only:
+                    if char == '\\':
+                        self.state.append("ESCAPING")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '#' and self.outbuf.category() == "BLANK":
+                        self.state.append("CPP_DIRECTIVE")
+                        self.outbuf.append_nonspace(char)
+                    else:
+                        self.outbuf.append_char(char)
                 else:
-                    self.outbuf.append_char(char)
+                    if char == '\\':
+                        self.state.append("ESCAPING")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '/':
+                        self.state.append("FOUND_SLASH")
+                    elif char == '"':
+                        self.state.append("DOUBLE_QUOTATION")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '\'':
+                        self.state.append("SINGLE_QUOTATION")
+                        self.outbuf.append_nonspace(char)
+                    elif char == '#' and self.outbuf.category() == "BLANK":
+                        self.state.append("CPP_DIRECTIVE")
+                        self.outbuf.append_nonspace(char)
+                    else:
+                        self.outbuf.append_char(char)
             elif self.state[-1] == "CPP_DIRECTIVE":
                 if char == '\\':
                     self.state.append("ESCAPING")
@@ -277,13 +288,11 @@ class fortran_cleaner(object):
             self.state[-1] = "CONTINUING_FROM_SOL"
         elif self.state[-1] == "VERIFY_CONTINUE":
             self.state[-1] = "CONTINUING_FROM_SOL"
-        #print(self.state)
 
-
-def c_file_source(fp, relaxed=True):
+def c_file_source(fp, relaxed=False, directives_only=False):
 
     current_physical_line = one_space_line()
-    cleaner = c_cleaner(current_physical_line)
+    cleaner = c_cleaner(current_physical_line, directives_only)
 
     current_logical_line = one_space_line()
 
@@ -339,7 +348,7 @@ def c_file_source(fp, relaxed=True):
 
     return (total_sloc, total_physical_lines)
 
-def fortran_file_source(fp, relaxed=True):
+def fortran_file_source(fp, relaxed=False):
 
     current_physical_line = one_space_line()
     cleaner = fortran_cleaner(current_physical_line)
@@ -350,16 +359,13 @@ def fortran_file_source(fp, relaxed=True):
     total_sloc = 0
     local_sloc = 0
 
-    physical_line_num = 0
-    c_walker = c_file_source(fp)
+    c_walker = c_file_source(fp, directives_only=True)
     try:
         while True:
             ((src_physical_start, src_physical_end), src_line_sloc, src_line, _) = next(c_walker)
             if current_physical_start == None:
                 current_physical_start = src_physical_start
             current_physical_line.__init__()
-            import pdb
-#            pdb.set_trace()
             cleaner.process(it.islice(src_line, 0, len(src_line)))
 
             if not current_physical_line.category() == "BLANK":
