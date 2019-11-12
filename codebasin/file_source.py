@@ -1,7 +1,7 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
-Contains classes and functions for stripping comments and whitespace from C/C++ files
+Contains classes and functions for stripping comments and whitespace from C/C++ files as well as fixed-form Fortran
 """
 
 import itertools as it

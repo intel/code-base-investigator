@@ -9,7 +9,7 @@ from os.path import splitext
 
 from . import preprocessor  # pylint : disable=no-name-in-module
 
-from codebasin.c_source import get_file_source
+from codebasin.file_source import get_file_source
 
 class LineGroup:
     """

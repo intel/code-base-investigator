@@ -2,7 +2,7 @@
 # Copyright (C) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-from codebasin.c_source import get_file_source
+from codebasin.file_source import get_file_source
 import os
 import sys
 import re
