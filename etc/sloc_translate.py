@@ -2,9 +2,13 @@
 # Copyright (C) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-from codebasin.file_source import get_file_source
 import os
 import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from codebasin.file_source import get_file_source
+
 import re
 
 def file_sloc(path, verbose=False):
