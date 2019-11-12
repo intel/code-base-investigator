@@ -362,9 +362,26 @@ def fortran_file_source(fp, relaxed=False):
     c_walker = c_file_source(fp, directives_only=True)
     try:
         while True:
-            ((src_physical_start, src_physical_end), src_line_sloc, src_line, _) = next(c_walker)
+            ((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category) = next(c_walker)
+            #if it's a cpp directive, flush what we have, then emit the directive and start over
             if current_physical_start == None:
                 current_physical_start = src_physical_start
+
+            if c_category == "CPP_DIRECTIVE":
+                line_cat = current_logical_line.category()
+                if line_cat != "BLANK":
+                    yield ((current_physical_start, src_physical_end), local_sloc, current_logical_line.flush(), line_cat)
+                else:
+                    current_logical_line.__init__()
+                    assert local_sloc == 0
+
+                current_physical_start = None
+                total_sloc += local_sloc
+                local_sloc = 0
+                yield ((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category)
+                total_sloc += src_line_sloc
+                continue
+
             current_physical_line.__init__()
             cleaner.process(it.islice(src_line, 0, len(src_line)))
 
