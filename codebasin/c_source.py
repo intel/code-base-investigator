@@ -5,6 +5,7 @@ Contains classes and functions for stripping comments and whitespace from C/C++ 
 """
 
 import itertools as it
+from os.path import splitext
 
 global whitespace_dict
 whitespace_dict = dict.fromkeys(' \t\n\r\x0b\x0c\x1c\x1d\x1e\x1f\x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000')
@@ -389,3 +390,30 @@ def fortran_file_source(fp, relaxed=True):
         assert cleaner.state == ["TOPLEVEL"]
 
     return (total_sloc, total_physical_lines)
+
+
+global extension_map
+extension_map = {'.f90' : "FREEFORM FORTRAN",
+                 '.cxx' : "C FAMILY",
+                 '.cl' : "C FAMILY",
+                 '.cu' : "C FAMILY",
+                 '.cpp' : "C FAMILY",
+                 '.c' : "C FAMILY",
+                 '.h' : "C FAMILY",
+                 '.hpp' : "C FAMILY"}
+
+def guess_language(fname):
+    _, ext = splitext(fname)
+    try:
+        return extension_map[ext.lower()]
+    except KeyError:
+        return "Unknown"
+
+def get_file_source(path):
+    lang = guess_language(path)
+    if lang == "FREEFORM FORTRAN":
+        return fortran_file_source
+    elif lang == "C FAMILY":
+        return c_file_source
+    else:
+        return None

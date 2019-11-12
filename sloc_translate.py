@@ -2,14 +2,17 @@
 # Copyright (C) 2019-2020 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-from codebasin.c_source import c_file_source, fortran_file_source
+from codebasin.c_source import get_file_source
 import os
 import sys
 import re
 
 def file_sloc(path, verbose=False):
+    file_source = get_file_source(path)
+    if not file_source:
+        raise RuntimeError(f"{path} doesn't appear to be a language this tool can process")
     with open(path, mode='r', errors='replace') as source_file:
-        walker = fortran_file_source(source_file, relaxed=False)
+        walker = file_source(source_file, relaxed=False)
         try:
             while True:
                 (interval, sloc, line, line_cat) = next(walker)
@@ -32,8 +35,11 @@ def walk_sloc(root, regexp, verbose=False):
                     pass
 
 if __name__ == '__main__':
-    # filename = sys.argv[1]
-    # (filename, total_sloc, physical_loc)  = file_sloc(filename, verbose=True)
-    # print(f"{filename}, {total_sloc}, {physical_loc}")
-
-    walk_sloc(sys.argv[1], re.compile(sys.argv[2]))
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
+        (filename, total_sloc, physical_loc)  = file_sloc(filename, verbose=True)
+        print(f"{filename}, {total_sloc}, {physical_loc}")
+    elif len(sys.argv) == 3:
+        walk_sloc(sys.argv[1], re.compile(sys.argv[2]))
+    else:
+        print("Expected either 1 argument (a single file to parse and print) or 2 (a directory root & file pattern)")

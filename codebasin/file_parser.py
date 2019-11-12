@@ -9,7 +9,7 @@ from os.path import splitext
 
 from . import preprocessor  # pylint : disable=no-name-in-module
 
-from codebasin.c_source import c_file_source
+from codebasin.c_source import get_file_source
 
 class LineGroup:
     """
@@ -67,7 +67,6 @@ class LineGroup:
 
         self.end_line = max(self.end_line, line_group.end_line)
         line_group.reset()
-
 
 class FileParser:
     """
@@ -132,6 +131,9 @@ class FileParser:
         """
 
         out_tree = preprocessor.SourceTree(self._filename)
+        file_source = get_file_source(path)
+        if not file_source:
+            raise RuntimeError(f"{path} doesn't appear to be a language this tool can process")
         with open(self._filename, mode='r', errors='replace') as source_file:
             previous_continue = False
 
@@ -142,10 +144,10 @@ class FileParser:
 
             groups['file'].start_line = 1
 
-            c_source = c_file_source(source_file)
+            source = file_source(source_file)
             try:
                 while True:
-                    (phys_int, local_sloc, logical_line, line_cat) = next(c_source)
+                    (phys_int, local_sloc, logical_line, line_cat) = next(source)
                     # Only follow continuation for directives
                     if line_cat == 'CPP_DIRECTIVE':
                         # Add this into the directive lines, even if it
