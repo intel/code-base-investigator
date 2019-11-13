@@ -26,7 +26,7 @@ class FileLanguage:
     _language_extensions['c++'] = ['.c++', '.cxx', '.cpp', '.cc',
                                    '.hpp', '.hxx', '.h++', '.hh',
                                    '.inc', '.inl', '.tcc', '.icc',
-                                   '.ipp']
+                                   '.ipp', '.cu', '.cuh', '.cl']
 
     def __init__(self, filename):
         self._filename = filename
