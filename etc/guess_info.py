@@ -18,15 +18,15 @@ import yaml
 
 def guess_app(inpath):
     path = Path(inpath)
-    if path.parts[0] == 'dlpbenchcuda':
+    if path.parts[0] == 'dlpbenchcuda' and path.parts[1] != 'utils':
         app = 'dlpbench-'  + path.parts[1]
     elif path.parts[0] == 'dlpbenchopencl':
         app = 'dlpbench-'  + path.parts[1]
-    elif path.parts[0] == 'dlpbench':
+    elif path.parts[0] == 'dlpbench' and path.parts[1] != 'common' and path.parts[1] !='deprecated_workloads' and path.parts[1] != 'csa':
         app = 'dlpbench-'  + path.parts[2]
-    elif path.parts[0] == 'cmedia-bench':
+    elif path.parts[0] in ['cmedia-bench', "config", "infrastructure", "Test-Infrastructure"]:
         app = None
-    elif path.parts[0] == 'DNNBench':
+    elif path.parts[0] == 'DNNBench' and not path.parts[1] == 'common':
         app = f"DNNBench-{path.parts[1]}"
     else:
         app = path.parts[0]
@@ -110,6 +110,7 @@ def categorize_file(inpath):
 
 def walk_apptree(inroot, regexp):
     apps = defaultdict(list)
+    paths = {}
     for root, dirs, files in os.walk(inroot):
         for f in files:
             full_path = os.path.join(root, f)
@@ -134,28 +135,58 @@ def app_groups(files, all_lang=frozenset(['cuda', 'opencl', 'dpc++', 'openmp']))
             partial_common = all_lang.difference(isnt_in)
             if len(partial_common) > 0:
                 for p in partial_common:
-                    platmap[p].append(f)
+                    platmap[p].append(Path(f))
         else:
             update=is_in.intersection(all_lang)
             if len(update) > 0:
                 for p in update:
-                    platmap[p].append(f)
+                    platmap[p].append(Path(f))
     return platmap
 
-def write_yaml(output, files):
-    platmap = app_groups(files)
-    base = {'codebase' : { 'files' : files, 'platforms' : list(platmap.keys()) }}
-    for plat_name, plat_files in platmap.items():
-        base[plat_name] = plat_files
+def write_yaml(output, files, langs_names_map, strip_prefix=Path(".")):
+
+    platmap = app_groups(files, frozenset(langs_names_map.values()))
+    all_files = set()
+    for plat, pfiles in platmap.items():
+        all_files.update([str(f.relative_to(strip_prefix)) for f in pfiles])
+    if len(all_files) == 0:
+        return False
+    base = {'codebase' : { 'files' : list(all_files) }}
+    plats = set()
+    for export_name, plat_name in langs_names_map.items():
+        plat_files = [str(f.relative_to(strip_prefix)) for f in platmap[plat_name]]
+        if len(plat_files) > 0:
+            base[export_name] = {'files': plat_files}
+            plats.update([export_name])
+        elif len(langs_names_map) < 4: #Hack
+            return False
+    base['codebase']['platforms'] = list(plats)
     with open(output, "w") as ofp:
         yaml.dump(base, ofp)
+    return True
 
 os.chdir("/nfs/home/jsewall/CDS-DPCPP-HPCBench/")
 apps = walk_apptree(".", re.compile('(.*\.)(cpp|c|hpp|h|cl|cu|cxx|cc|cuh)$'))
 
+#os.chdir("/nfs/home/jsewall/CDS-DPCPP-HPCBench/configs")
 for app_name, app_files in apps.items():
 
-    write_yaml(f"{app_name}.yaml", app_files)
-    print(f"{app_name}.yaml")
+    prefixed= [f"./{p}" for p in app_files]
+    app_path = Path(os.path.commonpath(prefixed))
+    if app_path.is_file():
+        app_path = app_path.parent
+
+    outpath = app_path / "cbi-configs"
+    try:
+        os.makedirs(outpath)
+    except FileExistsError:
+        pass
+    for suffix, config in [("all", dict(zip(*it.repeat(['cuda', 'opencl', 'dpc++', 'openmp'],2)))),
+                           ("dpcpp", {'dpc++-gpu' : 'dpc++', 'dpc++-cpu' : 'dpc++'}),
+                           ("ducttape", {'gpu' : 'cuda', 'cpu' : 'openmp'})]:
+        outfile = outpath / f"{app_name}-{suffix}.yaml"
+        write = write_yaml(outfile, app_files, config, strip_prefix=app_path)
+        if write:
+            print(outfile)
 
 print("done")
