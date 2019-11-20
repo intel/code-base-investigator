@@ -14,7 +14,7 @@ whitespace_dict = dict.fromkeys(' \t\n\r\x0b\x0c\x1c\x1d\x1e\x1f\x85\xa0\u1680\u
 def is_whitespace(c):
     return c in whitespace_dict
 
-class one_space_line(object):
+class one_space_line:
     def __init__(self):
         self.parts = []
         self.trailing_space = False
@@ -57,7 +57,7 @@ class one_space_line(object):
         self.__init__()
         return res
 
-class iter_keep1(object):
+class iter_keep1:
     def __init__(self, iterator):
         self.iterator = iter(iterator)
         self.single = None
@@ -73,7 +73,7 @@ class iter_keep1(object):
         assert self.single is None
         self.single = item
 
-class c_cleaner(object):
+class c_cleaner:
     def __init__(self, outbuf, directives_only=False):
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
@@ -191,7 +191,7 @@ class c_cleaner(object):
             else:
                 assert None
 
-class fortran_cleaner(object):
+class fortran_cleaner:
     def __init__(self, outbuf):
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
