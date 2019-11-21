@@ -1,24 +1,40 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
-Contains classes and functions for stripping comments and whitespace from C/C++ files as well as fixed-form Fortran
+Contains classes and functions for stripping comments and whitespace from
+C/C++ files as well as fixed-form Fortran
 """
 
 import itertools as it
-from os.path import splitext
 from .language import FileLanguage
 
-global whitespace_dict
-whitespace_dict = dict.fromkeys(' \t\n\r\x0b\x0c\x1c\x1d\x1e\x1f\x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000')
+### This string was created by looking at all unicode code points
+### and checking to see if they are considered whitespace
+### ('\s') by the re module
+whitespace_dict = dict.fromkeys(''.join([' \t\n\r\x0b\x0c\x1c\x1d\x1e',
+                                         '\x1f\x85\xa0\u1680\u2000\u2001',
+                                         '\u2002\u2003\u2004\u2005\u2006',
+                                         '\u2007\u2008\u2009\u200a\u2028',
+                                         '\u2029\u202f\u205f\u3000']))
 
 def is_whitespace(c):
+    """Returns true if the character c is whitespace"""
+    global whitespace_dict
     return c in whitespace_dict
 
 class one_space_line:
+    """
+    A container that represents a single line of code while (generally)
+    merging all whitespace into a single space.
+    """
     def __init__(self):
         self.parts = []
         self.trailing_space = False
     def append_char(self, c):
+        """
+        Append a character of no particular class to the line.
+        Whitespace will be dropped if the line already ends in space.
+        """
         if not is_whitespace(c):
             self.parts.append(c)
             self.trailing_space = False
@@ -27,6 +43,9 @@ class one_space_line:
                 self.parts.append(' ')
                 self.trailing_space = True
     def append_space(self):
+        """
+        Append whitespace to line, unless line already ends in a space.
+        """
         if not self.trailing_space:
             self.parts.append(' ')
             self.trailing_space = True
@@ -34,30 +53,46 @@ class one_space_line:
         self.parts.append(c)
         self.trailing_space = False
     def join(self, other):
-        if len(other.parts) > 0:
+        """
+        Append another one_space_line to this one, respecting whitespace rules.
+        """
+        if other.parts:
             if other.parts[0] == ' ' and self.trailing_space:
                 self.parts += other.parts[1:]
             else:
                 self.parts += other.parts[:]
             self.trailing_space = other.trailing_space
     def category(self):
+        """
+        Report the a category for this line:
+        * SRC_NONBLANK if it is non-empty/non-whitespace line of code.
+        * BLANK if it is empty or only whitespace.
+        * CPP_DIRECTIVE it is is a C preprocessor directive.
+        """
         res = "SRC_NONBLANK"
-        if len(self.parts) == 0:
+        if not self.parts:
             res = "BLANK"
         elif len(self.parts) == 1:
             if self.parts[0] == ' ':
                 res = "BLANK"
             elif self.parts[0] == '#':
                 res = "CPP_DIRECTIVE"
-        elif ( self.parts[0] == ' ' and self.parts[1] == '#' ) or self.parts[0] == '#':
+        elif self.parts[:2] == ' #' or self.parts[0] == '#':
             res = "CPP_DIRECTIVE"
         return res
     def flush(self):
-        res= ''.join(self.parts)
+        """
+        Convert the characters to a string and reset the buffer.
+        """
+        res = ''.join(self.parts)
         self.__init__()
         return res
 
 class iter_keep1:
+    """
+    An iterator wrapper that allows a single item to be 'put back'
+    and picked up for the next iteration.
+    """
     def __init__(self, iterator):
         self.iterator = iter(iterator)
         self.single = None
@@ -70,15 +105,32 @@ class iter_keep1:
         else:
             return next(self.iterator)
     def putback(self, item):
+        """
+        Put item into the iterator such that it will be the next
+        yielded item.
+        """
         assert self.single is None
         self.single = item
 
 class c_cleaner:
+    """
+    Approximation of the early stages of a C preprocessor.
+    Joins line continuations, merges whitespace, and replaces comments
+    with whitespace. State is kept across physical lines and cleared with
+    logical_newline.
+    """
     def __init__(self, outbuf, directives_only=False):
+        """
+        directives_only has the cleaner only operate on directive lines.
+        """
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
         self.directives_only = directives_only
     def logical_newline(self):
+        """
+        Reset state when a logical newline is found.
+        That is, when a newline without continuation.
+        """
         if self.state[-1] == "IN_INLINE_COMMENT":
             self.state = ["TOPLEVEL"]
             self.outbuf.append_space()
@@ -90,13 +142,16 @@ class c_cleaner:
             self.state = ["TOPLEVEL"]
         elif self.state[-1] == "DOUBLE_QUOTATION":
             # This probably should give a warning
-            self.state == ["TOPLEVEL"]
+            self.state = ["TOPLEVEL"]
         elif self.state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
             self.state.pop()
             assert self.state[-1] == "IN_BLOCK_COMMENT"
         elif self.state[-1] == "CPP_DIRECTIVE":
             self.state = ["TOPLEVEL"]
     def process(self, lineiter):
+        """
+        Add contents of lineiter to outbuf, stripping as directed.
+        """
         inbuffer = iter_keep1(lineiter)
         for char in inbuffer:
             if self.state[-1] == "TOPLEVEL":
@@ -192,25 +247,38 @@ class c_cleaner:
                 assert None
 
 class fortran_cleaner:
+    """
+    'Cleans' source to remove comments and blanks while preserving
+    directives and handling strings and continuations properly.
+    Expects to have c defines already processed.
+    """
     def __init__(self, outbuf):
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
         self.verify_continue = []
     def dir_check(self, inbuffer):
-        self.found=['!']
+        """
+        Inspect comment to see if it is in fact, a valid directive,
+        which should be preserved.
+        """
+        found = ['!']
         for char in inbuffer:
             if char == '$':
-                self.found.append('$')
-                for char in self.found:
-                    self.outbuf.append_nonspace(char)
-                for char in inbuffer:
-                    self.outbuf.append_nonspace(char)
+                found.append('$')
+                for c in found:
+                    self.outbuf.append_nonspace(c)
+                for c in inbuffer:
+                    self.outbuf.append_nonspace(c)
                 break
             elif char.isalpha():
-                self.found.append(char)
+                found.append(char)
             else:
                 return
     def process(self, lineiter):
+        """
+        Add contents of lineiter to current line, removing contents and
+        handling continuations.
+        """
         inbuffer = iter_keep1(lineiter)
         try:
             while True:
@@ -296,6 +364,15 @@ class fortran_cleaner:
             self.state[-1] = "CONTINUING_FROM_SOL"
 
 def c_file_source(fp, relaxed=False, directives_only=False):
+    """
+    Process file fp in terms of logical (sloc) and physical lines of C code.
+    Yield blocks of logical lines of code with physical extents.
+    Return total lines at exit.
+    Relaxed allows for inconsistent state at the end of parsing, usefule for
+    special composition cases.
+    directives_only sets up parser to only process directive lines such that
+    the output can be fed to another file source (i.e. Fortran).
+    """
 
     current_physical_line = one_space_line()
     cleaner = c_cleaner(current_physical_line, directives_only)
@@ -355,6 +432,14 @@ def c_file_source(fp, relaxed=False, directives_only=False):
     return (total_sloc, total_physical_lines)
 
 def fortran_file_source(fp, relaxed=False):
+    """
+    Process file fp in terms of logical (sloc) and physical lines of
+    fixed-form  Fortran code.
+    Yield blocks of logical lines of code with physical extents.
+    Return total lines at exit.
+    Relaxed allows for inconsistent state at the end of parsing, usefule for
+    special composition cases.
+    """
 
     current_physical_line = one_space_line()
     cleaner = fortran_cleaner(current_physical_line)
@@ -370,7 +455,7 @@ def fortran_file_source(fp, relaxed=False):
         while True:
             ((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category) = next(c_walker)
             #if it's a cpp directive, flush what we have, then emit the directive and start over
-            if current_physical_start == None:
+            if current_physical_start is None:
                 current_physical_start = src_physical_start
 
             if c_category == "CPP_DIRECTIVE":
@@ -421,6 +506,10 @@ def fortran_file_source(fp, relaxed=False):
     return (total_sloc, total_physical_lines)
 
 def get_file_source(path):
+    """
+    Return a C or Fortran line source for path depending on
+    the language we can detect, or fail.
+    """
     lang = FileLanguage(path)
     if lang.get_language() == "fortran-free":
         return fortran_file_source
