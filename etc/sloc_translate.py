@@ -12,6 +12,7 @@ import re
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
+# pylint: disable=wrong-import-position
 from codebasin.file_source import get_file_source
 
 def file_sloc(path, verbose=False):
@@ -31,6 +32,7 @@ def file_sloc(path, verbose=False):
                           f" {logical_line.current_physical_end}) ({logical_line.local_sloc}):"
                           f" {logical_line.flushed_line} {logical_line.category}")
         except StopIteration as it:
+             # pylint: disable=unpacking-non-sequence
             total_sloc, physical_loc = it.value
 
     return (path, total_sloc, physical_loc)

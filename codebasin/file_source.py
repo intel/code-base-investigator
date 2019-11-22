@@ -19,6 +19,7 @@ whitespace_dict = dict.fromkeys(''.join([' \t\n\r\x0b\x0c\x1c\x1d\x1e',
 
 def is_whitespace(c):
     """Returns true if the character c is whitespace"""
+    # pylint: disable=global-statement
     global whitespace_dict
     return c in whitespace_dict
 
@@ -152,6 +153,7 @@ class c_cleaner:
         """
         Add contents of lineiter to outbuf, stripping as directed.
         """
+        # pylint: disable=too-many-branches,too-many-statements
         inbuffer = iter_keep1(lineiter)
         for char in inbuffer:
             if self.state[-1] == "TOPLEVEL":
@@ -279,6 +281,7 @@ class fortran_cleaner:
         Add contents of lineiter to current line, removing contents and
         handling continuations.
         """
+        # pylint: disable=too-many-branches,too-many-statements
         inbuffer = iter_keep1(lineiter)
         try:
             while True:
@@ -523,6 +526,7 @@ def fortran_file_source(fp, relaxed=False):
                 total_sloc += curr_line.physical_reset()
 
     except StopIteration as stopit:
+        # pylint: disable=unpacking-non-sequence
         _, total_physical_lines = stopit.value
 
     curr_line.physical_update(total_physical_lines)

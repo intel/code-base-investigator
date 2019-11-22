@@ -153,6 +153,7 @@ class FileParser:
                     else:
                         groups['code'].add_line(phys_int, logical_line.local_sloc)
             except StopIteration as it:
+                # pylint: disable=unpacking-non-sequence
                 _, physical_loc = it.value
 
             if not groups['code'].empty():
