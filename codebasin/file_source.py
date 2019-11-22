@@ -379,16 +379,16 @@ class line_info:
         Combine this logical line with another one.
         """
         self.current_logical_line.join(other_line)
-    def physical_nonblank(self):
+    def physical_nonblank(self, n):
         """
         Mark nonblank link in this logical like.
         """
-        self.local_sloc += 1
+        self.local_sloc += n
     def physical_update(self, physical_line_num):
         """
         Mark end of new physical line.
         """
-        self.current_physical_end = physical_line_num + 1
+        self.current_physical_end = physical_line_num
         self.category = self.current_logical_line.category()
         self.flushed_line = self.current_logical_line.flush()
     def physical_reset(self):
@@ -400,6 +400,8 @@ class line_info:
         self.local_sloc = 0
         self.flushed_line = None
         return local_sloc_copy
+    def phys_interval(self):
+        return (self.current_physical_start, self.current_physical_end)
     def logical_result(self):
         """
         Return tuple of contents. Eventually should just return this class.
@@ -442,14 +444,14 @@ def c_file_source(fp, relaxed=False, directives_only=False):
             cleaner.logical_newline()
 
         if not current_physical_line.category() == "BLANK":
-            curr_line.physical_nonblank()
+            curr_line.physical_nonblank(1)
 
         curr_line.join(current_physical_line)
 
         if not continued:
             curr_line.physical_update(physical_line_num+1)
             if curr_line.category != "BLANK":
-                yield curr_line.logical_result()
+                yield curr_line
 
             total_sloc += curr_line.physical_reset()
 
@@ -457,7 +459,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
 
     curr_line.physical_update(physical_line_num+1)
     if curr_line.category != "BLANK":
-        yield curr_line.logical_result()
+        yield curr_line
 
     total_sloc += curr_line.physical_reset()
     if not relaxed:
@@ -478,62 +480,57 @@ def fortran_file_source(fp, relaxed=False):
     current_physical_line = one_space_line()
     cleaner = fortran_cleaner(current_physical_line)
 
-    current_logical_line = one_space_line()
+    curr_line = line_info()
 
     current_physical_start = None
     total_sloc = 0
-    local_sloc = 0
 
     c_walker = c_file_source(fp, directives_only=True)
     try:
         while True:
-            ((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category) = next(c_walker)
+            src_c_line = next(c_walker)
+            #((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category)
             #if it's a cpp directive, flush what we have, then emit the directive and start over
             if current_physical_start is None:
-                current_physical_start = src_physical_start
+                current_physical_start = curr_line.current_physical_start
 
-            if c_category == "CPP_DIRECTIVE":
-                line_cat = current_logical_line.category()
-                if line_cat != "BLANK":
-                    yield ((current_physical_start, src_physical_end), local_sloc, current_logical_line.flush(), line_cat)
-                else:
-                    current_logical_line.__init__()
-                    assert local_sloc == 0
+            if src_c_line.category == "CPP_DIRECTIVE":
+                curr_line.physical_update(src_c_line.current_physical_end)
+                if curr_line.category != "BLANK":
+                    yield curr_line
 
                 current_physical_start = None
-                total_sloc += local_sloc
-                local_sloc = 0
-                yield ((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category)
-                total_sloc += src_line_sloc
+                total_sloc += curr_line.physical_reset()
+                yield src_c_line
+                total_sloc += src_c_line.local_sloc
                 continue
 
             current_physical_line.__init__()
-            cleaner.process(it.islice(src_line, 0, len(src_line)))
+            cleaner.process(it.islice(src_c_line.flushed_line, 0, len(src_c_line.flushed_line)))
 
             if not current_physical_line.category() == "BLANK":
-                local_sloc += src_line_sloc
+                curr_line.physical_nonblank(src_c_line.local_sloc)
 
-            current_logical_line.join(current_physical_line)
+            curr_line.join(current_physical_line)
 
             if cleaner.state[-1] != "CONTINUING_FROM_SOL":
-                line_cat = current_logical_line.category()
-                if line_cat != "BLANK":
-                    yield ((current_physical_start, src_physical_end), local_sloc, current_logical_line.flush(), line_cat)
-                else:
-                    current_logical_line.__init__()
-                    assert local_sloc == 0
+                curr_line.current_physical_start = current_physical_start
+                curr_line.physical_update(src_c_line.current_physical_end)
+                if curr_line.category != "BLANK":
+                    yield curr_line
 
                 current_physical_start = None
-                total_sloc += local_sloc
-                local_sloc = 0
+                total_sloc += curr_line.physical_reset()
+
     except StopIteration as stopit:
         _, total_physical_lines = stopit.value
 
-    line_cat = current_logical_line.category()
-    if line_cat != "BLANK":
-        yield ((current_physical_start, total_physical_lines), local_sloc, current_logical_line.flush(), line_cat)
+    curr_line.physical_update(total_physical_lines)
+    if not curr_line.category == "BLANK":
+        curr_line.current_physical_start = current_physical_start
+        yield curr_line
 
-    total_sloc += local_sloc
+    total_sloc += curr_line.physical_reset()
     if not relaxed:
         assert cleaner.state == ["TOPLEVEL"]
 

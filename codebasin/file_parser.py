@@ -142,18 +142,20 @@ class FileParser:
             source = file_source(source_file)
             try:
                 while True:
-                    (phys_int, local_sloc, logical_line, line_cat) = next(source)
+                    logical_line = next(source)
+                    phys_int = (logical_line.current_physical_start, logical_line.current_physical_end)
                     # Only follow continuation for directives
-                    if line_cat == 'CPP_DIRECTIVE':
+                    if logical_line.category == 'CPP_DIRECTIVE':
                         # Add this into the directive lines, even if it
                         # might not be a directive we count
-                        groups['directive'].add_line(phys_int, local_sloc)
 
-                        FileParser.handle_directive(out_tree, groups, logical_line)
+                        groups['directive'].add_line(phys_int, logical_line.local_sloc)
+
+                        FileParser.handle_directive(out_tree, groups, logical_line.flushed_line)
 
                         # FallBack is that this line is a simple code line.
                     else:
-                        groups['code'].add_line(phys_int, local_sloc)
+                        groups['code'].add_line(phys_int, logical_line.local_sloc)
             except StopIteration as it:
                 total_sloc, physical_loc = it.value
 
