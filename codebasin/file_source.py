@@ -547,4 +547,5 @@ def get_file_source(path):
     elif lang.get_language() in ["c", "c++"]:
         return c_file_source
     else:
-        raise RuntimeError(f"Language {lang.get_language()} in file {path} is unsupported by code base investigator")
+        raise RuntimeError(f"Language {lang.get_language()} in file " +
+                           f"{path} is unsupported by code base investigator")

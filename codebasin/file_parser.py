@@ -5,12 +5,8 @@ Contains classes and functions related to parsing a file,
 and building a tree of nodes from it.
 """
 
-from os.path import splitext
-
-from . import preprocessor  # pylint : disable=no-name-in-module
-from . import language
-
 from codebasin.file_source import get_file_source
+from . import preprocessor  # pylint : disable=no-name-in-module
 
 class LineGroup:
     """
@@ -128,9 +124,9 @@ class FileParser:
         out_tree = preprocessor.SourceTree(self._filename)
         file_source = get_file_source(self._filename)
         if not file_source:
-            raise RuntimeError(f"{self._filename} doesn't appear to be a language this tool can process")
+            raise RuntimeError(f"{self._filename} doesn't appear " +
+                               "to be a language this tool can process")
         with open(self._filename, mode='r', errors='replace') as source_file:
-            previous_continue = False
 
             groups = {'code': LineGroup(),
                       'directive': LineGroup(),
@@ -143,7 +139,7 @@ class FileParser:
             try:
                 while True:
                     logical_line = next(source)
-                    phys_int = (logical_line.current_physical_start, logical_line.current_physical_end)
+                    phys_int = logical_line.phys_interval()
                     # Only follow continuation for directives
                     if logical_line.category == 'CPP_DIRECTIVE':
                         # Add this into the directive lines, even if it
@@ -157,7 +153,7 @@ class FileParser:
                     else:
                         groups['code'].add_line(phys_int, logical_line.local_sloc)
             except StopIteration as it:
-                total_sloc, physical_loc = it.value
+                _, physical_loc = it.value
 
             if not groups['code'].empty():
                 groups['code'].add_line((groups['code'].start_line, physical_loc-1), 0)
