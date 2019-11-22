@@ -15,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 # pylint: disable=wrong-import-position
 from codebasin.file_source import get_file_source
 
+
 def file_sloc(path, verbose=False):
     """
     Process file in path, reporting total_sloc/loc. Optionally print logical regions.
@@ -37,6 +38,7 @@ def file_sloc(path, verbose=False):
 
     return (path, total_sloc, physical_loc)
 
+
 def walk_sloc(in_root, regexp, verbose=False):
     """
     Run file_sloc on each file that matches regexp under root path.
@@ -52,6 +54,7 @@ def walk_sloc(in_root, regexp, verbose=False):
                 except FileNotFoundError:
                     pass
 
+
 def sloc_translate(args):
     """
     Toplevel routine for script.
@@ -64,6 +67,7 @@ def sloc_translate(args):
     else:
         print("Expected either 1 argument (a single file to parse" +
               " and print) or 2 (a directory root & file pattern)")
+
 
 if __name__ == '__main__':
     sloc_translate(sys.argv)

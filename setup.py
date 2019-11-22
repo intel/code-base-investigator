@@ -23,4 +23,4 @@ setup(name='codebasin',
                         'matplotlib',
                         'pyyaml',
                         'scipy']
-)
+      )

@@ -8,14 +8,15 @@ C/C++ files as well as fixed-form Fortran
 import itertools as it
 from .language import FileLanguage
 
-### This string was created by looking at all unicode code points
-### and checking to see if they are considered whitespace
-### ('\s') by the re module
+# This string was created by looking at all unicode code points
+# and checking to see if they are considered whitespace
+# ('\s') by the re module
 whitespace_dict = dict.fromkeys(''.join([' \t\n\r\x0b\x0c\x1c\x1d\x1e',
                                          '\x1f\x85\xa0\u1680\u2000\u2001',
                                          '\u2002\u2003\u2004\u2005\u2006',
                                          '\u2007\u2008\u2009\u200a\u2028',
                                          '\u2029\u202f\u205f\u3000']))
+
 
 def is_whitespace(c):
     """Returns true if the character c is whitespace"""
@@ -23,14 +24,17 @@ def is_whitespace(c):
     global whitespace_dict
     return c in whitespace_dict
 
+
 class one_space_line:
     """
     A container that represents a single line of code while (generally)
     merging all whitespace into a single space.
     """
+
     def __init__(self):
         self.parts = []
         self.trailing_space = False
+
     def append_char(self, c):
         """
         Append a character of no particular class to the line.
@@ -43,6 +47,7 @@ class one_space_line:
             if not self.trailing_space:
                 self.parts.append(' ')
                 self.trailing_space = True
+
     def append_space(self):
         """
         Append whitespace to line, unless line already ends in a space.
@@ -50,9 +55,11 @@ class one_space_line:
         if not self.trailing_space:
             self.parts.append(' ')
             self.trailing_space = True
+
     def append_nonspace(self, c):
         self.parts.append(c)
         self.trailing_space = False
+
     def join(self, other):
         """
         Append another one_space_line to this one, respecting whitespace rules.
@@ -63,6 +70,7 @@ class one_space_line:
             else:
                 self.parts += other.parts[:]
             self.trailing_space = other.trailing_space
+
     def category(self):
         """
         Report the a category for this line:
@@ -81,6 +89,7 @@ class one_space_line:
         elif self.parts[:2] == ' #' or self.parts[0] == '#':
             res = "CPP_DIRECTIVE"
         return res
+
     def flush(self):
         """
         Convert the characters to a string and reset the buffer.
@@ -89,22 +98,27 @@ class one_space_line:
         self.__init__()
         return res
 
+
 class iter_keep1:
     """
     An iterator wrapper that allows a single item to be 'put back'
     and picked up for the next iteration.
     """
+
     def __init__(self, iterator):
         self.iterator = iter(iterator)
         self.single = None
+
     def __iter__(self):
         return self
+
     def __next__(self):
         if self.single is not None:
             res, self.single = self.single, None
             return res
         else:
             return next(self.iterator)
+
     def putback(self, item):
         """
         Put item into the iterator such that it will be the next
@@ -113,6 +127,7 @@ class iter_keep1:
         assert self.single is None
         self.single = item
 
+
 class c_cleaner:
     """
     Approximation of the early stages of a C preprocessor.
@@ -120,6 +135,7 @@ class c_cleaner:
     with whitespace. State is kept across physical lines and cleared with
     logical_newline.
     """
+
     def __init__(self, outbuf, directives_only=False):
         """
         directives_only has the cleaner only operate on directive lines.
@@ -127,6 +143,7 @@ class c_cleaner:
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
         self.directives_only = directives_only
+
     def logical_newline(self):
         """
         Reset state when a logical newline is found.
@@ -149,6 +166,7 @@ class c_cleaner:
             assert self.state[-1] == "IN_BLOCK_COMMENT"
         elif self.state[-1] == "CPP_DIRECTIVE":
             self.state = ["TOPLEVEL"]
+
     def process(self, lineiter):
         """
         Add contents of lineiter to outbuf, stripping as directed.
@@ -248,16 +266,19 @@ class c_cleaner:
             else:
                 assert None
 
+
 class fortran_cleaner:
     """
     'Cleans' source to remove comments and blanks while preserving
     directives and handling strings and continuations properly.
     Expects to have c defines already processed.
     """
+
     def __init__(self, outbuf):
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
         self.verify_continue = []
+
     def dir_check(self, inbuffer):
         """
         Inspect comment to see if it is in fact, a valid directive,
@@ -276,6 +297,7 @@ class fortran_cleaner:
                 found.append(char)
             else:
                 return
+
     def process(self, lineiter):
         """
         Add contents of lineiter to current line, removing contents and
@@ -366,10 +388,12 @@ class fortran_cleaner:
             self.verify_continue = []
             self.state[-1] = "CONTINUING_FROM_SOL"
 
+
 class line_info:
     """
     Reprsents a logical line of code.
     """
+
     def __init__(self):
         self.current_logical_line = one_space_line()
         self.current_physical_start = 1
@@ -377,16 +401,19 @@ class line_info:
         self.local_sloc = 0
         self.category = None
         self.flushed_line = None
+
     def join(self, other_line):
         """
         Combine this logical line with another one.
         """
         self.current_logical_line.join(other_line)
+
     def physical_nonblank(self, n):
         """
         Mark nonblank link in this logical like.
         """
         self.local_sloc += n
+
     def physical_update(self, physical_line_num):
         """
         Mark end of new physical line.
@@ -394,6 +421,7 @@ class line_info:
         self.current_physical_end = physical_line_num
         self.category = self.current_logical_line.category()
         self.flushed_line = self.current_logical_line.flush()
+
     def physical_reset(self):
         """
         Prepare for next logical block. Return counted sloc.
@@ -403,14 +431,17 @@ class line_info:
         self.local_sloc = 0
         self.flushed_line = None
         return local_sloc_copy
+
     def phys_interval(self):
         return (self.current_physical_start, self.current_physical_end)
+
     def logical_result(self):
         """
         Return tuple of contents. Eventually should just return this class.
         """
         return ((self.current_physical_start, self.current_physical_end),
                 self.local_sloc, self.flushed_line, self.category)
+
 
 def c_file_source(fp, relaxed=False, directives_only=False):
     """
@@ -436,10 +467,10 @@ def c_file_source(fp, relaxed=False, directives_only=False):
         end = len(line)
         if line[-1] == '\n':
             end -= 1
-        elif end > 0 and line[end-1] == '\\':
+        elif end > 0 and line[end - 1] == '\\':
             raise RuntimeError("file seems to end in \\ with no newline!")
 
-        continued = end > 0 and line[end-1] == '\\'
+        continued = end > 0 and line[end - 1] == '\\'
         if continued:
             end -= 1
         cleaner.process(it.islice(line, 0, end))
@@ -452,7 +483,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
         curr_line.join(current_physical_line)
 
         if not continued:
-            curr_line.physical_update(physical_line_num+1)
+            curr_line.physical_update(physical_line_num + 1)
             if curr_line.category != "BLANK":
                 yield curr_line
 
@@ -460,7 +491,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
 
     total_physical_lines = physical_line_num
 
-    curr_line.physical_update(physical_line_num+1)
+    curr_line.physical_update(physical_line_num + 1)
     if curr_line.category != "BLANK":
         yield curr_line
 
@@ -469,6 +500,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
         assert cleaner.state == ["TOPLEVEL"]
 
     return (total_sloc, total_physical_lines)
+
 
 def fortran_file_source(fp, relaxed=False):
     """
@@ -493,7 +525,7 @@ def fortran_file_source(fp, relaxed=False):
         while True:
             src_c_line = next(c_walker)
             #((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category)
-            #if it's a cpp directive, flush what we have, then emit the directive and start over
+            # if it's a cpp directive, flush what we have, then emit the directive and start over
             if current_physical_start is None:
                 current_physical_start = curr_line.current_physical_start
 
@@ -539,6 +571,7 @@ def fortran_file_source(fp, relaxed=False):
         assert cleaner.state == ["TOPLEVEL"]
 
     return (total_sloc, total_physical_lines)
+
 
 def get_file_source(path):
     """

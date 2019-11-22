@@ -6,6 +6,7 @@ import logging
 import os
 from codebasin import preprocessor, file_parser
 
+
 class TestExampleFortranFile(unittest.TestCase):
     """
     Test handling of fixed form Fortran
@@ -18,6 +19,7 @@ class TestExampleFortranFile(unittest.TestCase):
         tree = parser.parse_file()
         self.assertEqual(tree.root.total_sloc, 20)
 
+
 class TestExampleCFile(unittest.TestCase):
     """
     Test handling of C comments
@@ -29,6 +31,7 @@ class TestExampleCFile(unittest.TestCase):
 
         tree = parser.parse_file()
         self.assertEqual(tree.root.total_sloc, 25)
+
 
 if __name__ == '__main__':
     unittest.main()

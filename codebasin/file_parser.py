@@ -8,6 +8,7 @@ and building a tree of nodes from it.
 from codebasin.file_source import get_file_source
 from . import preprocessor  # pylint : disable=no-name-in-module
 
+
 class LineGroup:
     """
     Represents a grouping of lines. It contains the extent, and the
@@ -37,10 +38,11 @@ class LineGroup:
         if self.start_line == -1 or phys_int[0] < self.start_line:
             self.start_line = phys_int[0]
 
-        if phys_int[1]-1 > self.end_line:
-            self.end_line = phys_int[1]-1
+        if phys_int[1] - 1 > self.end_line:
+            self.end_line = phys_int[1] - 1
 
         self.line_count += sloc_count
+
     def reset(self):
         """
         Reset the countable group
@@ -64,6 +66,7 @@ class LineGroup:
 
         self.end_line = max(self.end_line, line_group.end_line)
         line_group.reset()
+
 
 class FileParser:
     """
@@ -157,7 +160,7 @@ class FileParser:
                 _, physical_loc = it.value
 
             if not groups['code'].empty():
-                groups['code'].add_line((groups['code'].start_line, physical_loc-1), 0)
+                groups['code'].add_line((groups['code'].start_line, physical_loc - 1), 0)
                 self.insert_code_node(out_tree, groups['code'])
                 groups['file'].merge(groups['code'])
 
