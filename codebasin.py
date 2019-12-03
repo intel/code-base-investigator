@@ -98,8 +98,10 @@ if __name__ == '__main__':
 
     output_prefix = os.path.realpath(guess_project_name(args.config_file))
 
-    print(f"Config file: {args.config_file}")
-    print(f"Root: {rootdir}")
+    if report_enabled("summary") or report_enabled("clustering"):
+        print(f"Config file: {args.config_file}")
+        print(f"Root: {rootdir}")
+
     # Print summary report
     if report_enabled("summary"):
         summary = report.summary(setmap)
