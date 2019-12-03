@@ -8,7 +8,7 @@ Can optionally print logical line regions and cleaned lines.
 
 import os
 import sys
-import re
+from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -39,14 +39,14 @@ def file_sloc(path, verbose=False):
     return (path, total_sloc, physical_loc)
 
 
-def walk_sloc(in_root, regexp, verbose=False):
+def walk_sloc(in_root, extensions, verbose=False):
     """
     Run file_sloc on each file that matches regexp under root path.
     """
     for root, _, files in os.walk(in_root):
         for current_file in files:
             full_path = os.path.join(root, current_file)
-            if regexp.match(full_path):
+            if Path(full_path).suffix in extensions:
                 try:
                     (filename, total_sloc, physical_loc) = file_sloc(full_path)
                     if verbose:
@@ -63,7 +63,8 @@ def sloc_translate(args):
         (filename, total_sloc, physical_loc) = file_sloc(args[1], verbose=True)
         print(f"{filename}, {total_sloc}, {physical_loc}")
     elif len(args) == 3:
-        walk_sloc(args[1], re.compile(args[2]), verbose=True)
+        cleaned = [f".{x}" for x in args[2].split(',')]
+        walk_sloc(args[1], cleaned, verbose=True)
     else:
         print("Expected either 1 argument (a single file to parse" +
               " and print) or 2 (a directory root & file pattern)")
