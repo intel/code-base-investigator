@@ -9,7 +9,7 @@ from codebasin import preprocessor, file_parser
 
 class TestExampleFortranFile(unittest.TestCase):
     """
-    Test handling of fixed form Fortran
+    Test handling of freeform Fortran
     """
 
     def test_fortran_comments(self):
