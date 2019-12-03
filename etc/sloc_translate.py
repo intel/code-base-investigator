@@ -63,7 +63,7 @@ def sloc_translate(args):
         (filename, total_sloc, physical_loc) = file_sloc(args[1], verbose=True)
         print(f"{filename}, {total_sloc}, {physical_loc}")
     elif len(args) == 3:
-        walk_sloc(args[1], re.compile(args[2]))
+        walk_sloc(args[1], re.compile(args[2]), verbose=True)
     else:
         print("Expected either 1 argument (a single file to parse" +
               " and print) or 2 (a directory root & file pattern)")
