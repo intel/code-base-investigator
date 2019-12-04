@@ -72,6 +72,8 @@ if __name__ == '__main__':
     parser.add_argument('-R', '--report', dest='reports', metavar='REPORT', default=['all'],
                         choices=['all', 'summary', 'clustering'], nargs='+',
                         help='desired output reports (default: all)')
+    parser.add_argument('--batchmode', dest='batchmode', action='store_true', default=False,
+                        help="Set batch mode (additional output for bulk operation.)")
     args = parser.parse_args()
 
     stdout_log = logging.StreamHandler(sys.stdout)
@@ -98,7 +100,7 @@ if __name__ == '__main__':
 
     output_prefix = os.path.realpath(guess_project_name(args.config_file))
 
-    if report_enabled("summary") or report_enabled("clustering"):
+    if args.batchmode and (report_enabled("summary") or report_enabled("clustering")):
         print(f"Config file: {args.config_file}")
         print(f"Root: {rootdir}")
 
