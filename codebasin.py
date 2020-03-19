@@ -60,15 +60,15 @@ if __name__ == '__main__':
 
     # Read command-line arguments
     parser = argparse.ArgumentParser(description="Code Base Investigator v" + str(version))
+    parser.add_argument('-r', '--rootdir', dest="rootdir", metavar='DIR',
+                        default=os.getcwd(), type=str,
+                        help="Set working root directory (default .)")
     parser.add_argument('-c', '--config', dest='config_file', metavar='FILE', action='store',
                         help='configuration file (default: <DIR>/config.yaml)')
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='count', default=0, help='increase verbosity level')
     parser.add_argument('-q', '--quiet', dest='quiet',
                         action='count', default=0, help='decrease verbosity level')
-    parser.add_argument('-r', '--rootdir', dest="rootdir", metavar='DIR',
-                        default=os.getcwd(), type=str,
-                        help="Set working root directory (default .)")
     parser.add_argument('-R', '--report', dest='reports', metavar='REPORT', default=['all'],
                         choices=['all', 'summary', 'clustering'], nargs='+',
                         help='desired output reports (default: all)')
