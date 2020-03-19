@@ -9,7 +9,7 @@ usage: codebasin.py [-h] [-c FILE] [-v] [-q] [-r DIR] [-R REPORT [REPORT ...]]
 optional arguments:
   -h, --help            show this help message and exit
   -c FILE, --config FILE
-                        configuration file (default: config.yaml)
+                        configuration file (default: <DIR>/config.yaml)
   -v, --verbose         verbosity level
   -q, --quiet           quiet level
   -r DIR, --rootdir DIR
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # Read command-line arguments
     parser = argparse.ArgumentParser(description="Code Base Investigator v" + str(version))
     parser.add_argument('-c', '--config', dest='config_file', metavar='FILE', action='store',
-                        default='config.yaml', help='configuration file (default: config.yaml)')
+                        help='configuration file (default: <DIR>/config.yaml)')
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='count', default=0, help='increase verbosity level')
     parser.add_argument('-q', '--quiet', dest='quiet',
@@ -83,12 +83,16 @@ if __name__ == '__main__':
         max(1, logging.WARNING - 10 * (args.verbose - args.quiet)))
     rootdir = os.path.realpath(args.rootdir)
 
+    if args.config_file == None:
+        config_file = os.path.join(rootdir, "config.yaml")
+    else:
+        config_file = args.config_file
     # Load the configuration file into a dict
-    if not util.ensure_yaml(args.config_file):
+    if not util.ensure_yaml(config_file):
         logging.getLogger("codebasin").error(
             "Configuration file does not have YAML file extension.")
         sys.exit(1)
-    codebase, configuration = config.load(args.config_file, rootdir)
+    codebase, configuration = config.load(config_file, rootdir)
 
     # Parse the source tree, and determine source line associations.
     # The trees and associations are housed in state.
@@ -98,10 +102,10 @@ if __name__ == '__main__':
     platform_mapper = walkers.PlatformMapper(codebase)
     setmap = platform_mapper.walk(state)
 
-    output_prefix = os.path.realpath(guess_project_name(args.config_file))
+    output_prefix = os.path.realpath(guess_project_name(config_file))
 
     if args.batchmode and (report_enabled("summary") or report_enabled("clustering")):
-        print(f"Config file: {args.config_file}")
+        print(f"Config file: {config_file}")
         print(f"Root: {rootdir}")
 
     # Print summary report
