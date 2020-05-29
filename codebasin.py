@@ -83,7 +83,7 @@ if __name__ == '__main__':
         max(1, logging.WARNING - 10 * (args.verbose - args.quiet)))
     rootdir = os.path.realpath(args.rootdir)
 
-    if args.config_file == None:
+    if args.config_file is None:
         config_file = os.path.join(rootdir, "config.yaml")
     else:
         config_file = args.config_file

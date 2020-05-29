@@ -133,8 +133,7 @@ class FileParser:
 
             groups = {'code': LineGroup(),
                       'directive': LineGroup(),
-                      'file': LineGroup()
-                      }
+                      'file': LineGroup()}
 
             groups['file'].start_line = 1
 
