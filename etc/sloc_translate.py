@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # pylint: disable=wrong-import-position
-from codebasin.file_source import get_file_source
+from codebasin.file_source import get_file_source  # nopep8
 
 
 def file_sloc(path, verbose=False):
