@@ -25,7 +25,7 @@ import logging
 
 from codebasin import config, finder, report, util, walkers
 
-version = 1.0
+version = 1.05
 
 
 def report_enabled(name):
