@@ -165,7 +165,8 @@ class c_cleaner:
         elif self.state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
             self.state.pop()
             if not self.state[-1] == "IN_BLOCK_COMMENT":
-                raise RuntimeError("Inconsistent parser state! Looking for / to terminates a block comment but not in a block comment!")
+                raise RuntimeError(
+                    "Inconsistent parser state! Looking for / to terminate a block comment but not in a block comment!")
         elif self.state[-1] == "CPP_DIRECTIVE":
             self.state = ["TOPLEVEL"]
 
@@ -255,13 +256,15 @@ class c_cleaner:
                 if char == '/':
                     self.state.pop()
                     if not self.state[-1] == "IN_BLOCK_COMMENT":
-                        raise RuntimeError("Inconsistent parser state! Looking for / to terminates a block comment but not in a block comment!")
+                        raise RuntimeError(
+                            "Inconsistent parser state! Looking for / to terminate a block comment but not in a block comment!")
                     self.state.pop()
                     self.outbuf.append_space()
                 elif char != '*':
                     self.state.pop()
                     if not self.state[-1] == "IN_BLOCK_COMMENT":
-                        raise RuntimeError("Inconsistent parser Looking for * that terminates a block comment but not in a block comment!")
+                        raise RuntimeError(
+                            "Inconsistent parser state! Looking for * that terminates a block comment but not in a block comment!")
             elif self.state[-1] == "ESCAPING":
                 self.outbuf.append_nonspace(char)
                 self.state.pop()
@@ -572,7 +575,8 @@ def fortran_file_source(fp, relaxed=False):
 
     total_sloc += curr_line.physical_reset()
     if not relaxed and not cleaner.state == ["TOPLEVEL"]:
-        raise RuntimeError("Fortran file parser did not end at top level, and not in 'relaxed' mode")
+        raise RuntimeError(
+            "Fortran file parser did not end at top level, and not in 'relaxed' mode")
 
     return (total_sloc, total_physical_lines)
 
