@@ -5,7 +5,7 @@
 from setuptools import setup
 
 setup(name='codebasin',
-      version='1.0',
+      version='1.05',
       description='Code Base Investigator',
       author='John Pennycook',
       author_email='john.pennycook@intel.com',
