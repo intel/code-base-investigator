@@ -124,7 +124,8 @@ class iter_keep1:
         Put item into the iterator such that it will be the next
         yielded item.
         """
-        assert self.single is None
+        if self.single is not None:
+            raise RuntimeError("iter_keep1 can only have one item put back at a time!")
         self.single = item
 
 
@@ -163,7 +164,8 @@ class c_cleaner:
             self.state = ["TOPLEVEL"]
         elif self.state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
             self.state.pop()
-            assert self.state[-1] == "IN_BLOCK_COMMENT"
+            if not self.state[-1] == "IN_BLOCK_COMMENT":
+                raise RuntimeError("Inconsistent parser state! Looking for / to terminates a block comment but not in a block comment!")
         elif self.state[-1] == "CPP_DIRECTIVE":
             self.state = ["TOPLEVEL"]
 
@@ -252,19 +254,21 @@ class c_cleaner:
             elif self.state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
                 if char == '/':
                     self.state.pop()
-                    assert self.state[-1] == "IN_BLOCK_COMMENT"
+                    if not self.state[-1] == "IN_BLOCK_COMMENT":
+                        raise RuntimeError("Inconsistent parser state! Looking for / to terminates a block comment but not in a block comment!")
                     self.state.pop()
                     self.outbuf.append_space()
                 elif char != '*':
                     self.state.pop()
-                    assert self.state[-1] == "IN_BLOCK_COMMENT"
+                    if not self.state[-1] == "IN_BLOCK_COMMENT":
+                        raise RuntimeError("Inconsistent parser Looking for * that terminates a block comment but not in a block comment!")
             elif self.state[-1] == "ESCAPING":
                 self.outbuf.append_nonspace(char)
                 self.state.pop()
             elif self.state[-1] == "IN_INLINE_COMMENT":
                 return
             else:
-                assert None
+                raise RuntimeError("Unknown parser state!")
 
 
 class fortran_cleaner:
@@ -379,7 +383,7 @@ class fortran_cleaner:
                     elif is_whitespace(char):
                         self.verify_continue.append(char)
                 else:
-                    assert None
+                    raise RuntimeError("Unknown parser state")
         except StopIteration:
             pass
         if self.state[-1] == "CONTINUING_TO_EOL":
@@ -496,8 +500,8 @@ def c_file_source(fp, relaxed=False, directives_only=False):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not relaxed:
-        assert cleaner.state == ["TOPLEVEL"]
+    if not relaxed and not cleaner.state == ["TOPLEVEL"]:
+        raise RuntimeError("C file parser did not end at top level, and not in 'relaxed' mode")
 
     return (total_sloc, total_physical_lines)
 
@@ -567,8 +571,8 @@ def fortran_file_source(fp, relaxed=False):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not relaxed:
-        assert cleaner.state == ["TOPLEVEL"]
+    if not relaxed and not cleaner.state == ["TOPLEVEL"]:
+        raise RuntimeError("Fortran file parser did not end at top level, and not in 'relaxed' mode")
 
     return (total_sloc, total_physical_lines)
 
