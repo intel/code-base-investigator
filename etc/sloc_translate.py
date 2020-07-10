@@ -43,9 +43,10 @@ def walk_sloc(in_root, extensions, verbose=False):
     """
     Run file_sloc on each file that matches regexp under root path.
     """
+    in_root = os.path.realpath(in_root)
     for root, _, files in os.walk(in_root):
         for current_file in files:
-            full_path = os.path.join(root, current_file)
+            full_path = os.path.realpath(os.path.join(root, current_file))
             if Path(full_path).suffix in extensions:
                 try:
                     (filename, total_sloc, physical_loc) = file_sloc(full_path)
@@ -60,7 +61,8 @@ def sloc_translate(args):
     Toplevel routine for script.
     """
     if len(args) == 2:
-        (filename, total_sloc, physical_loc) = file_sloc(args[1], verbose=True)
+        path = os.path.realpath(args[1])
+        (filename, total_sloc, physical_loc) = file_sloc(path, verbose=True)
         print(f"{filename}, {total_sloc}, {physical_loc}")
     elif len(args) == 3:
         cleaned = [f".{x}" for x in args[2].split(',')]
