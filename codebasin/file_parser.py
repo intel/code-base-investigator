@@ -5,8 +5,10 @@ Contains classes and functions related to parsing a file,
 and building a tree of nodes from it.
 """
 
+import os
 from codebasin.file_source import get_file_source
 from . import preprocessor  # pylint : disable=no-name-in-module
+from . import util  # pylint : disable=no-name-in-module
 
 
 class LineGroup:
@@ -76,7 +78,7 @@ class FileParser:
     """
 
     def __init__(self, _filename):
-        self._filename = _filename
+        self._filename = os.path.realpath(_filename)
 
     @staticmethod
     def handle_directive(out_tree, groups, logical_line):
@@ -129,7 +131,7 @@ class FileParser:
         if not file_source:
             raise RuntimeError(f"{self._filename} doesn't appear " +
                                "to be a language this tool can process")
-        with open(self._filename, mode='r', errors='replace') as source_file:
+        with util.safe_open_read_nofollow(self._filename, mode='r', errors='replace') as source_file:
 
             groups = {'code': LineGroup(),
                       'directive': LineGroup(),

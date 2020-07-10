@@ -14,6 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # pylint: disable=wrong-import-position
 from codebasin.file_source import get_file_source  # nopep8
+from codebasin.util import safe_open_read_nofollow  # nopep8
 
 
 def file_sloc(path, verbose=False):
@@ -23,7 +24,7 @@ def file_sloc(path, verbose=False):
     file_source = get_file_source(path)
     if not file_source:
         raise RuntimeError(f"{path} doesn't appear to be a language this tool can process")
-    with open(path, mode='r', errors='replace') as source_file:
+    with safe_open_read_nofollow(path, mode='r', errors='replace') as source_file:
         walker = file_source(source_file, relaxed=False)
         try:
             while True:
