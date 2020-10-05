@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # pylint: disable=too-many-lines
 """
-Dontains classes that define:
+Contains classes that define:
 - Nodes from the tree
 - Tokens from lexing a line of code
 - Operators to handle tokens
@@ -443,7 +443,7 @@ class FileNode(Node):
     def __compute_file_hash(self):
         chunk_size = 4096
         hasher = hashlib.sha512()
-        with open(self.filename, 'rb') as in_file:
+        with util.safe_open_read_nofollow(self.filename, 'rb') as in_file:
             for chunk in iter(lambda: in_file.read(chunk_size), b""):
                 hasher.update(chunk)
 

@@ -50,6 +50,12 @@ def safe_open_write_binary(fname):
     return os.fdopen(fpid, "wb")
 
 
+def safe_open_read_nofollow(fname, *args, **kwargs):
+    """Open fname for reading, but don't follow links."""
+    fpid = os.open(fname, os.O_RDONLY | os.O_NOFOLLOW)
+    return os.fdopen(fpid, *args, **kwargs)
+
+
 def valid_path(path):
     """Return true if the path passed in is valid"""
     valid = True

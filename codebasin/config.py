@@ -134,7 +134,7 @@ def load_database(dbpath, rootdir):
     Return a list of compilation commands, where each command is
     represented as a compilation database entry.
     """
-    with open(dbpath, 'r') as fi:
+    with util.safe_open_read_nofollow(dbpath, 'r') as fi:
         db = yaml.safe_load(fi)
 
     configuration = []
@@ -244,7 +244,7 @@ def load(config_file, rootdir):
     Return a (codebase, platform configuration) tuple of dicts.
     """
     if os.path.isfile(config_file):
-        with open(config_file, 'r') as f:
+        with util.safe_open_read_nofollow(config_file, 'r') as f:
             config = yaml.safe_load(f)
     else:
         raise RuntimeError("Could not open {!s}.".format(config_file))
