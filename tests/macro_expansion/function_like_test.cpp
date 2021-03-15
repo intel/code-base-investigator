@@ -23,3 +23,14 @@ void both_foo_and_bar()
 }
 #endif
 
+#define _GLIBC_PREREQ(x) x
+
+#if _GLIBC_PREREQ(6)
+#else
+#error "#error "Shouldn't be true"
+#endif
+
+#if _UNDEFINED_GLIBC_PREREQ(6)
+#else
+#error "Shouldn't be true"
+#endif

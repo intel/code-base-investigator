@@ -15,8 +15,8 @@ class TestExampleFile(unittest.TestCase):
         self.rootdir = "./tests/macro_expansion/"
         logging.getLogger("codebasin").disabled = True
 
-        self.expected_setmap = {frozenset([]): 13,
-                                frozenset(['CPU', 'GPU']): 239}
+        self.expected_setmap = {frozenset([]): 14,
+                                frozenset(['CPU', 'GPU']): 247}
 
     def test_yaml(self):
         """macro_expansion/macro_expansion.yaml"""

@@ -1710,12 +1710,12 @@ class ExpressionEvaluator(Parser):
         exprs = []
         try:
             expr = self.expression()
-            exprs.extend(expr)
+            exprs.append(expr)
 
             while True:
                 self.match_value(Punctuator, ",")
                 expr = self.expression()
-                exprs.extend(expr)
+                exprs.append(expr)
         except ParseError:
             return exprs
 
