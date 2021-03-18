@@ -19,3 +19,11 @@ int bar()
     return 1;
 }
 #endif
+
+/\
+*
+*/ # /*
+*/ defi\
+ne FO\
+O 10\
+20

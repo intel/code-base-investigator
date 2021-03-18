@@ -481,7 +481,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
         if continued:
             end -= 1
         cleaner.process(it.islice(line, 0, end))
-        if not continued:
+        if not continued and cleaner.state[-1] != 'IN_BLOCK_COMMENT':
             cleaner.logical_newline()
 
         if not current_physical_line.category() == "BLANK":
@@ -489,7 +489,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
 
         curr_line.join(current_physical_line)
 
-        if not continued:
+        if not continued and cleaner.state[-1] != 'IN_BLOCK_COMMENT':
             curr_line.physical_update(physical_line_num + 1)
             if curr_line.category != "BLANK":
                 yield curr_line

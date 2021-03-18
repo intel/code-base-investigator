@@ -16,7 +16,7 @@ class TestExampleFile(unittest.TestCase):
         logging.getLogger("codebasin").disabled = True
 
         self.expected_setmap = {frozenset([]): 4,
-                                frozenset(['CPU', 'GPU']): 12}
+                                frozenset(['CPU', 'GPU']): 17}
 
     def test_yaml(self):
         """multi_line/multi_line.yaml"""
