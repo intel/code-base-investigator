@@ -124,6 +124,10 @@ def clustering(output_name, setmap):
     matplotlib.use("Agg")
     from matplotlib import pyplot as plt
 
+    # Remove misleading axes
+    for axis in ["right", "top", "bottom"]:
+        matplotlib.rcParams["axes.spines." + axis] = False
+
     from scipy.cluster import hierarchy
     from scipy.spatial.distance import squareform
 
