@@ -125,7 +125,7 @@ def clustering(output_name, setmap):
     from matplotlib import pyplot as plt
 
     # Remove misleading axes
-    for axis in ["right", "top", "bottom"]:
+    for axis in ["left", "right", "top"]:
         matplotlib.rcParams["axes.spines." + axis] = False
 
     from scipy.cluster import hierarchy
@@ -146,12 +146,11 @@ def clustering(output_name, setmap):
 
     # Plot dendrogram of hierarchical clustering
     fig, ax = plt.subplots()
-    hierarchy.dendrogram(clusters, labels=platforms)
-    ax.set_ylim(ymin=0, ymax=1)
-    ax.axhline(y=divergence(setmap), linestyle='--', label="Average")
+    hierarchy.dendrogram(clusters, labels=platforms, orientation="right")
+    ax.set_xlim(xmin=0, xmax=1)
+    ax.axvline(x=divergence(setmap), linestyle='--', label="Average")
     ax.legend()
-    plt.xlabel("Platform")
-    plt.ylabel("Code Divergence")
+    plt.xlabel("Code Divergence")
     with util.safe_open_write_binary(output_name) as fp:
         fig.savefig(fp)
 
