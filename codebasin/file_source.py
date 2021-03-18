@@ -86,7 +86,7 @@ class one_space_line:
                 res = "BLANK"
             elif self.parts[0] == '#':
                 res = "CPP_DIRECTIVE"
-        elif self.parts[:2] == ' #' or self.parts[0] == '#':
+        elif self.parts[:2] == [' ', '#'] or self.parts[0] == '#':
             res = "CPP_DIRECTIVE"
         return res
 

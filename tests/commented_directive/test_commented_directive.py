@@ -16,7 +16,7 @@ class TestExampleFile(unittest.TestCase):
         self.rootdir = "./tests/commented_directive/"
         logging.getLogger("codebasin").disabled = True
 
-        self.expected_setmap = {frozenset(['CPU', 'GPU']): 3}
+        self.expected_setmap = {frozenset(['CPU', 'GPU']): 5}
 
     def count_children_nodes(self, node):
         my_count = 0
@@ -38,7 +38,7 @@ class TestExampleFile(unittest.TestCase):
             node_count += self.count_children_nodes(state.get_tree(fn).root)
 
         self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
-        self.assertEqual(node_count, 4, "Incorrect number of nodes in tree: {}".format(node_count))
+        self.assertEqual(node_count, 6, "Incorrect number of nodes in tree: {}".format(node_count))
 
 
 if __name__ == '__main__':
