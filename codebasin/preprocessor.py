@@ -114,6 +114,16 @@ class Punctuator(Token):
             self.line, self.col, self.prev_white, self.token)
 
 
+class Unknown(Token):
+    """
+    Represents an unknown token.
+    """
+
+    def __repr__(self):
+        return "Unknown(line={!r},col={!r},prev_white={!r},token={!r})".format(
+            self.line, self.col, self.prev_white, self.token)
+
+
 class Lexer:
     """
     A lexer for the C preprocessor grammar.
@@ -343,6 +353,7 @@ class Lexer:
         Return a list of all tokens in the string.
         """
         tokens = []
+        self.whitespace()
         while not self.eos():
 
             # Try to match a new token
@@ -351,20 +362,25 @@ class Lexer:
                           self.identifier, self.operator, self.punctuator]
             for f in candidates:
                 col = self.pos
+                pws = self.prev_white
                 try:
-                    self.whitespace()
                     token = f()
                     self.prev_white = False
                     tokens.append(token)
                     break
                 except TokenError:
                     self.pos = col
+                    self.prev_white = pws
 
-            # Only continue matching if a token was found
+            # Treat unmatched single characters as unknown tokens
             if token is None:
-                break
+                tok = Unknown(self.line, self.pos, self.prev_white, self.read())
+                tokens.append(tok)
+                self.prev_white = False
+                self.pos += 1
 
-        self.whitespace()
+            self.whitespace()
+
         if not self.eos():
             raise TokenError("Encountered invalid token.")
 
