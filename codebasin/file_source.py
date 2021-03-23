@@ -144,6 +144,7 @@ class c_cleaner:
         self.state = ["TOPLEVEL"]
         self.outbuf = outbuf
         self.directives_only = directives_only
+        self.iterkeep = iter_keep1("")
 
     def logical_newline(self):
         """
@@ -175,100 +176,103 @@ class c_cleaner:
         Add contents of lineiter to outbuf, stripping as directed.
         """
         # pylint: disable=too-many-branches,too-many-statements
-        inbuffer = iter_keep1(lineiter)
+        state = self.state
+        obuf = self.outbuf
+        inbuffer = self.iterkeep
+        iter_keep1.__init__(inbuffer, lineiter)
         for char in inbuffer:
-            if self.state[-1] == "TOPLEVEL":
+            if state[-1] == "TOPLEVEL":
                 if self.directives_only:
                     if char == '\\':
-                        self.state.append("ESCAPING")
-                        self.outbuf.append_nonspace(char)
-                    elif char == '#' and self.outbuf.category() == "BLANK":
-                        self.state.append("CPP_DIRECTIVE")
-                        self.outbuf.append_nonspace(char)
+                        state.append("ESCAPING")
+                        obuf.append_nonspace(char)
+                    elif char == '#' and obuf.category() == "BLANK":
+                        state.append("CPP_DIRECTIVE")
+                        obuf.append_nonspace(char)
                     else:
-                        self.outbuf.append_char(char)
+                        obuf.append_char(char)
                 else:
                     if char == '\\':
-                        self.state.append("ESCAPING")
-                        self.outbuf.append_nonspace(char)
+                        state.append("ESCAPING")
+                        obuf.append_nonspace(char)
                     elif char == '/':
-                        self.state.append("FOUND_SLASH")
+                        state.append("FOUND_SLASH")
                     elif char == '"':
-                        self.state.append("DOUBLE_QUOTATION")
-                        self.outbuf.append_nonspace(char)
+                        state.append("DOUBLE_QUOTATION")
+                        obuf.append_nonspace(char)
                     elif char == '\'':
-                        self.state.append("SINGLE_QUOTATION")
-                        self.outbuf.append_nonspace(char)
-                    elif char == '#' and self.outbuf.category() == "BLANK":
-                        self.state.append("CPP_DIRECTIVE")
-                        self.outbuf.append_nonspace(char)
+                        state.append("SINGLE_QUOTATION")
+                        obuf.append_nonspace(char)
+                    elif char == '#' and obuf.category() == "BLANK":
+                        state.append("CPP_DIRECTIVE")
+                        obuf.append_nonspace(char)
                     else:
-                        self.outbuf.append_char(char)
-            elif self.state[-1] == "CPP_DIRECTIVE":
+                        obuf.append_char(char)
+            elif state[-1] == "CPP_DIRECTIVE":
                 if char == '\\':
-                    self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(char)
+                    state.append("ESCAPING")
+                    obuf.append_nonspace(char)
                 elif char == '/':
-                    self.state.append("FOUND_SLASH")
+                    state.append("FOUND_SLASH")
                 elif char == '"':
-                    self.state.append("DOUBLE_QUOTATION")
-                    self.outbuf.append_nonspace(char)
+                    state.append("DOUBLE_QUOTATION")
+                    obuf.append_nonspace(char)
                 elif char == '\'':
-                    self.state.append("SINGLE_QUOTATION")
-                    self.outbuf.append_nonspace(char)
+                    state.append("SINGLE_QUOTATION")
+                    obuf.append_nonspace(char)
                 else:
-                    self.outbuf.append_char(char)
-            elif self.state[-1] == "DOUBLE_QUOTATION":
+                    obuf.append_char(char)
+            elif state[-1] == "DOUBLE_QUOTATION":
                 if char == '\\':
-                    self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(char)
+                    state.append("ESCAPING")
+                    obuf.append_nonspace(char)
                 elif char == '"':
-                    self.state.pop()
-                    self.outbuf.append_nonspace(char)
+                    state.pop()
+                    obuf.append_nonspace(char)
                 else:
-                    self.outbuf.append_nonspace(char)
-            elif self.state[-1] == "SINGLE_QUOTATION":
+                    obuf.append_nonspace(char)
+            elif state[-1] == "SINGLE_QUOTATION":
                 if char == '\\':
-                    self.state.append("ESCAPING")
-                    self.outbuf.append_nonspace(char)
+                    state.append("ESCAPING")
+                    obuf.append_nonspace(char)
                 elif char == '/':
-                    self.state.append("FOUND_SLASH")
+                    state.append("FOUND_SLASH")
                 elif char == '\'':
-                    self.state.pop()
-                    self.outbuf.append_nonspace(char)
+                    state.pop()
+                    obuf.append_nonspace(char)
                 else:
-                    self.outbuf.append_nonspace(char)
-            elif self.state[-1] == "FOUND_SLASH":
+                    obuf.append_nonspace(char)
+            elif state[-1] == "FOUND_SLASH":
                 if char == '/':
-                    self.state.pop()
-                    self.state.append("IN_INLINE_COMMENT")
+                    state.pop()
+                    state.append("IN_INLINE_COMMENT")
                 elif char == '*':
-                    self.state.pop()
-                    self.state.append("IN_BLOCK_COMMENT")
+                    state.pop()
+                    state.append("IN_BLOCK_COMMENT")
                 else:
-                    self.state.pop()
-                    self.outbuf.append_char('/')
+                    state.pop()
+                    obuf.append_char('/')
                     inbuffer.putback(char)
-            elif self.state[-1] == "IN_BLOCK_COMMENT":
+            elif state[-1] == "IN_BLOCK_COMMENT":
                 if char == '*':
-                    self.state.append("IN_BLOCK_COMMENT_FOUND_STAR")
-            elif self.state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
+                    state.append("IN_BLOCK_COMMENT_FOUND_STAR")
+            elif state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
                 if char == '/':
-                    self.state.pop()
-                    if not self.state[-1] == "IN_BLOCK_COMMENT":
+                    state.pop()
+                    if not state[-1] == "IN_BLOCK_COMMENT":
                         raise RuntimeError(
                             "Inconsistent parser state! Looking for / to terminate a block comment but not in a block comment!")
-                    self.state.pop()
-                    self.outbuf.append_space()
+                    state.pop()
+                    obuf.append_space()
                 elif char != '*':
-                    self.state.pop()
-                    if not self.state[-1] == "IN_BLOCK_COMMENT":
+                    state.pop()
+                    if not state[-1] == "IN_BLOCK_COMMENT":
                         raise RuntimeError(
                             "Inconsistent parser state! Looking for * that terminates a block comment but not in a block comment!")
-            elif self.state[-1] == "ESCAPING":
-                self.outbuf.append_nonspace(char)
-                self.state.pop()
-            elif self.state[-1] == "IN_INLINE_COMMENT":
+            elif state[-1] == "ESCAPING":
+                obuf.append_nonspace(char)
+                state.pop()
+            elif state[-1] == "IN_INLINE_COMMENT":
                 return
             else:
                 raise RuntimeError("Unknown parser state!")
