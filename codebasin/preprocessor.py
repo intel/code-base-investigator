@@ -352,14 +352,14 @@ class Lexer:
         """
         Return a list of all tokens in the string.
         """
+        candidates = [self.number, self.character_constant, self.string_constant,
+                      self.identifier, self.operator, self.punctuator]
         tokens = []
         self.whitespace()
         while not self.eos():
 
             # Try to match a new token
             token = None
-            candidates = [self.number, self.character_constant, self.string_constant,
-                          self.identifier, self.operator, self.punctuator]
             for f in candidates:
                 col = self.pos
                 pws = self.prev_white
