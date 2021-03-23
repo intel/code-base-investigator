@@ -348,36 +348,42 @@ class Lexer:
             self.pos = col
             raise TokenError("Invalid punctuator.")
 
+    def tokenize_one(self):
+        """
+        Consume and return next token. Returns None if not possible.
+        """
+        candidates = [self.number, self.character_constant, self.string_constant,
+                      self.identifier, self.operator, self.punctuator]
+        token = None
+        for f in candidates:
+            col = self.pos
+            pws = self.prev_white
+            try:
+                token = f()
+                self.prev_white = False
+                break
+            except TokenError:
+                self.pos = col
+                self.prev_white = pws
+        return token
+
     def tokenize(self):
         """
         Return a list of all tokens in the string.
         """
-        candidates = [self.number, self.character_constant, self.string_constant,
-                      self.identifier, self.operator, self.punctuator]
         tokens = []
         self.whitespace()
         while not self.eos():
 
             # Try to match a new token
-            token = None
-            for f in candidates:
-                col = self.pos
-                pws = self.prev_white
-                try:
-                    token = f()
-                    self.prev_white = False
-                    tokens.append(token)
-                    break
-                except TokenError:
-                    self.pos = col
-                    self.prev_white = pws
+            token = self.tokenize_one()
 
             # Treat unmatched single characters as unknown tokens
             if token is None:
-                tok = Unknown(self.line, self.pos, self.prev_white, self.read())
-                tokens.append(tok)
+                token = Unknown(self.line, self.pos, self.prev_white, self.read())
                 self.prev_white = False
                 self.pos += 1
+            tokens.append(token)
 
             self.whitespace()
 
