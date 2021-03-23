@@ -20,6 +20,7 @@ class Platform():
         self._include_paths = []
         self._root_dir = _root_dir
         self.name = name
+        self.found_incl = {}
 
     def add_include_path(self, path):
         """
@@ -83,6 +84,11 @@ class Platform():
         System includes do not include the rootdir, while local includes
         do.
         """
+        try:
+            return self.found_incl[filename]
+        except KeyError:
+            pass
+
         include_file = None
 
         local_paths = []
@@ -94,6 +100,9 @@ class Platform():
             test_path = os.path.realpath(os.path.join(path, filename))
             if os.path.isfile(test_path):
                 include_file = test_path
-                break
+                self.found_incl[filename] = include_file
+                return include_file
 
-        return include_file
+        if include_file is None:
+            self.found_incl[filename] = None
+            return None
