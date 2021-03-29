@@ -1312,8 +1312,8 @@ class MacroExpander(Parser):
                 self.match_value(Punctuator, ")")
 
                 value = platform.is_defined(str(identifier))
-                return NumericalConstant("EXPANSION", identifier.line,
-                                         identifier.prev_white, value)
+                return [NumericalConstant("EXPANSION", identifier.line,
+                                          identifier.prev_white, value)]
             except ParseError:
                 self.pos = defined_pos
 
@@ -1321,8 +1321,8 @@ class MacroExpander(Parser):
             try:
                 identifier = self.match_type(Identifier)
                 value = platform.is_defined(str(identifier))
-                return NumericalConstant("EXPANSION", identifier.line,
-                                         identifier.prev_white, value)
+                return [NumericalConstant("EXPANSION", identifier.line,
+                                          identifier.prev_white, value)]
             except ParseError:
                 raise ParseError("Expected identifier after \"defined\" operator")
 
@@ -1370,20 +1370,9 @@ class MacroExpander(Parser):
             pass
         return args
 
-    @staticmethod
-    def grow_token_list(token_list, extension):
-        """
-        Copy tokens from extension into token_list.
-        extension can be a single token or a list of tokens.
-        """
-        if isinstance(extension, list):
-            token_list.extend(extension)
-        else:
-            token_list.append(extension)
-
     def function_macro(self, platform, stack):
         """
-        Expand a function-like macro.
+        Expand a function-like macro, returning a list of tokens.
 
         Follows the rules outlined in:
         https://gcc.gnu.org/onlinedocs/cpp/Macro-Arguments.html#Macro-Arguments
@@ -1415,7 +1404,7 @@ class MacroExpander(Parser):
             va_args = []
             for idx in range(len(macro.args) - 1, len(expanded_args) - 1):
                 va_args.append(expanded_args[idx])
-                va_args.append(Punctuator("EXPANSION", -1, False, ","))
+                va_args.append([Punctuator("EXPANSION", -1, False, ",")])
             if len(macro.args) - 1 < len(expanded_args):
                 va_args.append(expanded_args[-1])
 
@@ -1430,7 +1419,7 @@ class MacroExpander(Parser):
             try:
                 substitution = expanded_args[macro.args.index(token.token)]
             except (ValueError, ParseError):
-                substitution = token
+                substitution = [token]
 
             # If a token matches the variable argument, substitute
             # precomputed va_args
@@ -1440,9 +1429,9 @@ class MacroExpander(Parser):
                 # tracked through substitution
                 for t in va_args[0]:
                     t.prev_white = token.prev_white
-                substitution = va_args
+                substitution = [item for lst in va_args for item in lst]
 
-            self.grow_token_list(substituted_tokens, substitution)
+            substituted_tokens.extend(substitution)
 
         # Check the expansion for macros to expand
         stack.push(identifier)
@@ -1482,7 +1471,7 @@ class MacroExpander(Parser):
             stack = MacroStack(0, [])
 
         if stack.overflow():
-            return NumericalConstant("EXPANSION", -1, False, "0")
+            return [NumericalConstant("EXPANSION", -1, False, "0")]
 
         try:
             expanded_tokens = []
@@ -1501,10 +1490,10 @@ class MacroExpander(Parser):
 
                 # Pass all other tokens through unmodified
                 if expansion is None:
-                    expansion = self.cursor()
+                    expansion = [self.cursor()]
                     self.pos += 1
 
-                self.grow_token_list(expanded_tokens, expansion)
+                expanded_tokens.extend(expansion)
             return expanded_tokens
         except ParseError:
             raise ValueError("Error in macro expansion.")
