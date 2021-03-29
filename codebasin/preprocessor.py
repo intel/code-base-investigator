@@ -1257,7 +1257,7 @@ class Macro():
             expansion = parser.tokens[parser.pos:]
             parser.pos = len(parser.tokens)
         else:
-            expansion = []
+            expansion = NumericalConstant("Unknown", None, False, 1)
 
         return Macro(identifier, args, expansion)
 
