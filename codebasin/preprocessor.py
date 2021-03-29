@@ -1412,9 +1412,12 @@ class MacroExpander(Parser):
         # Combine variadic arguments into one, separated by commas
         va_args = None
         if macro.is_variadic():
-            va_args = util.interleave(expanded_args[len(macro.args) - 1:],
-                                      Punctuator("EXPANSION", -1, False, ","))
-            va_args = va_args[:-1]  # Remove final comma
+            va_args = []
+            for idx in range(len(macro.args) - 1, len(expanded_args) - 1):
+                va_args.append(expanded_args[idx])
+                va_args.append(Punctuator("EXPANSION", -1, False, ","))
+            if len(macro.args) - 1 < len(expanded_args):
+                va_args.append(expanded_args[-1])
 
         # Substitute each occurrence of an argument in the expansion
         substituted_tokens = []
