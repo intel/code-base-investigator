@@ -1227,6 +1227,12 @@ class Macro:
         self.name = name.as_str()
         self.expansion = expansion
 
+        if isinstance(self.expansion, list):
+            if self.expansion[0].token == "##":
+                raise RuntimeError("Found ## operator at start of expansion")
+            elif self.expansion[-1].token == "##":
+                raise RuntimeError("Found ## operator at end of expansion")
+
     def __repr__(self):
         return "Macro(name={0!r},expansion={1!r})".format(
             self.name, self.expansion)
@@ -1284,32 +1290,63 @@ class MacroFunction(Macro):
         else:
             return None
 
-    def expand(self, expanded_args):
+    def expand(self, input_args):
         """
         Return the substituted replacement for this macro.
-        expanded_args is expected to be a list of (original,
+        input_args is expected to be a list of (original,
         pre-expanded) arguments passed to this.
         """
         # Combine variadic arguments into one, separated by commas
         va_args = None
         if self.is_variadic():
             va_args = []
-            for idx in range(len(self.args) - 1, len(expanded_args) - 1):
-                va_args.append(expanded_args[idx])
+            for idx in range(len(self.args) - 1, len(input_args) - 1):
+                va_args.append(input_args[idx])
                 va_args.append([Punctuator("EXPANSION", -1, False, ",")])
-            if len(self.args) - 1 < len(expanded_args):
-                va_args.append(expanded_args[-1])
+            if len(self.args) - 1 < len(input_args):
+                va_args.append(input_args[-1])
+
+        last_cat = False
+        res_tokens = []
+        idx = 0
+
+        while idx < len(self.expansion):
+            tok = self.expansion[idx]
+            if tok.token == '##':
+                last = res_tokens.pop()
+                if not last_cat:
+                    try:
+                        argidx = self.args.index(last.token)
+                        last = input_args[argidx][0]  # Unexpanded arg
+                    except ValueError:
+                        last = [last]
+                idx += 1
+                nexttok = self.expansion[idx]
+                try:
+                    argidx = self.args.index(nexttok.token)
+                    nexttok = input_args[argidx][0]  # Unexpanded arg
+                except ValueError:
+                    nexttok = [nexttok]
+                lex = Lexer("".join([x.token for x in last + nexttok]))
+                tok = lex.tokenize_one()
+                if tok is None:
+                    raise ParseError(
+                        f"Concatenation didn't result in valid token {lex.string}")
+                last_cat = True
+            else:
+                last_cat = False
+            idx += 1
+            res_tokens.append(tok)
 
         # Substitute each occurrence of an argument in the expansion
         substituted_tokens = []
-        for token in self.expansion:
-
+        for token in res_tokens:
             substitution = []
 
             # If a token matches an argument, it is substituted;
             # otherwise it passes through
             try:
-                substitution = expanded_args[self.args.index(token.token)]
+                substitution = input_args[self.args.index(token.token)][1]
             except (ValueError, ParseError):
                 substitution = [token]
 
@@ -1479,7 +1516,7 @@ class MacroExpander(Parser):
 
         # Argument pre-scan
         # Macro arguments are macro-expanded before substitution
-        expanded_args = [self.subexpand(a) for a in args]
+        expanded_args = [(a, self.subexpand(a)) for a in args]
 
         substituted_tokens = macro.expand(expanded_args)
 
@@ -1514,9 +1551,6 @@ class MacroExpander(Parser):
 
         if self.stack.overflow():
             return [NumericalConstant("EXPANSION", -1, False, "0")]
-
-        self.tokens = self.expand_cat()
-        self.pos = 0
 
         try:
             expanded_tokens = []
