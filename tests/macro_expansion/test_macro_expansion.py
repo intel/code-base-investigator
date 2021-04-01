@@ -52,7 +52,7 @@ class TestExampleFile(unittest.TestCase):
             tokens = preprocessor.Lexer("eprintf(\"%d, %f, %e\", a, b, c)").tokenize()
             p = platform.Platform("Test", self.rootdir)
             p._definitions = {macro.name: macro}
-            expanded_tokens = preprocessor.MacroExpander(tokens).expand(p)
+            expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
             self.assertTrue(len(expanded_tokens) == len(expected_expansion))
             for i in range(len(expected_expansion)):
                 self.assertEqual(expanded_tokens[i].prev_white, expected_expansion[i].prev_white)
@@ -72,7 +72,7 @@ class TestExampleFile(unittest.TestCase):
         tokens = preprocessor.Lexer("FOO").tokenize()
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {macro.name: macro}
-        expanded_tokens = preprocessor.MacroExpander(tokens).expand(p)
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
         self.assertTrue(len(expanded_tokens) == len(expected_expansion))
         for i in range(len(expected_expansion)):
             self.assertEqual(expanded_tokens[i].line, expected_expansion[i].line)
@@ -90,7 +90,7 @@ class TestExampleFile(unittest.TestCase):
         tokens = preprocessor.Lexer("FOO").tokenize()
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {macro.name: macro}
-        expanded_tokens = preprocessor.MacroExpander(tokens).expand(p)
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
         self.assertTrue(len(expanded_tokens) == len(expected_expansion))
         for i in range(len(expected_expansion)):
             self.assertEqual(expanded_tokens[i].line, expected_expansion[i].line)
@@ -132,9 +132,9 @@ class TestExampleFile(unittest.TestCase):
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {x_macro.name: x_macro, y_macro.name: y_macro}
 
-        x_expanded_tokens = preprocessor.MacroExpander(x_tokens).expand(p)
+        x_expanded_tokens = preprocessor.MacroExpander(x_tokens,p).expand()
 
-        y_expanded_tokens = preprocessor.MacroExpander(y_tokens).expand(p)
+        y_expanded_tokens = preprocessor.MacroExpander(y_tokens,p).expand()
 
         self.assertTrue(len(x_expanded_tokens) == len(x_expected_expansion))
         for i in range(len(x_expected_expansion)):

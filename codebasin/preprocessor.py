@@ -666,7 +666,7 @@ class IncludeNode(DirectiveNode):
             include_path = self.value.path
             is_system_include = self.value.system
         else:
-            expansion = MacroExpander(self.value).expand(kwargs['platform'])
+            expansion = MacroExpander(self.value, kwargs['platform']).expand()
             path_obj = DirectiveParser(expansion).include_path()
             include_path = path_obj.path
             is_system_include = path_obj.system
@@ -703,7 +703,7 @@ class IfNode(DirectiveNode):
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
-        expanded_tokens = MacroExpander(self.tokens).expand(kwargs['platform'])
+        expanded_tokens = MacroExpander(self.tokens, kwargs['platform']).expand()
 
         # Evaluate the expanded tokens
         return ExpressionEvaluator(expanded_tokens).evaluate()
@@ -1295,8 +1295,16 @@ class MacroExpander(Parser):
     A specialized token parser for recognizing and expanding macros.
     """
 
+    def __init__(self, tokens, platform, stack=None):
+        super().__init__(tokens)
+        self.platform = platform
+        if stack is None:
+            self.stack = MacroStack(0, [])
+        else:
+            self.stack = stack
+
     # pylint: disable=unused-argument
-    def defined(self, platform, stack):
+    def defined(self):
         """
         Expand a call to defined(X) or defined X.
         """
@@ -1311,7 +1319,7 @@ class MacroExpander(Parser):
                 identifier = self.match_type(Identifier)
                 self.match_value(Punctuator, ")")
 
-                value = platform.is_defined(str(identifier))
+                value = self.platform.is_defined(str(identifier))
                 return [NumericalConstant("EXPANSION", identifier.line,
                                           identifier.prev_white, value)]
             except ParseError:
@@ -1320,7 +1328,7 @@ class MacroExpander(Parser):
             # Match an identifier without parens
             try:
                 identifier = self.match_type(Identifier)
-                value = platform.is_defined(str(identifier))
+                value = self.platform.is_defined(str(identifier))
                 return [NumericalConstant("EXPANSION", identifier.line,
                                           identifier.prev_white, value)]
             except ParseError:
@@ -1370,7 +1378,7 @@ class MacroExpander(Parser):
             pass
         return args
 
-    def function_macro(self, platform, stack):
+    def function_macro(self):
         """
         Expand a function-like macro, returning a list of tokens.
 
@@ -1380,7 +1388,7 @@ class MacroExpander(Parser):
         initial_pos = self.pos
         try:
             identifier = self.match_type(Identifier)
-            if identifier in stack:
+            if identifier in self.stack:
                 raise ParseError('Cannot expand token')
 
             self.match_value(Punctuator, "(")
@@ -1390,13 +1398,13 @@ class MacroExpander(Parser):
             self.pos = initial_pos
             raise ParseError("Not a function-like macro.")
 
-        macro = platform.get_macro(str(identifier))
+        macro = self.platform.get_macro(str(identifier))
         if not macro:
             raise ParseError("Not a function-like macro.")
 
         # Argument pre-scan
         # Macro arguments are macro-expanded before substitution
-        expanded_args = [MacroExpander(arg).expand(platform) for arg in args]
+        expanded_args = [MacroExpander(arg, self.platform, self.stack).expand() for arg in args]
 
         # Combine variadic arguments into one, separated by commas
         va_args = None
@@ -1434,43 +1442,41 @@ class MacroExpander(Parser):
             substituted_tokens.extend(substitution)
 
         # Check the expansion for macros to expand
-        stack.push(identifier)
-        expansion = MacroExpander(substituted_tokens).expand(platform, stack)
-        stack.pop()
+        self.stack.push(identifier)
+        expansion = MacroExpander(substituted_tokens, self.platform, self.stack).expand()
+        self.stack.pop()
         return expansion
 
-    def macro(self, platform, stack):
+    def macro(self):
         """
         Expand a macro.
         """
         initial_pos = self.pos
         try:
             identifier = self.match_type(Identifier)
-            if identifier in stack:
+            if identifier in self.stack:
                 raise ParseError('Cannot expand this token')
 
-            macro = platform.get_macro(str(identifier))
+            macro = self.platform.get_macro(str(identifier))
             if not macro:
                 raise TokenError('Not a macro.')
 
-            stack.push(identifier)
-            expansion = MacroExpander(macro.expansion).expand(platform, stack)
-            stack.pop()
+            self.stack.push(identifier)
+            expansion = MacroExpander(macro.expansion, self.platform, self.stack).expand()
+            self.stack.pop()
             return expansion
         except TokenError:
             self.pos = initial_pos
             raise ParseError("Not a macro.")
 
-    def expand(self, platform, stack=None):
+    def expand(self):
         """
         Expand a list of input tokens using the specified definitions.
         Return a list of new tokens, representing the result of macro
         expansion.
         """
-        if not stack:
-            stack = MacroStack(0, [])
 
-        if stack.overflow():
+        if self.stack.overflow():
             return [NumericalConstant("EXPANSION", -1, False, "0")]
 
         self.tokens = self.expand_cat()
@@ -1486,7 +1492,7 @@ class MacroExpander(Parser):
                 candidates = [self.defined, self.function_macro, self.macro]
                 for f in candidates:
                     try:
-                        expansion = f(platform, stack)
+                        expansion = f()
                         break
                     except ParseError:
                         self.pos = test_pos
