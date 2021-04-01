@@ -1378,6 +1378,15 @@ class MacroExpander(Parser):
             pass
         return args
 
+    def subexpand(self, tokens, ident=None):
+        if ident is not None:
+            self.stack.push(ident)
+        expansion = MacroExpander(tokens, self.platform, self.stack).expand()
+        if ident is not None:
+            self.stack.pop()
+
+        return expansion
+
     def function_macro(self):
         """
         Expand a function-like macro, returning a list of tokens.
@@ -1404,7 +1413,7 @@ class MacroExpander(Parser):
 
         # Argument pre-scan
         # Macro arguments are macro-expanded before substitution
-        expanded_args = [MacroExpander(arg, self.platform, self.stack).expand() for arg in args]
+        expanded_args = [self.subexpand(arg) for arg in args]
 
         # Combine variadic arguments into one, separated by commas
         va_args = None
@@ -1442,10 +1451,7 @@ class MacroExpander(Parser):
             substituted_tokens.extend(substitution)
 
         # Check the expansion for macros to expand
-        self.stack.push(identifier)
-        expansion = MacroExpander(substituted_tokens, self.platform, self.stack).expand()
-        self.stack.pop()
-        return expansion
+        return self.subexpand(substituted_tokens, identifier)
 
     def macro(self):
         """
@@ -1461,10 +1467,7 @@ class MacroExpander(Parser):
             if not macro:
                 raise TokenError('Not a macro.')
 
-            self.stack.push(identifier)
-            expansion = MacroExpander(macro.expansion, self.platform, self.stack).expand()
-            self.stack.pop()
-            return expansion
+            return self.subexpand(macro.expansion, identifier)
         except TokenError:
             self.pos = initial_pos
             raise ParseError("Not a macro.")
