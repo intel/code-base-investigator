@@ -48,7 +48,7 @@ class TestExampleFile(unittest.TestCase):
         for def_string in [
             "eprintf(...)=fprintf(stderr, __VA_ARGS__)",
                 "eprintf(args...)=fprintf(stderr, args)"]:
-            macro = preprocessor.Macro.from_definition_string(def_string)
+            macro = preprocessor.macro_from_definition_string(def_string)
             tokens = preprocessor.Lexer("eprintf(\"%d, %f, %e\", a, b, c)").tokenize()
             p = platform.Platform("Test", self.rootdir)
             p._definitions = {macro.name: macro}
@@ -68,7 +68,7 @@ class TestExampleFile(unittest.TestCase):
                               preprocessor.Punctuator('Unknown', 12, False, ')')]
 
         def_string = 'FOO=(4 + FOO)'
-        macro = preprocessor.Macro.from_definition_string(def_string)
+        macro = preprocessor.macro_from_definition_string(def_string)
         tokens = preprocessor.Lexer("FOO").tokenize()
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {macro.name: macro}
@@ -86,7 +86,7 @@ class TestExampleFile(unittest.TestCase):
         expected_expansion = [preprocessor.Identifier('Unknown', 4, False, 'FOO')]
 
         def_string = 'FOO=FOO'
-        macro = preprocessor.Macro.from_definition_string(def_string)
+        macro = preprocessor.macro_from_definition_string(def_string)
         tokens = preprocessor.Lexer("FOO").tokenize()
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {macro.name: macro}
@@ -122,9 +122,9 @@ class TestExampleFile(unittest.TestCase):
                                 preprocessor.Punctuator('Unknown', 8, False, ')')]
 
         x_string = 'x=(4 + y)'
-        x_macro = preprocessor.Macro.from_definition_string(x_string)
+        x_macro = preprocessor.macro_from_definition_string(x_string)
         y_string = 'y=(2 * x)'
-        y_macro = preprocessor.Macro.from_definition_string(y_string)
+        y_macro = preprocessor.macro_from_definition_string(y_string)
 
         x_tokens = preprocessor.Lexer("x").tokenize()
         y_tokens = preprocessor.Lexer("y").tokenize()

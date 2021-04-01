@@ -87,7 +87,7 @@ def find(rootdir, codebase, configuration):
                 file_platform.add_include_path(path)
 
             for definition in e['defines']:
-                macro = preprocessor.Macro.from_definition_string(definition)
+                macro = preprocessor.macro_from_definition_string(definition)
                 file_platform.define(macro.name, macro)
 
             # Process include files.
