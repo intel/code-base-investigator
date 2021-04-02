@@ -29,15 +29,15 @@ class TestExampleFile(unittest.TestCase):
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
 
-        def test_cat(self):
-            test_str = "#define CATTEST first ## 2"
-            macro = preprocessor.macro_from_definition_string(test_str)
-            tokens = preprocessor.Lexer("CATTEST").tokenize()
-            p = platform.Platform("Test", self.rootdir)
-            p._definitions = {macro.name: macro}
-            expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
-            expected = tokens = preprocessor.Lexer("first2").tokenize()
-            self.assertEqual(expanded_tokens, expected)
+    def test_cat(self):
+        test_str = "CATTEST=first ## 2"
+        macro = preprocessor.macro_from_definition_string(test_str)
+        tokens = preprocessor.Lexer("CATTEST").tokenize()
+        p = platform.Platform("Test", self.rootdir)
+        p._definitions = {macro.name: macro}
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
+        expected_tokens = preprocessor.Lexer("first2").tokenize()
+        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
 
     def test_variadic(self):
         """variadic macros"""
