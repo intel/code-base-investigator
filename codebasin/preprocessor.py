@@ -1339,13 +1339,19 @@ class MacroFunction(Macro):
         """
         # Combine variadic arguments into one, separated by commas
         if self.variadic:
-            va_args = []
+            comma = Punctuator("EXPANSION", -1, False, ",")
+            va_args_raw = []
+            va_args_exp = []
             for idx in range(len(self.args) - 1, len(input_args) - 1):
-                va_args.append(input_args[idx])
-                va_args.append(tuple(2 * [Punctuator("EXPANSION", -1, False, ",")]))
+                va_args_raw.extend(input_args[idx][0])
+                va_args_raw.append(comma)
+                va_args_exp.extend(input_args[idx][1])
+                va_args_exp.append(comma)
             if len(self.args) - 1 < len(input_args):
-                va_args.append(input_args[-1])
-            input_args[len(self.args) - 1:] = [list(zip(*va_args))]
+                va_args_raw.extend(input_args[-1][0])
+                va_args_exp.extend(input_args[-1][1])
+
+            input_args[len(self.args) - 1:] = [(va_args_raw, va_args_exp)]
 
         last_cat = False
         res_tokens = []
