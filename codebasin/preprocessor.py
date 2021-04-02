@@ -1557,58 +1557,6 @@ class MacroExpander(Parser):
         except ParseError:
             raise ValueError("Error in macro expansion.")
 
-    def expand_cat(self):
-        """Traverses tokens and applies concatenation operator.
-        Modifies self.pos. Returns new list of tokens."""
-        output_tokens = []
-        current_cat = []
-
-        assert self.pos == 0
-
-        last_tok = None
-        while not self.eol():
-            tok = self.cursor()
-            self.pos += 1
-            if tok.token == "##":
-                if last_tok is None:
-                    raise TokenError("Got cat token (##) as first token!")
-                if last_tok.token == "##":
-                    raise TokenError("Got successive cat tokens (##)")
-                current_cat.append(last_tok)
-                last_tok = tok
-            else:
-                if last_tok is None:
-                    last_tok = tok
-                elif last_tok.token == "##":
-                    last_tok = tok
-                else:
-                    if len(current_cat) > 0:
-                        current_cat.append(last_tok)
-                        lex = Lexer("".join((x.token for x in current_cat)))
-                        newtok = lex.tokenize_one()
-                        if newtok is None:
-                            raise ParseError(
-                                f"Concatenation didn't result in valid token {lex.string}")
-                        output_tokens.append(newtok)
-                        current_cat = []
-                        last_tok = tok
-                    else:
-                        output_tokens.append(last_tok)
-                        last_tok = tok
-        if len(current_cat) > 0:
-            current_cat.append(last_tok)
-            lex = Lexer("".join((x.token for x in current_cat)))
-            newtok = lex.tokenize_one()
-            if newtok is None:
-                raise ParseError(
-                    f"Concatenation didn't result in valid token {lex.string}")
-            output_tokens.append(newtok)
-            current_cat = []
-            last_tok = tok
-        elif last_tok is not None:
-            output_tokens.append(last_tok)
-        return output_tokens
-
 
 class ExpressionEvaluator(Parser):
     """
