@@ -14,7 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # pylint: disable=wrong-import-position
 from codebasin.file_parser import FileParser  # nopep8
-
+from codebasin.walkers import SourcePrinter  # nopep8
 
 if __name__ == '__main__':
 
@@ -35,4 +35,5 @@ if __name__ == '__main__':
     # Open file for parsing
     fileparser = FileParser(os.path.realpath(args.filename))
     source_tree = fileparser.parse_file()
-    print(source_tree)
+    source_printer = SourcePrinter(source_tree, None)
+    source_printer.walk()
