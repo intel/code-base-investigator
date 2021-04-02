@@ -1232,6 +1232,50 @@ class Macro:
                 raise RuntimeError("Found ## operator at start of expansion")
             elif self.expansion[-1].token == "##":
                 raise RuntimeError("Found ## operator at end of expansion")
+            self.preproc_expansion()
+
+    def is_arg(self, tok):
+        """
+        Returns true if token matches an argument this Macro accepts. (Never does for basic Macros.)
+        """
+        return False
+
+    def preproc_expansion(self):
+        """
+        Preprocess macroexpansion of ## where it doesn't abut arguments.
+        """
+        res_tokens = []
+        idx = 0
+
+        while idx < len(self.expansion):
+            tok = self.expansion[idx]
+            if tok.token == '##':
+                last = res_tokens.pop()
+                if self.is_arg(last.token):
+                    idx += 1
+                    res_tokens.append(last)
+                    res_tokens.append(tok)
+                    continue
+                else:
+                    last = [last]
+                idx += 1
+                nexttok = self.expansion[idx]
+                if self.is_arg(nexttok.token):
+                    idx += 1
+                    res_tokens.append(last)
+                    res_tokens.append(tok)
+                    res_tokens.append(nexttok)
+                    continue
+                else:
+                    nexttok = [nexttok]
+                lex = Lexer("".join([x.token for x in last + nexttok]))
+                tok = lex.tokenize_one()
+                if tok is None:
+                    raise ParseError(
+                        f"Concatenation didn't result in valid token {lex.string}")
+            idx += 1
+            res_tokens.append(tok)
+        self.expansion = res_tokens
 
     def __repr__(self):
         return "Macro(name={0!r},expansion={1!r})".format(
@@ -1257,7 +1301,6 @@ class MacroFunction(Macro):
     """
 
     def __init__(self, name, args, expansion):
-        super().__init__(name, expansion)
         self.args = [x.as_str() for x in args]
         if len(self.args) > 0:
             self.variadic = self.args[-1].endswith("...")
@@ -1270,6 +1313,14 @@ class MacroFunction(Macro):
             else:
                 # Strip '...' from argument name
                 self.args[-1] = self.args[-1][:-3]
+
+        super().__init__(name, expansion)
+
+    def is_arg(self, tok):
+        """
+        Returns true if token matches an argument this Macro accepts. (Never does for basic Macros.)
+        """
+        return tok in self.args
 
     def __repr__(self):
         return "MacroFunction(name={0!r},args={1!r},expansion={2!r})".format(
