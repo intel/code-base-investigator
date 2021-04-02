@@ -1259,6 +1259,17 @@ class MacroFunction(Macro):
     def __init__(self, name, args, expansion):
         super().__init__(name, expansion)
         self.args = [x.as_str() for x in args]
+        if len(self.args) > 0:
+            self.variadic = self.args[-1].endswith("...")
+        else:
+            self.variadic = False
+        if self.variadic:
+            if self.args[-1] == '...':
+                # An unnamed variable argument replaces __VA_ARGS__
+                self.args[-1] = "__VA_ARGS__"
+            else:
+                # Strip '...' from argument name
+                self.args[-1] = self.args[-1][:-3]
 
     def __repr__(self):
         return "MacroFunction(name={0!r},args={1!r},expansion={2!r})".format(
@@ -1269,27 +1280,6 @@ class MacroFunction(Macro):
         arg_str = ",".join([str(t) for t in self.args])
         return ["{0!s}({1!s})={2!s}".format(self.name, arg_str, expansion_str)]
 
-    def is_variadic(self):
-        """
-        Return true if macro is variadic
-        """
-        return self.args[-1].endswith("...")
-
-    def variable_argument(self):
-        """
-        Return the name of the variable argument for a variadic macro.
-        If the macro is not variadic, return None.
-        """
-        if self.is_variadic():
-            if self.args[-1] == '...':
-                # An unnamed variable argument replaces __VA_ARGS__
-                return "__VA_ARGS__"
-            else:
-                # Strip '...' from argument name
-                return self.args[-1][:-3]
-        else:
-            return None
-
     def expand(self, input_args):
         """
         Return the substituted replacement for this macro.
@@ -1297,14 +1287,14 @@ class MacroFunction(Macro):
         pre-expanded) arguments passed to this.
         """
         # Combine variadic arguments into one, separated by commas
-        va_args = None
-        if self.is_variadic():
+        if self.variadic:
             va_args = []
             for idx in range(len(self.args) - 1, len(input_args) - 1):
                 va_args.append(input_args[idx])
-                va_args.append([Punctuator("EXPANSION", -1, False, ",")])
+                va_args.append(tuple(2 * [Punctuator("EXPANSION", -1, False, ",")]))
             if len(self.args) - 1 < len(input_args):
                 va_args.append(input_args[-1])
+            input_args[len(self.args) - 1:] = [list(zip(*va_args))]
 
         last_cat = False
         res_tokens = []
@@ -1349,16 +1339,6 @@ class MacroFunction(Macro):
                 substitution = input_args[self.args.index(token.token)][1]
             except (ValueError, ParseError):
                 substitution = [token]
-
-            # If a token matches the variable argument, substitute
-            # precomputed va_args
-            if self.is_variadic() and token.token == self.variable_argument() and va_args:
-
-                # Whether the token was preceded by whitespace should be
-                # tracked through substitution
-                for t in va_args[0]:
-                    t.prev_white = token.prev_white
-                substitution = [item for lst in va_args for item in lst]
 
             substituted_tokens.extend(substitution)
 
