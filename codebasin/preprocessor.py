@@ -1227,7 +1227,7 @@ class Macro:
         self.name = name.as_str()
         self.expansion = expansion
 
-        if isinstance(self.expansion, list):
+        if isinstance(self.expansion, list) and len(self.expansion) > 0:
             if self.expansion[0].token == "##":
                 raise RuntimeError("Found ## operator at start of expansion")
             elif self.expansion[-1].token == "##":
