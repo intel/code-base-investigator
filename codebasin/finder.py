@@ -11,7 +11,7 @@ import collections
 from . import file_parser
 from . import platform
 from . import preprocessor
-from . import walkers
+from .walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger("codebasin")
 
@@ -99,13 +99,13 @@ def find(rootdir, codebase, configuration):
                 if include_file:
                     state.insert_file(include_file)
 
-                    associator = walkers.TreeAssociator(state.get_tree(
+                    associator = TreeAssociator(state.get_tree(
                         include_file), state.get_map(include_file))
                     associator.walk(file_platform, state)
 
             # Process the file, to build a list of associate nodes
-            associator = walkers.TreeAssociator(state.get_tree(e['file']),
-                                                state.get_map(e['file']))
+            associator = TreeAssociator(state.get_tree(e['file']),
+                                        state.get_map(e['file']))
             associator.walk(file_platform, state)
 
     return state
