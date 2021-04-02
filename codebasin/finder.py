@@ -6,6 +6,7 @@ and parsing source files as part of a code base.
 """
 
 import logging
+import collections
 
 from . import file_parser
 from . import platform
@@ -35,7 +36,7 @@ class ParserState():
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
             self.trees[fn] = parser.parse_file()
-            self.maps[fn] = walkers.NodeAssociationMap()
+            self.maps[fn] = collections.defaultdict(set)
 
     def get_filenames(self):
         """

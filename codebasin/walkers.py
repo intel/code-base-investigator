@@ -11,57 +11,6 @@ import collections
 log = logging.getLogger('codebasin')
 
 
-class NodeAssociation():
-    """
-    Houses an association of platforms to a node. Each association
-    should be mapped (at a higher level) to a node, and the platforms
-    are contained here.
-    """
-
-    def __init__(self):
-        self.platforms = set()
-
-    def add_platform(self, _platform):
-        """
-        Add a platform to the list of associated platforms.
-        """
-        if _platform not in self.platforms:
-            self.platforms.update([_platform])
-
-
-class NodeAssociationMap():
-    """
-    Contains a map of the node associations for a specific tree.
-    The map of trees to NodeAssociationMap happens as at higher
-    level, and then each node's association map is housed here.
-    """
-
-    def __init__(self):
-        self._node_associations = {}
-
-    def prepare_node(self, _node):
-        """
-        Create an empty node association map for a node.
-        """
-        if _node not in self._node_associations:
-            self._node_associations[_node] = NodeAssociation()
-
-    def add_platform(self, _node, _platform):
-        """
-        Add a platform association to a node
-        """
-        self.prepare_node(_node)
-        self._node_associations[_node].add_platform(_platform)
-
-    def get_association(self, _node):
-        """
-        Return the association class for a node.
-        """
-        if _node in self._node_associations:
-            return self._node_associations[_node]
-        return None
-
-
 class TreeWalker():
     """
     Generic tree walker class.
@@ -120,7 +69,7 @@ class TreeAssociator(TreeWalker):
         Associate this node with the platform. Evaluate the node,
         and (if the evaluation say to) descend into the children nodes.
         """
-        self._node_associations.add_platform(node, platform.name)
+        self._node_associations[node].add(platform.name)
 
         node_processed = False
         eval_args = {'platform': platform,
@@ -197,12 +146,9 @@ class PlatformMapper(TreeMapper):
         # This is equivalent to isinstance(CodeNode), without needing to
         # import lexer.
         if 'num_lines' in dir(_node) and type(_node).__name__ != 'FileNode':
-            association = _map.get_association(_node)
-            if association:
-                platform = frozenset(association.platforms)
-                self.line_map[platform] += _node.num_lines
-            else:
-                self.line_map[self._null_set] += _node.num_lines
+            association = _map[_node]
+            platform = frozenset(association)
+            self.line_map[platform] += _node.num_lines
 
         for child in _node.children:
             self._map_node(child, _map)
