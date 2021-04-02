@@ -554,14 +554,16 @@ class FileNode(Node):
 class CodeNode(Node):
     """
     Represents any line of code. Contains a start and end line, and the
-    number of countable lines occurring between them.
+    number of countable lines occurring between them. Optionally contains
+    the original source.
     """
 
-    def __init__(self, start_line=-1, end_line=-1, num_lines=0):
+    def __init__(self, start_line=-1, end_line=-1, num_lines=0, source=None):
         super().__init__()
         self.start_line = start_line
         self.end_line = end_line
         self.num_lines = num_lines
+        self.source = source
 
     def __repr__(self):
         return "CodeNode(start={0!r},end={1!r},lines={2!r}".format(

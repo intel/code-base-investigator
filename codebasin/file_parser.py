@@ -21,6 +21,7 @@ class LineGroup:
         self.line_count = 0
         self.start_line = -1
         self.end_line = -1
+        self.body = []
 
     def empty(self):
         """
@@ -31,7 +32,7 @@ class LineGroup:
             return False
         return True
 
-    def add_line(self, phys_int, sloc_count):
+    def add_line(self, phys_int, sloc_count, body=""):
         """
         Add a line to this line group. Update the extent appropriately,
         and if it's a countable line, add it to the line count.
@@ -44,6 +45,8 @@ class LineGroup:
             self.end_line = phys_int[1] - 1
 
         self.line_count += sloc_count
+        if body is not "":
+            self.body.append(body)
 
     def reset(self):
         """
@@ -52,6 +55,7 @@ class LineGroup:
         self.line_count = 0
         self.start_line = -1
         self.end_line = -1
+        self.body = []
 
     def merge(self, line_group):
         """
@@ -65,6 +69,8 @@ class LineGroup:
         elif line_group.start_line == -1:
             line_group.start_line = self.start_line
         self.start_line = min(self.start_line, line_group.start_line)
+
+        self.body.extend(line_group.body)
 
         self.end_line = max(self.end_line, line_group.end_line)
         line_group.reset()
@@ -104,7 +110,7 @@ class FileParser:
         Build a code node, and insert it into the source tree
         """
         new_node = preprocessor.CodeNode(
-            line_group.start_line, line_group.end_line, line_group.line_count)
+            line_group.start_line, line_group.end_line, line_group.line_count, line_group.body)
         tree.insert(new_node)
 
     @staticmethod
@@ -149,13 +155,15 @@ class FileParser:
                         # Add this into the directive lines, even if it
                         # might not be a directive we count
 
-                        groups['directive'].add_line(phys_int, logical_line.local_sloc)
+                        groups['directive'].add_line(
+                            phys_int, logical_line.local_sloc, logical_line.flushed_line)
 
                         FileParser.handle_directive(out_tree, groups, logical_line.flushed_line)
 
                         # FallBack is that this line is a simple code line.
                     else:
-                        groups['code'].add_line(phys_int, logical_line.local_sloc)
+                        groups['code'].add_line(
+                            phys_int, logical_line.local_sloc, logical_line.flushed_line)
             except StopIteration as it:
                 # pylint: disable=unpacking-non-sequence
                 _, physical_loc = it.value
