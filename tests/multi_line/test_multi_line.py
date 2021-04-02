@@ -4,7 +4,7 @@
 import unittest
 import logging
 from codebasin import config, finder, walkers
-
+from codebasin.walkers.platform_mapper import PlatformMapper
 
 class TestExampleFile(unittest.TestCase):
     """
@@ -22,7 +22,7 @@ class TestExampleFile(unittest.TestCase):
         """multi_line/multi_line.yaml"""
         codebase, configuration = config.load("./tests/multi_line/multi_line.yaml", self.rootdir)
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = walkers.PlatformMapper(codebase)
+        mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
 

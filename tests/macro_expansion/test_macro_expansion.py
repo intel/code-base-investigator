@@ -4,7 +4,7 @@
 import unittest
 import logging
 from codebasin import config, finder, walkers, preprocessor, platform
-
+from codebasin.walkers.platform_mapper import PlatformMapper
 
 class TestExampleFile(unittest.TestCase):
     """
@@ -25,7 +25,7 @@ class TestExampleFile(unittest.TestCase):
         codebase, configuration = config.load(
             "./tests/macro_expansion/macro_expansion.yaml", self.rootdir)
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = walkers.PlatformMapper(codebase)
+        mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
 
