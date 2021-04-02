@@ -13,8 +13,7 @@ import logging
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # pylint: disable=wrong-import-position
-from codebasin.walkers import SourcePrinter  # nopep8
-from codebasin.walkers import PreprocessedSourcePrinter  # nopep8
+from codebasin.walkers.source_printer import SourcePrinter, PreprocessedSourcePrinter  # nopep8
 import codebasin.finder as finder  # nopep8
 
 if __name__ == '__main__':
