@@ -55,7 +55,6 @@ class TestExampleFile(unittest.TestCase):
             expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
             self.assertTrue(len(expanded_tokens) == len(expected_expansion))
             for i in range(len(expected_expansion)):
-                self.assertEqual(expanded_tokens[i].prev_white, expected_expansion[i].prev_white)
                 self.assertEqual(expanded_tokens[i].token, expected_expansion[i].token)
 
     def test_self_reference_macros_1(self):
