@@ -13,9 +13,9 @@ import logging
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # pylint: disable=wrong-import-position
-from codebasin.file_parser import FileParser  # nopep8
 from codebasin.walkers import SourcePrinter  # nopep8
-import codebasin.finder as finder # nopep8
+from codebasin.walkers import PreprocessedSourcePrinter  # nopep8
+import codebasin.finder as finder  # nopep8
 
 if __name__ == '__main__':
 
@@ -43,13 +43,13 @@ if __name__ == '__main__':
     logging.getLogger("codebasin").setLevel(logging.WARNING)
 
     # Parse file and construct source tree
-    file_path = os.path.realpath(args.filename)
-    fileparser = FileParser(file_path)
-    source_tree = fileparser.parse_file()
+    #fileparser = FileParser(file_path)
+    #source_tree = fileparser.parse_file()
 
     # Run CBI configured as-if:
     # - codebase contains a single file (the file being preprocessed)
     # - configuration contains a single platform (corresponding to flags)
+    file_path = os.path.realpath(args.filename)
     codebase = {"files": [file_path], "platforms": ["cli"]}
     configuration = {"cli": [{"file": file_path,
                               "defines": args.defines,
@@ -57,5 +57,13 @@ if __name__ == '__main__':
                               "include_files": args.include_files}]}
     state = finder.find(os.getcwd(), codebase, configuration)
 
-    source_printer = SourcePrinter(source_tree, None)
+    #source_printer = SourcePrinter(source_tree)
+    # source_printer.walk()
+    source_tree = state.get_tree(file_path)
+    node_associations = state.get_map(file_path)
+
+    source_printer = SourcePrinter(source_tree)
+    source_printer.walk()
+    print("---")
+    source_printer = PreprocessedSourcePrinter(source_tree, node_associations)
     source_printer.walk()
