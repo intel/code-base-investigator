@@ -28,6 +28,8 @@ if __name__ == '__main__':
                         default=[], help="add to the include files")
     parser.add_argument('-D', dest='defines', metavar='DEFINE', action='append', default=[],
                         help="define a macro")
+    parser.add_argument('--passthrough', dest='passthrough', action='store_true', default=False,
+                        help="print source code without preprocessing")
     parser.add_argument('filename', metavar='FILE', action='store')
     args = parser.parse_args()
 
@@ -58,8 +60,9 @@ if __name__ == '__main__':
     source_tree = state.get_tree(file_path)
     node_associations = state.get_map(file_path)
 
-    source_printer = SourcePrinter(source_tree)
-    source_printer.walk()
-    print("---")
-    source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform, state)
-    source_printer.walk()
+    if args.passthrough:
+        source_printer = SourcePrinter(source_tree)
+        source_printer.walk()
+    else:
+        source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform, state)
+        source_printer.walk()
