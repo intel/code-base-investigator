@@ -49,6 +49,18 @@ class TestExampleFile(unittest.TestCase):
         expected_tokens = preprocessor.Lexer("\"foo(\\\"4 + 5\\\")\"").tokenize()
         self.assertEquals([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
 
+    def test_stringify_ws(self):
+        test_str = "STR(x)= TEST #x"
+        macro = preprocessor.macro_from_definition_string(test_str)
+        to_expand_str = r'STR(L      + 2-2 "\" \n")'
+        tokens = preprocessor.Lexer(to_expand_str).tokenize()
+        p = platform.Platform("Test", self.rootdir)
+        p._definitions = {macro.name: macro}
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
+        expected_str = r'TEST "L + 2-2 \"\\\" \\n\""'
+        expected_tokens = preprocessor.Lexer(expected_str).tokenize()
+        self.assertEquals([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
+
     def test_stringify_nested(self):
         mac_xstr = preprocessor.macro_from_definition_string("xstr(s)=str(s)")
         mac_str = preprocessor.macro_from_definition_string("str(s)=#s")

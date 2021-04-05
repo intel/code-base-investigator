@@ -87,15 +87,19 @@ class StringConstant(Token):
         """
         Return this string quoted for stringification.
         """
-        out = ['\\"']
+        out = [r'\"']
         c = 0
         while c < len(self.token):
             if self.token[c] == '\\':
-                out.append('\\\\')
+                if c + 1 < len(self.token) and self.token[c + 1] == '"':
+                    out.append(r'\\\"')
+                    c += 1
+                else:
+                    out.append('\\\\')
             else:
                 out.append(self.token[c])
             c += 1
-        out.append('\\"')
+        out.append(r'\"')
         return "".join(out)
 
 
