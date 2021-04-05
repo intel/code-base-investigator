@@ -10,6 +10,9 @@ import os
 import sys
 import logging
 
+from codebasin.preprocessor import Macro  # nopep8
+from codebasin.platform import Platform  # nopep8
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # pylint: disable=wrong-import-position
@@ -55,6 +58,12 @@ if __name__ == '__main__':
                               "include_paths": args.include_paths,
                               "include_files": args.include_files}]}
     state = finder.find(os.getcwd(), codebase, configuration)
+    platform = Platform("cli", os.getcwd())
+    for path in args.include_paths:
+        platform.add_include_path(path)
+    for definition in args.defines:
+        macro = Macro.from_definition_string(definition)
+        platform.define(macro.name, macro)
 
     #source_printer = SourcePrinter(source_tree)
     # source_printer.walk()
@@ -64,5 +73,5 @@ if __name__ == '__main__':
     source_printer = SourcePrinter(source_tree)
     source_printer.walk()
     print("---")
-    source_printer = PreprocessedSourcePrinter(source_tree, node_associations)
+    source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform)
     source_printer.walk()
