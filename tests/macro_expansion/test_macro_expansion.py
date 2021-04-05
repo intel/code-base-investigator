@@ -39,6 +39,33 @@ class TestExampleFile(unittest.TestCase):
         expected_tokens = preprocessor.Lexer("first2").tokenize()
         self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
 
+    def test_stringify_quote(self):
+        test_str = "STR(x)= #x"
+        macro = preprocessor.macro_from_definition_string(test_str)
+        tokens = preprocessor.Lexer("STR(foo(\"4 + 5\"))").tokenize()
+        p = platform.Platform("Test", self.rootdir)
+        p._definitions = {macro.name: macro}
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
+        expected_tokens = preprocessor.Lexer("\"foo(\"4+5\")\"").tokenize()
+        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
+
+    def test_stringify_nested(self):
+        mac_xstr = preprocessor.macro_from_definition_string("xstr(s)=str(s)")
+        mac_str = preprocessor.macro_from_definition_string("str(s)=#s")
+        mac_def = preprocessor.macro_from_definition_string("foo=4")
+        p = platform.Platform("Test", self.rootdir)
+        p._definitions = {x.name: x for x in [mac_xstr, mac_str, mac_def]}
+
+        tokens = preprocessor.Lexer("str(foo)").tokenize()
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
+        expected_tokens = preprocessor.Lexer("\"foo\"").tokenize()
+        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
+
+        tokens = preprocessor.Lexer("xstr(foo)").tokenize()
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
+        expected_tokens = preprocessor.Lexer("\"4\"").tokenize()
+        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
+
     def test_variadic(self):
         """variadic macros"""
 

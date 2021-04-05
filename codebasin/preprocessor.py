@@ -77,6 +77,21 @@ class StringConstant(Token):
     def __str__(self):
         return "\"{!s}\"".format(self.token)
 
+    def sanitized_str(self):
+        """
+        Return this string quoted for stringification.
+        """
+        out = ['\\"']
+        c = 0
+        while c < len(self.token):
+            if self.token[c] == '\\':
+                out.append('\\\\')
+            else:
+                out.append(self.token[c])
+            c += 1
+        out.append('\\"')
+        return "".join(out)
+
 
 class Identifier(Token):
     """
@@ -280,6 +295,19 @@ class Lexer:
 
         constant = StringConstant(self.line, col, self.prev_white, "".join(chars))
         return constant
+
+    @staticmethod
+    def stringify(tokens):
+        """
+        Return a tokenized string version of an input series of tokens.
+        """
+        parts = ['"']
+        for p in tokens:
+            if p.prev_white:
+                parts.append(" ")
+            parts.append(str(p))
+        parts.append('"')
+        return Lexer("".join(parts)).tokenize_one()
 
     def identifier(self):
         """
@@ -1379,6 +1407,18 @@ class MacroFunction(Macro):
                 if tok is None:
                     raise ParseError(
                         f"Concatenation didn't result in valid token {lex.string}")
+                last_cat = True
+            elif tok.token == '#':
+                idx += 1
+                if idx == len(self.expansion):
+                    raise ParseError("Found # at end of macro expansion!")
+                nexttok = self.expansion[idx]
+                try:
+                    argidx = self.args.index(nexttok.token)
+                    tok = input_args[argidx][0]  # Unexpanded arg
+                except ValueError:
+                    raise ParseError(f"# was not followed by a macro argument.")
+                tok = Lexer.stringify(tok)
                 last_cat = True
             else:
                 last_cat = False
