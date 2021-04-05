@@ -29,7 +29,7 @@ class TestExampleFile(unittest.TestCase):
         expected_str = r'"L + 2-2 \"\\\" \\n\""'
         tokens = preprocessor.Lexer(expected_str).tokenize()
         expected = preprocessor.StringConstant('Unknown', 'Unknown', False, r'L + 2-2 \"\\\" \\n\"')
-        self.assertEquals(tokens[0].token, expected.token)
+        self.assertEqual(tokens[0].token, expected.token)
 
 if __name__ == '__main__':
     unittest.main()
