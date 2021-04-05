@@ -22,7 +22,7 @@ class SourcePrinter(TreeWalker):
         Print this specific node, then descend into its children nodes.
         """
         if not isinstance(node, FileNode):
-            print(node.spelling())
+            print("\n".join(node.spelling()))
 
         for child in node.children:
             self.__print_nodes(child)
@@ -58,13 +58,21 @@ class PreprocessedSourcePrinter(TreeWalker):
             _node.evaluate_for_platform(**eval_args)
             expander = MacroExpander(self.platform)
             if association and not isinstance(_node, DirectiveNode):
-                line = _node.spelling()
-                if self.expand_macros:
-                    tokens = Lexer(line).tokenize()
-                    expansion = expander.expand(tokens)
-                    # TODO: revisit this after Jason's token-list fixes
-                    line = "".join([str(token) for token in expansion])
-                print(line)
+                node_lines = _node.spelling()
+                # TODO: revisit this after Jason's token-list fixes
+                output_lines = []
+                for line in node_lines:
+                    if self.expand_macros:
+                        tokens = Lexer(line).tokenize()
+                        expansion = expander.expand(tokens)
+                        for tok in expansion:
+                            if tok.prev_white:
+                                output_lines.append(" ")
+                            output_lines.append(str(tok))
+                    else:
+                        output_lines.append(line)
+                    output_lines.append("\n")
+                print("".join(output_lines))
             else:
                 # Replace unused code with whitespace
                 print()

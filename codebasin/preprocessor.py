@@ -67,10 +67,10 @@ class Token():
             self.line, self.col, self.prev_white, self.token)
 
     def __str__(self):
-        return self.spelling()
+        return "\n".join(self.spelling())
 
     def spelling(self):
-        return str(self.token)
+        return [str(self.token)]
 
     def sanitized_str(self):
         """
@@ -110,11 +110,8 @@ class StringConstant(Token):
         return "StringConstant(line={!r},col={!r},prev_white={!r},token={!r})".format(
             self.line, self.col, self.prev_white, self.token)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "\"{!s}\"".format(self.token)
+        return ["\"{!s}\"".format(self.token)]
 
     def sanitized_str(self):
         """
@@ -158,12 +155,6 @@ class Operator(Token):
     def __repr__(self):
         return "Operator(line={!r},col={!r},prev_white={!r},token={!r})".format(
             self.line, self.col, self.prev_white, self.token)
-
-    def __str__(self):
-        return self.spelling()
-
-    def spelling(self):
-        return str(self.token)
 
 
 class Punctuator(Token):
@@ -583,9 +574,9 @@ class CodeNode(Node):
 
     def spelling(self):
         if self.source:
-            return "\n".join(self.source)
+            return self.source
         else:
-            return "/* {} SLOC omitted */".format(self.num_lines)
+            return ["/* {} SLOC omitted */".format(self.num_lines)]
 
 
 class DirectiveNode(CodeNode):
@@ -612,11 +603,8 @@ class UnrecognizedDirectiveNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={!r},tokens={!r})".format(self.kind, self.tokens)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "{}".format(" ".join([str(t) for t in self.tokens]))
+        return ["{}".format(" ".join([str(t) for t in self.tokens]))]
 
 
 class PragmaNode(DirectiveNode):
@@ -632,11 +620,8 @@ class PragmaNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},tokens={1!r})".format(self.kind, self.tokens)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "#pragma {0!s}".format(" ".join([str(t) for t in self.tokens]))
+        return ["#pragma {0!s}".format(" ".join([str(t) for t in self.tokens]))]
 
     def evaluate_for_platform(self, **kwargs):
         if self.tokens and str(self.tokens[0]) == 'once':
@@ -659,19 +644,16 @@ class DefineNode(DirectiveNode):
         return "DirectiveNode(kind={0!r},identifier={1!r},args={2!r},value={3!r})".format(
             self.kind, self.identifier, self.args, self.value)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
         value_str = "".join([str(v) for v in self.value])
 
         if self.args is None:
-            return "#define {0!s} {1!s}".format(self.identifier, value_str)
+            return ["#define {0!s} {1!s}".format(self.identifier, value_str)]
         elif self.args == []:
-            return "#define {0!s}() {1!s}".format(self.identifier, value_str)
+            return ["#define {0!s}() {1!s}".format(self.identifier, value_str)]
         else:
             arg_str = ", ".join([str(arg) for arg in self.args])
-            return "#define {0!s}({1!s}) {2!s}".format(self.identifier, arg_str, value_str)
+            return ["#define {0!s}({1!s}) {2!s}".format(self.identifier, arg_str, value_str)]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -695,11 +677,8 @@ class UndefNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},identifier={1!r})".format(self.kind, self.identifier)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "#undef {0!s}".format(self.identifier)
+        return ["#undef {0!s}".format(self.identifier)]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -721,13 +700,10 @@ class IncludePath():
     def __repr__(self):
         return "IncludePath(path={!r},system={!r})".format(self.path, self.system)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
         if self.system:
-            return "<{0!s}>".format(self.path)
-        return "\"{0!s}\"".format(self.path)
+            return ["<{0!s}>".format(self.path)]
+        return ["\"{0!s}\"".format(self.path)]
 
     def is_system_path(self):
         return self.system
@@ -747,11 +723,8 @@ class IncludeNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},value={1!r})".format(self.kind, self.value)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "#include {0!s}".format(self.value)
+        return ["#include {0!s}".format(self.value)]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -799,11 +772,8 @@ class IfNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},tokens={1!r})".format(self.kind, self.tokens)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "#if {0!s}".format(" ".join([str(t) for t in self.tokens]))
+        return ["#if {0!s}".format(" ".join([str(t) for t in self.tokens]))]
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
@@ -847,11 +817,8 @@ class ElseNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r})".format(self.kind)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "#else"
+        return ["#else"]
 
     def evaluate_for_platform(self, **kwargs):
         return True
@@ -873,11 +840,8 @@ class EndIfNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r})".format(self.kind)
 
-    def __str__(self):
-        return self.spelling()
-
     def spelling(self):
-        return "#endif"
+        return ["#endif"]
 
 
 class Parser:
@@ -1395,9 +1359,6 @@ class Macro:
     def __repr__(self):
         return "Macro(name={0!r},replacement={1!r})".format(
             self.name, self.replacement)
-
-    def __str__(self):
-        return self.spelling()
 
     def spelling(self):
         """
