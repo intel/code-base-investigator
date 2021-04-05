@@ -31,9 +31,10 @@ class PreprocessedSourcePrinter(TreeWalker):
     """
     TreeWalker that prints preprocessed source code.
     """
-    def __init__(self, _tree, _node_associations, _platform):
+    def __init__(self, _tree, _node_associations, _platform, _state):
         super().__init__(_tree, _node_associations)
         self.platform = _platform
+        self.state = _state
         self.expand_macros = True
 
     def walk(self):
@@ -48,6 +49,13 @@ class PreprocessedSourcePrinter(TreeWalker):
         """
         if isinstance(_node, CodeNode):
             association = _map[_node]
+
+            # Re-evaluating the node during this walk is required to
+            # define/undefine macros appropriately
+            eval_args = {'platform': self.platform,
+                         'filename': self.tree.root.filename,
+                         'state': self.state}
+            _node.evaluate_for_platform(**eval_args)
             expander = MacroExpander(self.platform)
             if association and not isinstance(_node, DirectiveNode):
                 line = _node.spelling()

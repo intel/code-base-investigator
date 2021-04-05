@@ -10,13 +10,12 @@ import os
 import sys
 import logging
 
-from codebasin.preprocessor import Macro  # nopep8
-from codebasin.platform import Platform  # nopep8
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # pylint: disable=wrong-import-position
 from codebasin.walkers.source_printer import SourcePrinter, PreprocessedSourcePrinter  # nopep8
+from codebasin.preprocessor import macro_from_definition_string  # nopep8
+from codebasin.platform import Platform  # nopep8
 import codebasin.finder as finder  # nopep8
 
 if __name__ == '__main__':
@@ -25,13 +24,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Code Base Investigator Preprocessor")
     parser.add_argument('-I', dest='include_paths', metavar='PATH', action='append', default=[],
                         help="add to the include path")
-    parser.add_argument(
-        '-include',
-        dest='include_files',
-        metavar='PATH',
-        action='append',
-        default=[],
-        help="add to the include files")
+    parser.add_argument('-include', dest='include_files', metavar='PATH', action='append',
+                        default=[], help="add to the include files")
     parser.add_argument('-D', dest='defines', metavar='DEFINE', action='append', default=[],
                         help="define a macro")
     parser.add_argument('filename', metavar='FILE', action='store')
@@ -43,10 +37,6 @@ if __name__ == '__main__':
     stderr_log.setFormatter(logging.Formatter('[%(levelname)-8s] %(message)s'))
     logging.getLogger("codebasin").addHandler(stderr_log)
     logging.getLogger("codebasin").setLevel(logging.WARNING)
-
-    # Parse file and construct source tree
-    #fileparser = FileParser(file_path)
-    #source_tree = fileparser.parse_file()
 
     # Run CBI configured as-if:
     # - codebase contains a single file (the file being preprocessed)
@@ -62,16 +52,14 @@ if __name__ == '__main__':
     for path in args.include_paths:
         platform.add_include_path(path)
     for definition in args.defines:
-        macro = Macro.from_definition_string(definition)
+        macro = macro_from_definition_string(definition)
         platform.define(macro.name, macro)
 
-    #source_printer = SourcePrinter(source_tree)
-    # source_printer.walk()
     source_tree = state.get_tree(file_path)
     node_associations = state.get_map(file_path)
 
     source_printer = SourcePrinter(source_tree)
     source_printer.walk()
     print("---")
-    source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform)
+    source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform, state)
     source_printer.walk()
