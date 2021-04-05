@@ -31,11 +31,11 @@ class PreprocessedSourcePrinter(TreeWalker):
     """
     TreeWalker that prints preprocessed source code.
     """
-    def __init__(self, _tree, _node_associations, _platform, _state):
+    def __init__(self, _tree, _node_associations, _platform, _state, _expand):
         super().__init__(_tree, _node_associations)
         self.platform = _platform
         self.state = _state
-        self.expand_macros = True
+        self.expand_macros = _expand
 
     def walk(self):
         """

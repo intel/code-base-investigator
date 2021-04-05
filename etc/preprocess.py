@@ -30,6 +30,8 @@ if __name__ == '__main__':
                         help="define a macro")
     parser.add_argument('--passthrough', dest='passthrough', action='store_true', default=False,
                         help="print source code without preprocessing")
+    parser.add_argument('--no-expand', dest='expand', action='store_false', default=True,
+                        help="do not expand macros in source code")
     parser.add_argument('filename', metavar='FILE', action='store')
     args = parser.parse_args()
 
@@ -64,5 +66,5 @@ if __name__ == '__main__':
         source_printer = SourcePrinter(source_tree)
         source_printer.walk()
     else:
-        source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform, state)
+        source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform, state, args.expand)
         source_printer.walk()
