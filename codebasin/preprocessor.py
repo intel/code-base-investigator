@@ -42,6 +42,12 @@ class Token():
     def __str__(self):
         return str(self.token)
 
+    def sanitized_str(self):
+        """
+        Dummy based implementation of string santization. Overloaded for String Constant.
+        """
+        return str(self)
+
 
 class CharacterConstant(Token):
     """
@@ -305,7 +311,7 @@ class Lexer:
         for p in tokens:
             if p.prev_white:
                 parts.append(" ")
-            parts.append(str(p))
+            parts.append(p.sanitized_str())
         parts.append('"')
         return Lexer("".join(parts)).tokenize_one()
 

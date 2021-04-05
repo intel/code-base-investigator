@@ -37,7 +37,7 @@ class TestExampleFile(unittest.TestCase):
         p._definitions = {macro.name: macro}
         expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
         expected_tokens = preprocessor.Lexer("first2").tokenize()
-        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
+        self.assertEquals([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
 
     def test_stringify_quote(self):
         test_str = "STR(x)= #x"
@@ -46,8 +46,8 @@ class TestExampleFile(unittest.TestCase):
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {macro.name: macro}
         expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
-        expected_tokens = preprocessor.Lexer("\"foo(\"4+5\")\"").tokenize()
-        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
+        expected_tokens = preprocessor.Lexer("\"foo(\\\"4 + 5\\\")\"").tokenize()
+        self.assertEquals([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
 
     def test_stringify_nested(self):
         mac_xstr = preprocessor.macro_from_definition_string("xstr(s)=str(s)")
@@ -59,12 +59,12 @@ class TestExampleFile(unittest.TestCase):
         tokens = preprocessor.Lexer("str(foo)").tokenize()
         expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
         expected_tokens = preprocessor.Lexer("\"foo\"").tokenize()
-        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
+        self.assertEquals([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
 
         tokens = preprocessor.Lexer("xstr(foo)").tokenize()
         expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
         expected_tokens = preprocessor.Lexer("\"4\"").tokenize()
-        self.assertEquals(expanded_tokens[0].token, expected_tokens[0].token)
+        self.assertEquals([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
 
     def test_variadic(self):
         """variadic macros"""
