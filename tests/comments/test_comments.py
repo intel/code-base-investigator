@@ -16,7 +16,7 @@ class TestExampleFortranFile(unittest.TestCase):
         rootdir = "./tests/comments/"
         parser = file_parser.FileParser(os.path.join(rootdir, "fortran.f90"))
 
-        tree = parser.parse_file()
+        tree = parser.parse_file(True)
         self.assertEqual(tree.root.total_sloc, 20)
 
 
@@ -29,7 +29,7 @@ class TestExampleCFile(unittest.TestCase):
         rootdir = "./tests/comments/"
         parser = file_parser.FileParser(os.path.join(rootdir, "continuation.cpp"))
 
-        tree = parser.parse_file()
+        tree = parser.parse_file(True)
         self.assertEqual(tree.root.total_sloc, 25)
 
 

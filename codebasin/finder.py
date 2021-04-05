@@ -63,7 +63,7 @@ class ParserState():
 
 
 # FIXME: Should this be kwargs?
-def find(rootdir, codebase, configuration, summarize_code):
+def find(rootdir, codebase, configuration, summarize_code=True):
     """
     Find codepaths in the files provided and return a mapping of source
     lines to platforms.
