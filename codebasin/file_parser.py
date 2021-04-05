@@ -126,7 +126,7 @@ class FileParser:
         new_node.num_lines = line_group.line_count
         tree.insert(new_node)
 
-    def parse_file(self):
+    def parse_file(self, summarize_code):
         """
         Parse the file that this parser points at, build a SourceTree
         representing this file, and return it.
@@ -162,8 +162,12 @@ class FileParser:
 
                         # FallBack is that this line is a simple code line.
                     else:
-                        groups['code'].add_line(
-                            phys_int, logical_line.local_sloc, logical_line.flushed_line)
+                        if summarize_code:
+                            groups['code'].add_line(
+                                phys_int, logical_line.local_sloc)
+                        else:
+                            groups['code'].add_line(
+                                phys_int, logical_line.local_sloc, logical_line.flushed_line)
             except StopIteration as it:
                 # pylint: disable=unpacking-non-sequence
                 _, physical_loc = it.value

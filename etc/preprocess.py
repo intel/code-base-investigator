@@ -32,6 +32,8 @@ if __name__ == '__main__':
                         help="print source code without preprocessing")
     parser.add_argument('--no-expand', dest='expand', action='store_false', default=True,
                         help="do not expand macros in source code")
+    parser.add_argument('--summarize', dest='summarize', action='store_true', default=False,
+                        help="summarize code blocks with SLOC count")
     parser.add_argument('filename', metavar='FILE', action='store')
     args = parser.parse_args()
 
@@ -51,7 +53,9 @@ if __name__ == '__main__':
                               "defines": args.defines,
                               "include_paths": args.include_paths,
                               "include_files": args.include_files}]}
-    state = finder.find(os.getcwd(), codebase, configuration)
+
+    # FIXME: Don't like passing "True" here
+    state = finder.find(os.getcwd(), codebase, configuration, args.summarize)
     platform = Platform("cli", os.getcwd())
     for path in args.include_paths:
         platform.add_include_path(path)
@@ -66,5 +70,6 @@ if __name__ == '__main__':
         source_printer = SourcePrinter(source_tree)
         source_printer.walk()
     else:
-        source_printer = PreprocessedSourcePrinter(source_tree, node_associations, platform, state, args.expand)
+        source_printer = PreprocessedSourcePrinter(
+            source_tree, node_associations, platform, state, args.expand)
         source_printer.walk()
