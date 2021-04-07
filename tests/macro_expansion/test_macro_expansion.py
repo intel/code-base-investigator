@@ -146,6 +146,18 @@ class TestExampleFile(unittest.TestCase):
             self.assertEqual(expanded_tokens[i].prev_white, expected_expansion[i].prev_white)
             self.assertEqual(expanded_tokens[i].token, expected_expansion[i].token)
 
+    def test_self_reference_macros_3(self):
+        """Self referencing macros test 3"""
+
+        def_string = 'foo(x)=bar x'
+        macro = preprocessor.macro_from_definition_string(def_string)
+        tokens = preprocessor.Lexer("foo(foo) (2)").tokenize()
+        p = platform.Platform("Test", self.rootdir)
+        p._definitions = {macro.name: macro}
+        expanded_tokens = preprocessor.MacroExpander(tokens,p).expand()
+        expected_tokens = preprocessor.Lexer("bar foo (2)").tokenize()
+        self.assertEqual([(x.prev_white, x.token) for x in expanded_tokens], [(x.prev_white, x.token) for x in expected_tokens])
+
     def test_indirect_self_reference_macros(self):
         """ Indirect self referencing macros test"""
 
