@@ -1593,7 +1593,7 @@ class MacroExpander(Parser):
             raise ParseError("Not a function-like macro.")
 
         macro = self.platform.get_macro(str(identifier))
-        if not macro:
+        if not macro or not isinstance(macro, MacroFunction):
             raise ParseError("Not a function-like macro.")
 
         # Argument pre-scan
@@ -1616,7 +1616,8 @@ class MacroExpander(Parser):
                 raise ParseError('Cannot expand this token')
 
             macro = self.platform.get_macro(str(identifier))
-            if not macro:
+            # type() because MacroFunction would satisfy isinstance
+            if not macro or not type(macro) == Macro:
                 raise TokenError('Not a macro.')
 
             return self.subexpand(macro.expand(), identifier)
