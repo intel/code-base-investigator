@@ -994,25 +994,20 @@ class DirectiveParser(Parser):
         <include> := 'include'<token-list>
         """
         initial_pos = self.pos
+
         try:
             self.match_value(Identifier, "include")
+
             path_pos = self.pos
 
             # Match system or local include path
             try:
-                path = self.include_path()
-                return IncludeNode(path)
+                include_payload = self.include_path()
             except ParseError:
-                self.pos = path_pos
+                include_payload = self.tokens[path_pos:]
+                self.pos = len(self.tokens)
 
-            # Match computed include with a simple macro
-            try:
-                identifier = self.match_type(Identifier)
-                return IncludeNode([identifier])
-            except ParseError:
-                self.pos = path_pos
-
-            raise ParseError("Invalid include directive.")
+            return IncludeNode(include_payload)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid include directive.")
