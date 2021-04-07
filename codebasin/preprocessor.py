@@ -1300,7 +1300,7 @@ class Macro:
                 nexttok = self.expansion[idx]
                 if self.is_arg(nexttok.token):
                     idx += 1
-                    res_tokens.append(last)
+                    res_tokens.append(last[0])
                     res_tokens.append(tok)
                     res_tokens.append(nexttok)
                     continue
