@@ -1237,7 +1237,7 @@ def macro_from_definition_string(string):
         expansion = parser.tokens[parser.pos:]
         parser.pos = len(parser.tokens)
     else:
-        expansion = NumericalConstant("Unknown", None, False, 1)
+        expansion = [NumericalConstant("Unknown", None, False, 1)]
 
     return make_macro(identifier, args, expansion)
 
