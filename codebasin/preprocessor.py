@@ -1539,7 +1539,7 @@ class MacroExpander:
                 continue
 
             if isinstance(macro_lookup, MacroFunction):
-                if prsr.pos == len(prsr.tokens) or prsr.tokens[prsr.pos + 1].token != '(':
+                if prsr.pos == len(prsr.tokens) - 1 or prsr.tokens[prsr.pos + 1].token != '(':
                     expanded_tokens.append(prsr.cursor())
                     prsr.pos += 1
                     continue
