@@ -1478,140 +1478,13 @@ class MacroExpander:
         """
         return ident.token in self.no_expand
 
-    # pylint: disable=unused-argument
-    def defined(self):
+    def defined(self, identifier):
         """
         Expand a call to defined(X) or defined X.
         """
-        prsr = self.top()
-
-        initial_pos = prsr.pos
-        try:
-            prsr.match_value(Identifier, "defined")
-
-            # Match an identifier in parens
-            defined_pos = prsr.pos
-            try:
-                prsr.match_value(Punctuator, "(")
-                identifier = prsr.match_type(Identifier)
-                prsr.match_value(Punctuator, ")")
-
-                value = self.platform.is_defined(str(identifier))
-                return [NumericalConstant("EXPANSION", identifier.line,
-                                          identifier.prev_white, value)]
-            except ParseError:
-                prsr.pos = defined_pos
-
-            # Match an identifier without parens
-            try:
-                identifier = prsr.match_type(Identifier)
-                value = self.platform.is_defined(str(identifier))
-                return [NumericalConstant("EXPANSION", identifier.line,
-                                          identifier.prev_white, value)]
-            except ParseError:
-                raise ParseError("Expected identifier after \"defined\" operator")
-
-        except ParseError:
-            prsr.pos = initial_pos
-            raise ParseError("Not a defined operator.")
-
-    def __arg(self):
-        """
-        Match an argument to a function-like macro, where:
-        - An argument is a (potentially empty) list of tokens
-        - Arguments are separated by a ","
-        - "(" must be matched with a ")" within an argument
-        """
-        arg = []
-        open_parens = 0
-        prsr = self.top()
-        while not prsr.eol():
-            t = prsr.cursor()
-            if isinstance(t, Punctuator):
-                if t.token == "(":
-                    open_parens += 1
-                elif t.token == ")" and open_parens > 0:
-                    open_parens -= 1
-                elif (t.token == "," or t.token == ")") and open_parens == 0:
-                    return arg
-            arg.append(t)
-            prsr.pos += 1
-
-        if open_parens > 0:
-            raise ParseError("Mismatched parentheses in macro argument.")
-        raise ParseError("Invalid macro argument.")
-
-    def __arg_list(self):
-        """
-        Match a list of function-like macro arguments.
-        """
-        arg = self.__arg()
-        args = [arg]
-        prsr = self.top()
-        try:
-            while not prsr.eol():
-                prsr.match_value(Punctuator, ",")
-                arg = self.__arg()
-                args.append(arg)
-        except ParseError:
-            pass
-        return args
-
-    def function_macro(self):
-        """
-        Expand a function-like macro, returning a list of tokens.
-
-        Follows the rules outlined in:
-        https://gcc.gnu.org/onlinedocs/cpp/Macro-Arguments.html#Macro-Arguments
-        """
-        prsr = self.top()
-        initial_pos = prsr.pos
-        try:
-            identifier = prsr.match_type(Identifier)
-            if self.not_expandable(identifier):
-                raise ParseError('Cannot expand token')
-
-            prsr.match_value(Punctuator, "(")
-            args = self.__arg_list()
-            prsr.match_value(Punctuator, ")")
-        except ParseError:
-            prsr.pos = initial_pos
-            raise ParseError("Not a function-like macro.")
-
-        macro = self.platform.get_macro(str(identifier))
-        if not macro or not isinstance(macro, MacroFunction):
-            raise ParseError("Not a function-like macro.")
-
-        # Argument pre-scan
-        # Macro arguments are macro-expanded before substitution
-        expanded_args = [(a, self.expand(a)) for a in args]
-
-        substituted_tokens = macro.expand(expanded_args)
-
-        # Check the expansion for macros to expand
-        return self.expand(substituted_tokens, identifier)
-
-    def macro(self):
-        """
-        Expand a macro.
-        """
-        prsr = self.top()
-        initial_pos = prsr.pos
-        try:
-            identifier = prsr.match_type(Identifier)
-
-            if self.not_expandable(identifier):
-                raise ParseError('Cannot expand this token')
-
-            macro = self.platform.get_macro(str(identifier))
-            # type() because MacroFunction would satisfy isinstance
-            if not macro or not type(macro) == Macro:
-                raise TokenError('Not a macro.')
-
-            return self.expand(macro.expand(), identifier)
-        except TokenError:
-            prsr.pos = initial_pos
-            raise ParseError("Not a macro.")
+        value = self.platform.is_defined(str(identifier))
+        return [NumericalConstant("EXPANSION", identifier.line,
+                                  identifier.prev_white, value)]
 
     def expand(self, tokens, ident=None):
         """
@@ -1626,34 +1499,88 @@ class MacroExpander:
         self.no_expand.append(str(ident))
 
         prsr = self.top()
-        changed = False
-        try:
-            expanded_tokens = []
-            while not prsr.eol():
-                # Match and expand special tokens
-                expansion = None
-                test_pos = prsr.pos
 
-                candidates = [self.defined, self.function_macro, self.macro]
-                for f in candidates:
-                    try:
-                        expansion = f()
-                        changed = True
-                        break
-                    except ParseError:
-                        prsr.pos = test_pos
+        expanded_tokens = []
+        while not prsr.eol():
+            test_pos = prsr.pos
 
-                # Pass all other tokens through unmodified
-                if expansion is None:
-                    expansion = [prsr.cursor()]
+            if not isinstance(
+                    prsr.tokens[test_pos],
+                    Identifier) or self.not_expandable(
+                    prsr.tokens[test_pos]):
+                expanded_tokens.append(prsr.cursor())
+                prsr.pos += 1
+                continue
+
+            if prsr.tokens[test_pos].token == 'defined':
+                try:
+                    tok = prsr.tokens[prsr.pos + 1]
+                    if tok.token == '(':
+                        ident = prsr.tokens[prsr.pos + 2]
+                        paren = prsr.tokens[prsr.pos + 3]
+                        if paren.token != ')':
+                            raise ParserError(
+                                "Expected closing paren to follow identifier following 'defined'")
+                        prsr.pos += 4
+                    else:
+                        ident = tok
+                        prsr.pos += 2
+                    if not isinstance(ident, Identifier):
+                        raise ParserError("Expected 'defined' to be followed by identifier")
+                    expanded_tokens.extend(self.defined(ident))
+                except IndexError:
+                    raise ParserError("Expected 'defined' to be followed by identifier")
+                continue
+
+            macro_lookup = self.platform.get_macro(str(prsr.tokens[test_pos]))
+            if not macro_lookup:
+                expanded_tokens.append(prsr.cursor())
+                prsr.pos += 1
+                continue
+
+            if isinstance(macro_lookup, MacroFunction):
+                if prsr.pos == len(prsr.tokens) or prsr.tokens[prsr.pos + 1].token != '(':
+                    expanded_tokens.append(prsr.cursor())
+                    prsr.pos += 1
+                    continue
+                args = []
+                current_arg = []
+                open_paren_count = 1
+                prsr.pos += 2
+                while True:
+                    if prsr.pos >= len(prsr.tokens):
+                        raise ParseError("Mismatched parentheses in macro argument.")
+                    tok = prsr.tokens[prsr.pos]
+                    if tok.token == ',' and open_paren_count == 1:
+                        args.append(current_arg)
+                        current_arg = []
+                        prsr.pos += 1
+                        continue
+
+                    if tok.token == '(':
+                        open_paren_count += 1
+                    elif tok.token == ')':
+                        open_paren_count -= 1
+                        if open_paren_count == 0:
+                            args.append(current_arg)
+                            prsr.pos += 1
+                            break
+
+                    current_arg.append(tok)
                     prsr.pos += 1
 
-                expanded_tokens.extend(expansion)
-        except ParseError:
-            raise ValueError("Error in macro expansion.")
-
-        # if changed:
-        #     expanded_tokens = self.expand(expanded_tokens)
+                # Pre-scan
+                pre_expanded = [(arg, self.expand(arg, macro_lookup.name)) for arg in args]
+                # Proper expand
+                expanded_tokens.extend(
+                    self.expand(
+                        macro_lookup.expand(pre_expanded),
+                        macro_lookup.name))
+            elif type(macro_lookup) == Macro:
+                expanded_tokens.extend(self.expand(macro_lookup.expand(), macro_lookup.name))
+                prsr.pos += 1
+            else:
+                raise ParseError("Something weird happened")
 
         self.parser_stack.pop()
         self.no_expand.pop()
