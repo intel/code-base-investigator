@@ -12,6 +12,7 @@ import logging
 import collections
 import hashlib
 import numpy as np
+from copy import deepcopy as dc
 from . import util
 from . import walkers
 
@@ -1496,7 +1497,7 @@ class MacroExpander:
         """
         Push a new parser for tokens with new no_expand ident onto stack.
         """
-        self.parser_stack.append(Parser(tokens[:]))
+        self.parser_stack.append(Parser(dc(tokens)))
         self.top().pre_expand = False
         self.no_expand.append(ident)
 
@@ -1547,7 +1548,7 @@ class MacroExpander:
         if self.overflow():
             return [NumericalConstant("EXPANSION", -1, False, "0")]
 
-        self.parser_stack.append(Parser(tokens[:]))
+        self.parser_stack.append(Parser(dc(tokens)))
         self.top().pre_expand = pre_expand
         self.no_expand.append(str(ident))
 
