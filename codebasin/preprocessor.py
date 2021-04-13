@@ -1624,6 +1624,8 @@ class MacroExpander:
                     self.push(macro_lookup.expand(pre_expanded), macro_lookup.name)
                 elif type(macro_lookup) == Macro:
                     self.push(macro_lookup.expand(), macro_lookup.name)
+                    if self.overflow():
+                        return [NumericalConstant("EXPANSION", -1, False, "0")]
                 else:
                     raise ParseError("Something weird happened")
         except EndofParse:
