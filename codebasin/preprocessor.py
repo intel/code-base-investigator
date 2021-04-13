@@ -31,6 +31,12 @@ class EndofParse(ValueError):
     """
 
 
+class MacroExpandOverflow(ValueError):
+    """
+    Represents MacroExpander overflow
+    """
+
+
 class Token():
     """
     Represents a token constructed by the parser.
@@ -1500,6 +1506,7 @@ class MacroExpander:
         self.parser_stack.append(Parser(dc(tokens)))
         self.top().pre_expand = False
         self.no_expand.append(ident)
+        self.overflow_check()
 
     def next_tok(self):
         """
@@ -1519,11 +1526,12 @@ class MacroExpander:
             [tok] + self.top().tokens[self.top().pos:]
         self.top().pos += 1
 
-    def overflow(self):
+    def overflow_check(self):
         """
-        Return if the parser stack has exceeded the limits set.
+        Raise MacroExpandOverflow if we exceed the allowable # of levels.
         """
-        return len(self.parser_stack) >= self.max_level
+        if len(self.parser_stack) >= self.max_level:
+            raise MacroExpandOverflow
 
     def not_expandable(self, ident):
         """
@@ -1545,8 +1553,7 @@ class MacroExpander:
         Return a list of new tokens, representing the result of macro
         expansion.
         """
-        if self.overflow():
-            return [NumericalConstant("EXPANSION", -1, False, "0")]
+        self.overflow_check()
 
         self.parser_stack.append(Parser(dc(tokens)))
         self.top().pre_expand = pre_expand
@@ -1624,8 +1631,6 @@ class MacroExpander:
                     self.push(macro_lookup.expand(pre_expanded), macro_lookup.name)
                 elif type(macro_lookup) == Macro:
                     self.push(macro_lookup.expand(), macro_lookup.name)
-                    if self.overflow():
-                        return [NumericalConstant("EXPANSION", -1, False, "0")]
                 else:
                     raise ParseError("Something weird happened")
         except EndofParse:
@@ -1633,6 +1638,9 @@ class MacroExpander:
             self.parser_stack.pop()
             self.no_expand.pop()
             return res_tokens
+        except MacroExpandOverflow:
+            self.__init__(self.platform)
+            return [NumericalConstant("EXPANSION", -1, False, "0")]
 
 
 class ExpressionEvaluator(Parser):
