@@ -1648,7 +1648,7 @@ class MacroExpander:
 
                     pre_expanded = []
                     for arg in args:
-                        arg_expansion = self.expand(arg, macro_lookup.name, pre_expand=True)
+                        arg_expansion = self.expand(arg, ident=None, pre_expand=True)
                         pre_expanded.append((arg, arg_expansion))
                     # Proper expand
                     replacement = dc(macro_lookup.replace(pre_expanded))
