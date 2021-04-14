@@ -1274,16 +1274,16 @@ class Macro:
     Represents a macro definition.
     """
 
-    def __init__(self, name, expansion):
+    def __init__(self, name, replacement):
         self.name = name.as_str()
-        self.expansion = expansion
+        self.replacement = replacement
 
-        if isinstance(self.expansion, list) and len(self.expansion) > 0:
-            if self.expansion[0].token == "##":
-                raise RuntimeError("Found ## operator at start of expansion")
-            elif self.expansion[-1].token == "##":
-                raise RuntimeError("Found ## operator at end of expansion")
-            self.preproc_expansion()
+        if isinstance(self.replacement, list) and len(self.replacement) > 0:
+            if self.replacement[0].token == "##":
+                raise RuntimeError("Found ## operator at start of replacement")
+            elif self.replacement[-1].token == "##":
+                raise RuntimeError("Found ## operator at end of replacement")
+            self.preproc_replacement()
 
     def is_arg(self, tok):
         """
@@ -1291,15 +1291,15 @@ class Macro:
         """
         return False
 
-    def preproc_expansion(self):
+    def preproc_replacement(self):
         """
         Preprocess macroexpansion of ## where it doesn't abut arguments.
         """
         res_tokens = []
         idx = 0
 
-        while idx < len(self.expansion):
-            tok = self.expansion[idx]
+        while idx < len(self.replacement):
+            tok = self.replacement[idx]
             if tok.token == '##':
                 last = res_tokens.pop()
                 if self.is_arg(last.token):
@@ -1310,7 +1310,7 @@ class Macro:
                 else:
                     last = [last]
                 idx += 1
-                nexttok = self.expansion[idx]
+                nexttok = self.replacement[idx]
                 if self.is_arg(nexttok.token):
                     idx += 1
                     res_tokens.append(last[0])
@@ -1326,24 +1326,24 @@ class Macro:
                         f"Concatenation didn't result in valid token {lex.string}")
             idx += 1
             res_tokens.append(tok)
-        self.expansion = res_tokens
+        self.replacement = res_tokens
 
     def __repr__(self):
-        return "Macro(name={0!r},expansion={1!r})".format(
-            self.name, self.expansion)
+        return "Macro(name={0!r},replacement={1!r})".format(
+            self.name, self.replacement)
 
     def spelling(self):
         """
         Return (a list containing) a string with a lexable representation of this Macro.
         """
-        expansion_str = " ".join([str(t) for t in self.expansion])
-        return ["{0!s}={1!s}".format(self.name, expansion_str)]
+        replacement_str = " ".join([str(t) for t in self.replacement])
+        return ["{0!s}={1!s}".format(self.name, replacement_str)]
 
-    def expand(self):
+    def replace(self):
         """
         Return the expansion list for this Macro.
         """
-        return self.expansion
+        return self.replacement
 
 
 class MacroFunction(Macro):
@@ -1351,7 +1351,7 @@ class MacroFunction(Macro):
     Represents a macro function definition.
     """
 
-    def __init__(self, name, args, expansion):
+    def __init__(self, name, args, replacement):
         self.args = [x.as_str() for x in args]
         if len(self.args) > 0:
             self.variadic = self.args[-1].endswith("...")
@@ -1365,7 +1365,7 @@ class MacroFunction(Macro):
                 # Strip '...' from argument name
                 self.args[-1] = self.args[-1][:-3]
 
-        super().__init__(name, expansion)
+        super().__init__(name, replacement)
 
     def is_arg(self, tok):
         """
@@ -1374,15 +1374,15 @@ class MacroFunction(Macro):
         return tok in self.args
 
     def __repr__(self):
-        return "MacroFunction(name={0!r},args={1!r},expansion={2!r})".format(
-            self.name, self.args, self.expansion)
+        return "MacroFunction(name={0!r},args={1!r},replacement={2!r})".format(
+            self.name, self.args, self.replacement)
 
-    def __str__(self):
-        expansion_str = " ".join([str(t) for t in self.expansion])
+    def spelling(self):
+        replacement_str = " ".join([str(t) for t in self.replacement])
         arg_str = ",".join([str(t) for t in self.args])
-        return ["{0!s}({1!s})={2!s}".format(self.name, arg_str, expansion_str)]
+        return ["{0!s}({1!s})={2!s}".format(self.name, arg_str, replacement_str)]
 
-    def expand(self, input_args):
+    def replace(self, input_args):
         """
         Return the substituted replacement for this macro.
         input_args is expected to be a list of (original,
@@ -1408,8 +1408,8 @@ class MacroFunction(Macro):
         res_tokens = []
         idx = 0
 
-        while idx < len(self.expansion):
-            tok = self.expansion[idx]
+        while idx < len(self.replacement):
+            tok = self.replacement[idx]
             if tok.token == '##':
                 last = res_tokens.pop()
                 if not last_cat:
@@ -1419,7 +1419,7 @@ class MacroFunction(Macro):
                     except ValueError:
                         last = [last]
                 idx += 1
-                nexttok = self.expansion[idx]
+                nexttok = self.replacement[idx]
                 try:
                     argidx = self.args.index(nexttok.token)
                     nexttok = input_args[argidx][0]  # Unexpanded arg
@@ -1433,9 +1433,9 @@ class MacroFunction(Macro):
                 last_cat = True
             elif tok.token == '#':
                 idx += 1
-                if idx == len(self.expansion):
-                    raise ParseError("Found # at end of macro expansion!")
-                nexttok = self.expansion[idx]
+                if idx == len(self.replacement):
+                    raise ParseError("Found # at end of macro replacement!")
+                nexttok = self.replacement[idx]
                 try:
                     argidx = self.args.index(nexttok.token)
                     tok = input_args[argidx][0]  # Unexpanded arg
@@ -1448,7 +1448,7 @@ class MacroFunction(Macro):
             idx += 1
             res_tokens.append(tok)
 
-        # Substitute each occurrence of an argument in the expansion
+        # Substitute each occurrence of an argument in the replacement
         substituted_tokens = []
         for token in res_tokens:
             substitution = []
@@ -1632,9 +1632,9 @@ class MacroExpander:
                         arg_expansion = self.expand(arg, macro_lookup.name, pre_expand=True)
                         pre_expanded.append((arg, arg_expansion))
                     # Proper expand
-                    self.push(macro_lookup.expand(pre_expanded), macro_lookup.name)
+                    self.push(macro_lookup.replace(pre_expanded), macro_lookup.name)
                 elif type(macro_lookup) == Macro:
-                    self.push(macro_lookup.expand(), macro_lookup.name)
+                    self.push(macro_lookup.replace(), macro_lookup.name)
                 else:
                     raise ParseError("Something weird happened")
         except EndofParse:
