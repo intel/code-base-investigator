@@ -1522,6 +1522,21 @@ class MacroExpander:
         del self.top().tokens[self.top().pos]
         return tok
 
+    def peek_tok(self):
+        """
+        Return the next logical token, or None if exhausted
+        This may require us to peek 'down' in the stack.
+        """
+        pos = len(self.parser_stack) - 1
+        while True:
+            if self.parser_stack[pos].eol():
+                if pos == 0 or self.parser_stack[pos].pre_expand:
+                    return None
+                else:
+                    pos -= 1
+            else:
+                return self.parser_stack[pos].tokens[self.parser_stack[pos].pos]
+
     def insert_tok(self, tok):
         """
         Insert token into top token's position, advancing over it.
@@ -1604,12 +1619,12 @@ class MacroExpander:
                     continue
 
                 if isinstance(macro_lookup, MacroFunction):
-                    paren = self.next_tok()
-                    if paren.token != '(':
+                    paren = self.peek_tok()
+                    if not paren or paren.token != '(':
                         self.insert_tok(ctok)
-                        self.insert_tok(paren)
-                        self.top().pos -= 1
                         continue
+                    else:
+                        self.next_tok()
                     args = []
                     current_arg = []
                     open_paren_count = 1
