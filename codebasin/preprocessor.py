@@ -1460,7 +1460,8 @@ class MacroFunction(Macro):
             # otherwise it passes through
             try:
                 substitution = input_args[self.args.index(token.token)][1]
-                substitution[0].prev_white = token.prev_white
+                if len(substitution) > 0:
+                    substitution[0].prev_white = token.prev_white
             except (ValueError, ParseError):
                 substitution = [token]
 
