@@ -1317,6 +1317,7 @@ class Macro:
                     continue
                 lex = Lexer(last.token + nexttok.token)
                 tok = lex.tokenize_one()
+                tok.prev_white = last.prev_white
                 if tok is None:
                     raise ParseError(
                         f"Concatenation didn't result in valid token {lex.string}")
@@ -1408,6 +1409,7 @@ class MacroFunction(Macro):
             tok = self.replacement[idx]
             if tok.token == '##':
                 last = res_tokens.pop()
+                prev_white = last.prev_white
                 if not last_cat:
                     try:
                         argidx = self.args.index(last.token)
@@ -1428,6 +1430,7 @@ class MacroFunction(Macro):
                 if tok is None:
                     raise ParseError(
                         f"Concatenation didn't result in valid token {lex.string}")
+                tok.prev_white = prev_white
                 last_cat = True
             elif tok.token == '#':
                 idx += 1
@@ -1440,6 +1443,7 @@ class MacroFunction(Macro):
                 except ValueError:
                     raise ParseError(f"# was not followed by a macro argument.")
                 tok = Lexer.stringify(tok)
+                tok.prev_white = tok.prev_white
                 last_cat = True
             else:
                 last_cat = False
