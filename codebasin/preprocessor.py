@@ -12,11 +12,23 @@ import logging
 import collections
 import hashlib
 import numpy as np
-from copy import deepcopy as dc
+from copy import copy
 from . import util
 from . import walkers
 
 log = logging.getLogger('codebasin')
+
+
+def toklist_print(toklist):
+    """
+    Helper function to print token lists with proper whitespace.
+    """
+    out = []
+    for tok in toklist:
+        if tok.prev_white:
+            out.append(" ")
+        out.append(str(tok))
+    return ''.join(out)
 
 
 class TokenError(ValueError):
@@ -1461,6 +1473,7 @@ class MacroFunction(Macro):
             try:
                 substitution = input_args[self.args.index(token.token)][1]
                 if len(substitution) > 0:
+                    substitution[0] = copy(substitution[0])
                     substitution[0].prev_white = token.prev_white
             except (ValueError, ParseError):
                 substitution = [token]
@@ -1619,7 +1632,7 @@ class MacroExpander:
         if len(tokens) == 0:
             return tokens
 
-        self.parser_stack.append(ExpanderHelper(dc(tokens)))
+        self.parser_stack.append(ExpanderHelper(tokens))
         self.top().pre_expand = pre_expand
         self.no_expand.append(str(ident))
 
@@ -1651,8 +1664,9 @@ class MacroExpander:
                     continue
 
                 if self.not_expandable(ctok):
-                    ctok.expandable = False
-                    self.insert_tok(ctok)
+                    itok = copy(ctok)
+                    itok.expandable = False
+                    self.insert_tok(itok)
                     continue
 
                 macro_lookup = self.platform.get_macro(str(ctok))
@@ -1693,13 +1707,15 @@ class MacroExpander:
                         arg_expansion = self.expand(arg, ident=None, pre_expand=True)
                         pre_expanded.append((arg, arg_expansion))
                     # Proper expand
-                    replacement = dc(macro_lookup.replace(pre_expanded))
+                    replacement = macro_lookup.replace(pre_expanded)
                     if isinstance(replacement, list) and len(replacement) > 0:
+                        replacement[0] = copy(replacement[0])
                         replacement[0].prev_white = ctok.prev_white
                     self.push(replacement, macro_lookup.name)
                 elif type(macro_lookup) == Macro:
-                    replacement = dc(macro_lookup.replace())
+                    replacement = macro_lookup.replace()
                     if isinstance(replacement, list) and len(replacement) > 0:
+                        replacement[0] = copy(replacement[0])
                         replacement[0].prev_white = ctok.prev_white
                     self.push(replacement, macro_lookup.name)
                 else:
