@@ -1544,30 +1544,24 @@ class MacroExpander:
         # least 15, but cpp has been implemented to handle 200.
         self.max_level = 200
 
-    def top(self):
-        """
-        Return top of stack.
-        """
-        return self.parser_stack[-1]
-
     def pop(self):
         """
         Pop top of parser stack off and splice tokens in it into below parser.
         If top of stack is also bottom, instead throw EndofParse.
         """
-        if len(self.parser_stack) == 1 or self.top().pre_expand:
+        if len(self.parser_stack) == 1 or self.parser_stack[-1].pre_expand:
             raise EndofParse("Hit end of input streams")
-        top_toks = self.top()
+        top_toks = self.parser_stack[-1]
         self.parser_stack.pop()
         self.no_expand.pop()
-        self.top().splice(top_toks)
+        self.parser_stack[-1].splice(top_toks)
 
     def push(self, tokens, ident=None):
         """
         Push a new ExpanderHelper for tokens with new no_expand ident onto stack.
         """
         self.parser_stack.append(ExpanderHelper(tokens))
-        self.top().pre_expand = False
+        self.parser_stack[-1].pre_expand = False
         self.no_expand.append(ident)
         self.overflow_check()
 
@@ -1575,9 +1569,9 @@ class MacroExpander:
         """
         Return next token from top parser's position, deleting it from stream.
         """
-        while self.top().eol():
+        while self.parser_stack[-1].eol():
             self.pop()
-        return self.top().next()
+        return self.parser_stack[-1].next()
 
     def peek_tok(self):
         """
@@ -1598,7 +1592,7 @@ class MacroExpander:
         """
         Insert token into top parser's done list.
         """
-        self.top().emit(tok)
+        self.parser_stack[-1].emit(tok)
 
     def overflow_check(self):
         """
@@ -1633,7 +1627,7 @@ class MacroExpander:
             return tokens
 
         self.parser_stack.append(ExpanderHelper(tokens))
-        self.top().pre_expand = pre_expand
+        self.parser_stack[-1].pre_expand = pre_expand
         self.no_expand.append(str(ident))
 
         try:
@@ -1721,7 +1715,7 @@ class MacroExpander:
                 else:
                     raise ParseError("Something weird happened")
         except EndofParse:
-            res_tokens = self.top().done
+            res_tokens = self.parser_stack[-1].done
             self.parser_stack.pop()
             self.no_expand.pop()
             return res_tokens
