@@ -216,7 +216,7 @@ class Lexer:
         if self.read(len(literal)) == literal:
             self.pos += len(literal)
         else:
-            raise TokenError("Expected {}.".format(literal))
+            raise TokenError()
 
     def match_any(self, literals):
         """
@@ -228,7 +228,7 @@ class Lexer:
                 self.pos += len(literal)
                 return index
 
-        raise TokenError("Expected one of: {}.".format(", ".join(literals)))
+        raise TokenError()
 
     def number(self):
         """
