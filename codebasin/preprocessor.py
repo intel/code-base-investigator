@@ -1319,6 +1319,7 @@ class Macro:
                     idx += 1
                     res_tokens.append(last)
                     res_tokens.append(tok)
+                    self.has_strcat = True
                     continue
                 idx += 1
                 nexttok = self.replacement[idx]
@@ -1328,6 +1329,7 @@ class Macro:
                     res_tokens.append(last)
                     res_tokens.append(tok)
                     res_tokens.append(nexttok)
+                    self.has_strcat = True
                     continue
                 lex = Lexer(last.token + nexttok.token)
                 tok = lex.tokenize_one()
@@ -1335,6 +1337,9 @@ class Macro:
                 if tok is None:
                     raise ParseError(
                         f"Concatenation didn't result in valid token {lex.string}")
+            elif tok.token == '#':
+                if isinstance(self, MacroFunction):
+                    self.has_strcat = True
             elif isinstance(tok, Identifier):
                 arg_idx = self.which_arg(tok.token)
                 if arg_idx != -1:
@@ -1368,6 +1373,7 @@ class MacroFunction(Macro):
 
     def __init__(self, name, args, replacement):
         self.args = [x.token for x in args]
+        self.has_strcat = False
         if len(self.args) > 0:
             self.variadic = self.args[-1].endswith("...")
         else:
@@ -1422,64 +1428,67 @@ class MacroFunction(Macro):
 
             input_args[len(self.args) - 1:] = [(va_args_raw, va_args_exp)]
 
-        last_cat = False
-        res_tokens = []
-        idx = 0
+        if self.has_strcat:
+            res_tokens = []
+            last_cat = False
+            idx = 0
 
-        while idx < len(self.replacement):
-            tok = self.replacement[idx]
-            if tok.token == '##':
-                last = res_tokens.pop()
-                prev_white = last.prev_white
-                if not last_cat:
-                    try:
-                        argidx = self.args.index(last.token)
-                        last = input_args[argidx][0]  # Unexpanded arg
-                    except ValueError:
+            while idx < len(self.replacement):
+                tok = self.replacement[idx]
+                if tok.token == '##':
+                    last = res_tokens.pop()
+                    prev_white = last.prev_white
+                    if not last_cat:
+                        try:
+                            argidx = self.args.index(last.token)
+                            last = input_args[argidx][0]  # Unexpanded arg
+                        except ValueError:
+                            last = [last]
+                    else:
                         last = [last]
+                    idx += 1
+                    nexttok = self.replacement[idx]
+                    try:
+                        argidx = self.args.index(nexttok.token)
+                        nexttok = input_args[argidx][0]  # Unexpanded arg
+                    except ValueError:
+                        nexttok = [nexttok]
+                    if len(last) > 0:
+                        lex = Lexer(last[-1].token + nexttok[0].token)
+                        tok = lex.tokenize_one()
+                        if tok is None:
+                            raise ParseError(
+                                f"Concatenation didn't result in valid token {lex.string}")
+                        tok.prev_white = last[-1].prev_white
+                        toadd = last[:-1] + [tok] + nexttok[1:]
+                        if toadd[0].prev_white != prev_white:
+                            cp = copy(toadd[0])
+                            cp.prev_white = prev_white
+                            toadd[0].prev_white = prev_white
+                        res_tokens.extend(toadd)
+                    else:
+                        res_tokens.extend(nexttok)
+                    last_cat = True
+                elif tok.token == '#':
+                    idx += 1
+                    if idx == len(self.replacement):
+                        raise ParseError("Found # at end of macro replacement!")
+                    nexttok = self.replacement[idx]
+                    try:
+                        argidx = self.args.index(nexttok.token)
+                        tok = input_args[argidx][0]  # Unexpanded arg
+                    except ValueError:
+                        raise ParseError(f"# was not followed by a macro argument.")
+                    tok = Lexer.stringify(tok)
+                    tok.prev_white = tok.prev_white
+                    last_cat = True
+                    res_tokens.append(tok)
                 else:
-                    last = [last]
+                    last_cat = False
+                    res_tokens.append(tok)
                 idx += 1
-                nexttok = self.replacement[idx]
-                try:
-                    argidx = self.args.index(nexttok.token)
-                    nexttok = input_args[argidx][0]  # Unexpanded arg
-                except ValueError:
-                    nexttok = [nexttok]
-                if len(last) > 0:
-                    lex = Lexer(last[-1].token + nexttok[0].token)
-                    tok = lex.tokenize_one()
-                    if tok is None:
-                        raise ParseError(
-                            f"Concatenation didn't result in valid token {lex.string}")
-                    tok.prev_white = last[-1].prev_white
-                    toadd = last[:-1] + [tok] + nexttok[1:]
-                    if toadd[0].prev_white != prev_white:
-                        cp = copy(toadd[0])
-                        cp.prev_white = prev_white
-                        toadd[0].prev_white = prev_white
-                    res_tokens.extend(toadd)
-                else:
-                    res_tokens.extend(nexttok)
-                last_cat = True
-            elif tok.token == '#':
-                idx += 1
-                if idx == len(self.replacement):
-                    raise ParseError("Found # at end of macro replacement!")
-                nexttok = self.replacement[idx]
-                try:
-                    argidx = self.args.index(nexttok.token)
-                    tok = input_args[argidx][0]  # Unexpanded arg
-                except ValueError:
-                    raise ParseError(f"# was not followed by a macro argument.")
-                tok = Lexer.stringify(tok)
-                tok.prev_white = tok.prev_white
-                last_cat = True
-                res_tokens.append(tok)
-            else:
-                last_cat = False
-                res_tokens.append(tok)
-            idx += 1
+        else:
+            res_tokens = copy(self.replacement)
 
         # Substitute each occurrence of an argument in the replacement
         substituted_tokens = []
