@@ -139,9 +139,6 @@ class Identifier(Token):
         super().__init__(line, col, prev_white, token)
         self.expandable = True
 
-    def as_str(self):
-        return str(self.token)
-
     def __repr__(self):
         return "Identifier(line={!r},col={!r},prev_white={!r},expandable={!r},token={!r})".format(
             self.line, self.col, self.prev_white, self.expandable, self.token)
@@ -655,7 +652,7 @@ class DefineNode(DirectiveNode):
         Add a definition into the platform, and return false
         """
         macro = make_macro(self.identifier, self.args, self.value)
-        kwargs['platform'].define(self.identifier.as_str(), macro)
+        kwargs['platform'].define(self.identifier.token, macro)
         return False
 
 
@@ -679,7 +676,7 @@ class UndefNode(DirectiveNode):
         """
         Add a definition into the platform, and return false
         """
-        kwargs['platform'].undefine(self.identifier.as_str())
+        kwargs['platform'].undefine(self.identifier.token)
         return False
 
 
@@ -1289,7 +1286,7 @@ class Macro:
     """
 
     def __init__(self, name, replacement):
-        self.name = name.as_str()
+        self.name = name.token
         self.replacement = replacement
 
         if isinstance(self.replacement, list) and len(self.replacement) > 0:
@@ -1364,7 +1361,7 @@ class MacroFunction(Macro):
     """
 
     def __init__(self, name, args, replacement):
-        self.args = [x.as_str() for x in args]
+        self.args = [x.token for x in args]
         if len(self.args) > 0:
             self.variadic = self.args[-1].endswith("...")
         else:
