@@ -939,10 +939,10 @@ class DirectiveParser(Parser):
                 self.match_value(Punctuator, ",")
 
                 arg = self.__arg()
-                if arg.token.endswith("..."):
+                args.append(arg)
+                if arg.token.endswith('...'):
                     return args
 
-                args.append(arg)
         except ParseError:
             return args
 
