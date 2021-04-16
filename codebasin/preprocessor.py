@@ -1695,7 +1695,7 @@ class MacroExpander:
                     self.replace_tok(itok)
                     continue
 
-                macro_lookup = self.platform.get_macro(str(ctok))
+                macro_lookup = self.platform.get_macro(ctok.token)
                 if not macro_lookup:
                     self.parser_stack[-1].pos -= 1
                     self.replace_tok(ctok)
