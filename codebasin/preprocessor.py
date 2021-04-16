@@ -1437,12 +1437,21 @@ class MacroFunction(Macro):
                     nexttok = input_args[argidx][0]  # Unexpanded arg
                 except ValueError:
                     nexttok = [nexttok]
-                lex = Lexer("".join((x.token for x in last + nexttok)))
-                tok = lex.tokenize_one()
-                if tok is None:
-                    raise ParseError(
-                        f"Concatenation didn't result in valid token {lex.string}")
-                tok.prev_white = prev_white
+                if len(last) > 0:
+                    lex = Lexer(last[-1].token + nexttok[0].token)
+                    tok = lex.tokenize_one()
+                    if tok is None:
+                        raise ParseError(
+                            f"Concatenation didn't result in valid token {lex.string}")
+                    tok.prev_white = last[-1].prev_white
+                    toadd = last[:-1] + [tok] + nexttok[1:]
+                    if toadd[0].prev_white != prev_white:
+                        cp = copy(toadd[0])
+                        cp.prev_white = prev_white
+                        toadd[0].prev_white = prev_white
+                    res_tokens.extend(toadd)
+                else:
+                    res_tokens.extend(nexttok)
                 last_cat = True
             elif tok.token == '#':
                 idx += 1
@@ -1457,10 +1466,12 @@ class MacroFunction(Macro):
                 tok = Lexer.stringify(tok)
                 tok.prev_white = tok.prev_white
                 last_cat = True
+                res_tokens.append(tok)
             else:
                 last_cat = False
+                res_tokens.append(tok)
             idx += 1
-            res_tokens.append(tok)
+
 
         # Substitute each occurrence of an argument in the replacement
         substituted_tokens = []
