@@ -1390,7 +1390,7 @@ class MacroFunction(Macro):
 
     def which_arg(self, tok):
         """
-        Returns index token occpuies in this Macro's list. -1 if not found.
+        Returns index token occupies in this Macro's list. -1 if not found.
         """
         try:
             return self.args.index(tok)
