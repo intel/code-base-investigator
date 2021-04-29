@@ -1776,7 +1776,7 @@ class MacroExpander:
                         replacement[0].prev_white = ctok.prev_white
                     self.push(replacement, macro_lookup.name)
                 else:
-                    raise ParseError("Something weird happened")
+                    raise ParseError("Unexpected error in macro expansion")
         except EndofParse:
             res_tokens = list(filter(None, self.parser_stack[-1].tokens))
             self.parser_stack.pop()
