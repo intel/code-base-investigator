@@ -1885,7 +1885,7 @@ class ExpressionEvaluator(Parser):
             # Preprocessor always uses 64-bit arithmetic!
             int_value = int(value, base)
             if suffix and 'u' in suffix:
-                return np.int64(int_value)
+                return np.uint64(int_value)
             else:
                 return np.int64(int_value)
         except ParseError:
@@ -1910,7 +1910,7 @@ class ExpressionEvaluator(Parser):
         # to false
         try:
             self.match_type(Identifier)
-            return np.uint64(0)
+            return np.int64(0)
         except ParseError:
             self.pos = initial_pos
 
