@@ -47,6 +47,7 @@ class PreprocessedSourcePrinter(TreeWalker):
         """
         Print this specific node, then descend into its children nodes.
         """
+        descend = True
         if isinstance(_node, CodeNode):
             association = _map[_node]
 
@@ -55,7 +56,7 @@ class PreprocessedSourcePrinter(TreeWalker):
             eval_args = {'platform': self.platform,
                          'filename': self.tree.root.filename,
                          'state': self.state}
-            _node.evaluate_for_platform(**eval_args)
+            descend = _node.evaluate_for_platform(**eval_args)
             expander = MacroExpander(self.platform)
             if association and not isinstance(_node, DirectiveNode):
                 node_lines = _node.spelling()
@@ -77,5 +78,6 @@ class PreprocessedSourcePrinter(TreeWalker):
                 # Replace unused code with whitespace
                 print()
 
-        for child in _node.children:
-            self.__print_nodes(child, _map)
+        if descend:
+            for child in _node.children:
+                self.__print_nodes(child, _map)
