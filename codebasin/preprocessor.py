@@ -71,7 +71,7 @@ class Token():
 
     def sanitized_str(self):
         """
-        Dummy based implementation of string santization. Overloaded for String Constant.
+        Dummy based implementation of string sanitization. Overloaded for String Constant.
         """
         return str(self)
 
