@@ -82,6 +82,8 @@ CBI and its dependencies can be installed using `setup.py`:
 python3 setup.py install
 ```
 
+The master branch of CBI is the development branch, and should not be used in production.  Tagged releases are available [here](https://github.com/intel/code-base-investigator/releases).
+
 ## License
 [BSD 3-Clause](./LICENSE)
 
