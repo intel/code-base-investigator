@@ -1547,7 +1547,7 @@ class ExpanderHelper:
         t = self.tokens[self.pos]
         return t
 
-    def chomp_tok(self):
+    def consume_tok(self):
         """
         Consume the current token, advance, and return it.
         """
@@ -1632,13 +1632,13 @@ class MacroExpander:
             else:
                 return self.parser_stack[pos].peek_tok()
 
-    def chomp_tok(self):
+    def consume_tok(self):
         """
         Consume top parser's current token, possibly popping to get where that can be done.
         """
         while self.parser_stack[-1].eol():
             self.pop()
-        return self.parser_stack[-1].chomp_tok()
+        return self.parser_stack[-1].consume_tok()
 
     def replace_tok(self, tok):
         """
@@ -1693,13 +1693,13 @@ class MacroExpander:
                     self.advance_tok()
                     continue
 
-                _ = self.chomp_tok()
+                _ = self.consume_tok()
                 if ctok.token == 'defined':
                     try:
                         tok = self.peek_tok()
                         if tok.token == '(':
-                            _ = self.chomp_tok()
-                            ident = self.chomp_tok()
+                            _ = self.consume_tok()
+                            ident = self.consume_tok()
                             paren = self.peek_tok()
                             if paren.token != ')':
                                 raise ParserError(
@@ -1733,13 +1733,13 @@ class MacroExpander:
                         self.replace_tok(ctok)
                         continue
                     else:
-                        _ = self.chomp_tok()
+                        _ = self.consume_tok()
                     args = []
                     current_arg = []
                     open_paren_count = 1
 
                     while True:
-                        tok = self.chomp_tok()
+                        tok = self.consume_tok()
                         if tok.token == ',' and open_paren_count == 1:
                             args.append(current_arg)
                             current_arg = []
