@@ -32,7 +32,7 @@ class LineGroup:
             return False
         return True
 
-    def add_line(self, phys_int, sloc_count, body=""):
+    def add_line(self, phys_int, sloc_count, source=None):
         """
         Add a line to this line group. Update the extent appropriately,
         and if it's a countable line, add it to the line count.
@@ -45,8 +45,8 @@ class LineGroup:
             self.end_line = phys_int[1] - 1
 
         self.line_count += sloc_count
-        if body is not "":
-            self.body.append(body)
+        if source is not None:
+            self.body.append(source)
 
     def reset(self):
         """
@@ -132,12 +132,13 @@ class FileParser:
         representing this file, and return it.
         """
 
-        out_tree = preprocessor.SourceTree(self._filename)
-        file_source = get_file_source(self._filename)
+        filename = self._filename
+        out_tree = preprocessor.SourceTree(filename)
+        file_source = get_file_source(filename)
         if not file_source:
-            raise RuntimeError(f"{self._filename} doesn't appear " +
+            raise RuntimeError(f"{filename} doesn't appear " +
                                "to be a language this tool can process")
-        with util.safe_open_read_nofollow(self._filename, mode='r', errors='replace') as source_file:
+        with util.safe_open_read_nofollow(filename, mode='r', errors='replace') as source_file:
 
             groups = {'code': LineGroup(),
                       'directive': LineGroup(),
