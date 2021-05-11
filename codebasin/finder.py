@@ -36,7 +36,7 @@ class ParserState():
         """
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
-            self.trees[fn] = parser.parse_file(self.summarize_code)
+            self.trees[fn] = parser.parse_file(summarize_code=self.summarize_code)
             self.maps[fn] = collections.defaultdict(set)
 
     def get_filenames(self):
@@ -62,8 +62,7 @@ class ParserState():
         return self.maps[fn]
 
 
-# FIXME: Should this be kwargs?
-def find(rootdir, codebase, configuration, summarize_code=True):
+def find(rootdir, codebase, configuration, *, summarize_code=True):
     """
     Find codepaths in the files provided and return a mapping of source
     lines to platforms.

@@ -126,7 +126,7 @@ class FileParser:
         new_node.num_lines = line_group.line_count
         tree.insert(new_node)
 
-    def parse_file(self, summarize_code):
+    def parse_file(self, *, summarize_code=False):
         """
         Parse the file that this parser points at, build a SourceTree
         representing this file, and return it.
