@@ -24,10 +24,10 @@ class ParserState():
     platforms.
     """
 
-    def __init__(self, summarize_code):
+    def __init__(self, summarize_only):
         self.trees = {}
         self.maps = {}
-        self.summarize_code = summarize_code
+        self.summarize_only = summarize_only
 
     def insert_file(self, fn):
         """
@@ -36,7 +36,7 @@ class ParserState():
         """
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
-            self.trees[fn] = parser.parse_file(summarize_code=self.summarize_code)
+            self.trees[fn] = parser.parse_file(summarize_only=self.summarize_only)
             self.maps[fn] = collections.defaultdict(set)
 
     def get_filenames(self):
@@ -62,14 +62,14 @@ class ParserState():
         return self.maps[fn]
 
 
-def find(rootdir, codebase, configuration, *, summarize_code=True):
+def find(rootdir, codebase, configuration, *, summarize_only=True):
     """
     Find codepaths in the files provided and return a mapping of source
     lines to platforms.
     """
 
     # Build a tree for each unique file for all platforms.
-    state = ParserState(summarize_code)
+    state = ParserState(summarize_only)
     for f in codebase["files"]:
         state.insert_file(f)
     for p in configuration:

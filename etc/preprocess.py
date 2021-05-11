@@ -54,7 +54,7 @@ if __name__ == '__main__':
                               "include_paths": args.include_paths,
                               "include_files": args.include_files}]}
 
-    state = finder.find(os.getcwd(), codebase, configuration, summarize_code=args.summarize)
+    state = finder.find(os.getcwd(), codebase, configuration, summarize_only=args.summarize)
     platform = Platform("cli", os.getcwd())
     for path in args.include_paths:
         platform.add_include_path(path)
