@@ -28,9 +28,9 @@ class TreePrinter(TreeWalker):
         for _ in range(level):
             spacing = '  {}'.format(spacing)
 
-        association = self._node_associations.get_association(node)
+        association = self._node_associations[node]
         if association:
-            platform = ', '.join(association.platforms)
+            platform = ', '.join(association)
         else:
             platform = ''
 
