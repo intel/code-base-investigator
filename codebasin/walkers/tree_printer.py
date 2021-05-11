@@ -24,16 +24,13 @@ class TreePrinter(TreeWalker):
         """
         Print this specific node, then descend into it's children nodes.
         """
-        spacing = ''
-        for _ in range(level):
-            spacing = '  {}'.format(spacing)
-
         association = self._node_associations[node]
         if association:
             platform = ', '.join(association)
         else:
             platform = ''
 
+        spacing = '  ' * (level)
         print('{}{} -- Platforms: {}'.format(spacing, node, platform))
 
         for child in node.children:
