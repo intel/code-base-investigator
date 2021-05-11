@@ -60,7 +60,6 @@ class PreprocessedSourcePrinter(TreeWalker):
             expander = MacroExpander(self.platform)
             if association and not isinstance(_node, DirectiveNode):
                 node_lines = _node.spelling()
-                # TODO: revisit this after Jason's token-list fixes
                 output_lines = []
                 for line in node_lines:
                     if self.expand_macros:
