@@ -71,15 +71,3 @@ def valid_path(path):
         valid = False
 
     return valid
-
-
-def interleave(l1, l2):
-    """
-    Return an interleaving of lists l1 and l2.
-    If l2 is not a list, broadcast its value.
-    """
-    if isinstance(l2, list):
-        l2_list = l2
-    else:
-        l2_list = [l2] * len(l1)
-    return list(it.chain.from_iterable(it.zip_longest(l1, l2_list)))

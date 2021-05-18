@@ -3,8 +3,7 @@
 
 import unittest
 import logging
-from codebasin import config, finder, walkers
-
+from codebasin import config, finder, walkers, preprocessor
 
 class TestExampleFile(unittest.TestCase):
     """
@@ -26,6 +25,11 @@ class TestExampleFile(unittest.TestCase):
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
 
+    def test_strings(self):
+        expected_str = r'"L + 2-2 \"\\\" \\n\""'
+        tokens = preprocessor.Lexer(expected_str).tokenize()
+        expected = preprocessor.StringConstant('Unknown', 'Unknown', False, r'L + 2-2 \"\\\" \\n\"')
+        self.assertEqual(tokens[0].token, expected.token)
 
 if __name__ == '__main__':
     unittest.main()

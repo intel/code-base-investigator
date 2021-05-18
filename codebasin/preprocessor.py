@@ -12,15 +12,42 @@ import logging
 import collections
 import hashlib
 import numpy as np
+from copy import copy
 from . import util
 from . import walkers
 
 log = logging.getLogger('codebasin')
 
 
+def toklist_print(toklist):
+    """
+    Helper function to print token lists with proper whitespace.
+    """
+    out = []
+    for tok in toklist:
+        if not tok:
+            continue
+        if tok.prev_white:
+            out.append(" ")
+        out.append(str(tok))
+    return ''.join(out)
+
+
 class TokenError(ValueError):
     """
     Represents an error encountered during tokenization.
+    """
+
+
+class EndofParse(ValueError):
+    """
+    Represents end of token stream.
+    """
+
+
+class MacroExpandOverflow(ValueError):
+    """
+    Represents MacroExpander overflow
     """
 
 
@@ -41,6 +68,12 @@ class Token():
 
     def __str__(self):
         return str(self.token)
+
+    def sanitized_str(self):
+        """
+        Dummy based implementation of string sanitization. Overloaded for String Constant.
+        """
+        return str(self)
 
 
 class CharacterConstant(Token):
@@ -77,18 +110,38 @@ class StringConstant(Token):
     def __str__(self):
         return "\"{!s}\"".format(self.token)
 
+    def sanitized_str(self):
+        """
+        Return this string quoted for stringification.
+        """
+        out = [r'\"']
+        c = 0
+        while c < len(self.token):
+            if self.token[c] == '\\':
+                if c + 1 < len(self.token) and self.token[c + 1] == '"':
+                    out.append(r'\\\"')
+                    c += 1
+                else:
+                    out.append('\\\\')
+            else:
+                out.append(self.token[c])
+            c += 1
+        out.append(r'\"')
+        return "".join(out)
+
 
 class Identifier(Token):
     """
     Represents a C identifier.
     """
 
-    def as_str(self):
-        return str(self.token)
+    def __init__(self, line, col, prev_white, token):
+        super().__init__(line, col, prev_white, token)
+        self.expandable = True
 
     def __repr__(self):
-        return "Identifier(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+        return "Identifier(line={!r},col={!r},prev_white={!r},expandable={!r},token={!r})".format(
+            self.line, self.col, self.prev_white, self.expandable, self.token)
 
 
 class Operator(Token):
@@ -111,6 +164,16 @@ class Punctuator(Token):
 
     def __repr__(self):
         return "Punctuator(line={!r},col={!r},prev_white={!r},token={!r})".format(
+            self.line, self.col, self.prev_white, self.token)
+
+
+class Unknown(Token):
+    """
+    Represents an unknown token.
+    """
+
+    def __repr__(self):
+        return "Unknown(line={!r},col={!r},prev_white={!r},token={!r})".format(
             self.line, self.col, self.prev_white, self.token)
 
 
@@ -152,7 +215,7 @@ class Lexer:
         if self.read(len(literal)) == literal:
             self.pos += len(literal)
         else:
-            raise TokenError("Expected {}.".format(literal))
+            raise TokenError()
 
     def match_any(self, literals):
         """
@@ -164,7 +227,7 @@ class Lexer:
                 self.pos += len(literal)
                 return index
 
-        raise TokenError("Expected one of: {}.".format(", ".join(literals)))
+        raise TokenError()
 
     def number(self):
         """
@@ -271,6 +334,19 @@ class Lexer:
         constant = StringConstant(self.line, col, self.prev_white, "".join(chars))
         return constant
 
+    @staticmethod
+    def stringify(tokens):
+        """
+        Return a tokenized string version of an input series of tokens.
+        """
+        parts = ['"']
+        for p in tokens:
+            if p.prev_white:
+                parts.append(" ")
+            parts.append(p.sanitized_str())
+        parts.append('"')
+        return Lexer("".join(parts)).tokenize_one()
+
     def identifier(self):
         """
         Construct an Identifier by parsing a string.
@@ -338,33 +414,45 @@ class Lexer:
             self.pos = col
             raise TokenError("Invalid punctuator.")
 
+    def tokenize_one(self):
+        """
+        Consume and return next token. Returns None if not possible.
+        """
+        candidates = [self.number, self.character_constant, self.string_constant,
+                      self.identifier, self.operator, self.punctuator]
+        token = None
+        for f in candidates:
+            col = self.pos
+            pws = self.prev_white
+            try:
+                token = f()
+                self.prev_white = False
+                break
+            except TokenError:
+                self.pos = col
+                self.prev_white = pws
+        return token
+
     def tokenize(self):
         """
         Return a list of all tokens in the string.
         """
         tokens = []
+        self.whitespace()
         while not self.eos():
 
             # Try to match a new token
-            token = None
-            candidates = [self.number, self.character_constant, self.string_constant,
-                          self.identifier, self.operator, self.punctuator]
-            for f in candidates:
-                col = self.pos
-                try:
-                    self.whitespace()
-                    token = f()
-                    self.prev_white = False
-                    tokens.append(token)
-                    break
-                except TokenError:
-                    self.pos = col
+            token = self.tokenize_one()
 
-            # Only continue matching if a token was found
+            # Treat unmatched single characters as unknown tokens
             if token is None:
-                break
+                token = Unknown(self.line, self.pos, self.prev_white, self.read())
+                self.prev_white = False
+                self.pos += 1
+            tokens.append(token)
 
-        self.whitespace()
+            self.whitespace()
+
         if not self.eos():
             raise TokenError("Encountered invalid token.")
 
@@ -563,8 +651,8 @@ class DefineNode(DirectiveNode):
         """
         Add a definition into the platform, and return false
         """
-        macro = Macro(self.identifier, self.args, self.value)
-        kwargs['platform'].define(self.identifier.as_str(), macro)
+        macro = make_macro(self.identifier, self.args, self.value)
+        kwargs['platform'].define(self.identifier.token, macro)
         return False
 
 
@@ -588,7 +676,7 @@ class UndefNode(DirectiveNode):
         """
         Add a definition into the platform, and return false
         """
-        kwargs['platform'].undefine(self.identifier.as_str())
+        kwargs['platform'].undefine(self.identifier.token)
         return False
 
 
@@ -644,7 +732,7 @@ class IncludeNode(DirectiveNode):
             include_path = self.value.path
             is_system_include = self.value.system
         else:
-            expansion = MacroExpander(self.value).expand(kwargs['platform'])
+            expansion = MacroExpander(kwargs['platform']).expand(self.value)
             path_obj = DirectiveParser(expansion).include_path()
             include_path = path_obj.path
             is_system_include = path_obj.system
@@ -681,7 +769,7 @@ class IfNode(DirectiveNode):
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
-        expanded_tokens = MacroExpander(self.tokens).expand(kwargs['platform'])
+        expanded_tokens = MacroExpander(kwargs['platform']).expand(self.tokens)
 
         # Evaluate the expanded tokens
         return ExpressionEvaluator(expanded_tokens).evaluate()
@@ -851,10 +939,10 @@ class DirectiveParser(Parser):
                 self.match_value(Punctuator, ",")
 
                 arg = self.__arg()
-                if arg.token.endswith("..."):
+                args.append(arg)
+                if arg.token.endswith('...'):
                     return args
 
-                args.append(arg)
         except ParseError:
             return args
 
@@ -934,25 +1022,20 @@ class DirectiveParser(Parser):
         <include> := 'include'<token-list>
         """
         initial_pos = self.pos
+
         try:
             self.match_value(Identifier, "include")
+
             path_pos = self.pos
 
             # Match system or local include path
             try:
-                path = self.include_path()
-                return IncludeNode(path)
+                include_payload = self.include_path()
             except ParseError:
-                self.pos = path_pos
+                include_payload = self.tokens[path_pos:]
+                self.pos = len(self.tokens)
 
-            # Match computed include with a simple macro
-            try:
-                identifier = self.match_type(Identifier)
-                return IncludeNode([identifier])
-            except ParseError:
-                self.pos = path_pos
-
-            raise ParseError("Invalid include directive.")
+            return IncludeNode(include_payload)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid include directive.")
@@ -1148,7 +1231,8 @@ class DirectiveParser(Parser):
                 try:
                     directive = f()
                     if not self.eol():
-                        log.warning("Additional tokens at end of preprocessor directive")
+                        chars = "".join((str(x) for x in self.tokens))
+                        log.warning(f"Additional tokens at end of preprocessor directive: {chars}")
                     return directive
                 except ParseError:
                     pass
@@ -1165,324 +1249,542 @@ class DirectiveParser(Parser):
             raise ParseError("Not a directive.")
 
 
-class Macro():
+def macro_from_definition_string(string):
+    """
+    Construct a Macro or MacroFunction by parsing a string of the form
+    MACRO=expansion.
+    """
+    tokens = Lexer(string).tokenize()
+    parser = DirectiveParser(tokens)
+
+    (identifier, args) = parser.macro_definition()
+
+    # Any remaining tokens after an "=" are the macro expansion
+    if not parser.eol():
+        parser.match_value(Operator, "=")
+        expansion = parser.tokens[parser.pos:]
+        parser.pos = len(parser.tokens)
+    else:
+        expansion = [NumericalConstant("Unknown", None, False, "1")]
+
+    return make_macro(identifier, args, expansion)
+
+
+def make_macro(identifier, args, expansion):
+    """
+    Return a Macro or MacroFunction based on the contents of args.
+    """
+    if args is None:
+        return Macro(identifier, expansion)
+    else:
+        return MacroFunction(identifier, args, expansion)
+
+
+class Macro:
     """
     Represents a macro definition.
     """
 
-    def __init__(self, name, args=None, expansion=None):
-        self.name = str(name)
-        if args is not None:
-            self.args = [str(a) for a in args]
-        else:
-            self.args = None
-        self.expansion = expansion
+    def __init__(self, name, replacement):
+        self.name = name.token
+        self.replacement = replacement
+
+        if isinstance(self.replacement, list) and len(self.replacement) > 0:
+            if self.replacement[0].token == "##":
+                raise RuntimeError("Found ## operator at start of replacement")
+            elif self.replacement[-1].token == "##":
+                raise RuntimeError("Found ## operator at end of replacement")
+            self.replacement[0].prev_white = False
+            self.preproc_replacement()
+
+    def which_arg(self, tok):
+        """
+        Returns index token occpuies in this Macro's list. -1 if not found.
+        """
+        return -1
+
+    def preproc_replacement(self):
+        """
+        Preprocess macroexpansion of ## where it doesn't abut arguments.
+        """
+        res_tokens = []
+        idx = 0
+
+        while idx < len(self.replacement):
+            tok = self.replacement[idx]
+            if tok.token == '##':
+                last = res_tokens.pop()
+                arg_idx = self.which_arg(last.token)
+                if arg_idx != -1:
+                    idx += 1
+                    res_tokens.append(last)
+                    res_tokens.append(tok)
+                    self.has_strcat = True
+                    continue
+                idx += 1
+                nexttok = self.replacement[idx]
+                arg_idx = self.which_arg(nexttok.token)
+                if arg_idx != -1:
+                    idx += 1
+                    res_tokens.append(last)
+                    res_tokens.append(tok)
+                    res_tokens.append(nexttok)
+                    self.has_strcat = True
+                    continue
+                lex = Lexer(last.token + nexttok.token)
+                tok = lex.tokenize_one()
+                tok.prev_white = last.prev_white
+                if tok is None:
+                    raise ParseError(
+                        f"Concatenation didn't result in valid token {lex.string}")
+            elif tok.token == '#':
+                if isinstance(self, MacroFunction):
+                    self.has_strcat = True
+            elif isinstance(tok, Identifier):
+                arg_idx = self.which_arg(tok.token)
+                if arg_idx != -1:
+                    self.arg_needs_expansion[arg_idx] = True
+            idx += 1
+            res_tokens.append(tok)
+        self.replacement = res_tokens
 
     def __repr__(self):
-        return "Macro(name={0!r},args={1!r},expansion={2!r})".format(
-            self.name, self.args, self.expansion)
+        return "Macro(name={0!r},replacement={1!r})".format(
+            self.name, self.replacement)
 
-    def __str__(self):
-        expansion_str = " ".join([str(t) for t in self.expansion])
-        if self.args is None:
-            return "{0!s}={1!s}".format(self.name, expansion_str)
-        arg_str = ",".join(self.args)
-        return "{0!s}({1!s})={2!s}".format(self.name, arg_str, expansion_str)
+    def spelling(self):
+        """
+        Return (a list containing) a string with a lexable representation of this Macro.
+        """
+        replacement_str = " ".join([str(t) for t in self.replacement])
+        return ["{0!s}={1!s}".format(self.name, replacement_str)]
 
-    def is_function(self):
+    def replace(self):
         """
-        Return true if macro is function-like
+        Return the expansion list for this Macro.
         """
-        return self.args is not None
+        return self.replacement
 
-    def is_variadic(self):
-        """
-        Return true if macro is variadic
-        """
-        if self.is_function() and self.args:
-            return self.args[-1].endswith("...")
-        return False
 
-    def variable_argument(self):
-        """
-        Return the name of the variable argument for a variadic macro.
-        If the macro is not variadic, return None.
-        """
-        if self.is_variadic():
+class MacroFunction(Macro):
+    """
+    Represents a macro function definition.
+    """
+
+    def __init__(self, name, args, replacement):
+        self.args = [x.token for x in args]
+        self.has_strcat = False
+        if len(self.args) > 0:
+            self.variadic = self.args[-1].endswith("...")
+        else:
+            self.variadic = False
+        if self.variadic:
             if self.args[-1] == '...':
                 # An unnamed variable argument replaces __VA_ARGS__
-                return "__VA_ARGS__"
+                self.args[-1] = "__VA_ARGS__"
             else:
                 # Strip '...' from argument name
-                return self.args[-1][:-3]
-        else:
-            return None
+                self.args[-1] = self.args[-1][:-3]
+        self.arg_needs_expansion = [False for x in self.args]
+        super().__init__(name, replacement)
 
-    @staticmethod
-    def from_definition_string(string):
+    def which_arg(self, tok):
         """
-        Construct a Macro by parsing a string of the form
-        MACRO=expansion.
+        Returns index token occupies in this Macro's list. -1 if not found.
         """
-        tokens = Lexer(string).tokenize()
-        parser = DirectiveParser(tokens)
-
-        (identifier, args) = parser.macro_definition()
-
-        # Any remaining tokens after an "=" are the macro expansion
-        if not parser.eol():
-            parser.match_value(Operator, "=")
-            expansion = parser.tokens[parser.pos:]
-            parser.pos = len(parser.tokens)
-        else:
-            expansion = []
-
-        return Macro(identifier, args, expansion)
-
-
-class MacroStack:
-    """
-    Tracks previously expanded macros during recursive expansion.
-    """
-
-    def __init__(self, level, no_expand):
-        self.level = level
-        self.no_expand = no_expand
-
-        # Prevent infinite recursion. CPP standard requires this be at
-        # least 15, but cpp has been implemented to handle 200.
-        self.max_level = 200
-
-    def __contains__(self, identifier):
-        return str(identifier) in self.no_expand
-
-    def push(self, identifier):
-        self.level += 1
-        self.no_expand.append(str(identifier))
-
-    def pop(self):
-        self.level -= 1
-        self.no_expand.pop()
-
-    def overflow(self):
-        return self.level >= self.max_level
-
-
-class MacroExpander(Parser):
-    """
-    A specialized token parser for recognizing and expanding macros.
-    """
-
-    # pylint: disable=unused-argument
-    def defined(self, platform, stack):
-        """
-        Expand a call to defined(X) or defined X.
-        """
-        initial_pos = self.pos
         try:
-            self.match_value(Identifier, "defined")
+            return self.args.index(tok)
+        except ValueError:
+            return -1
 
-            # Match an identifier in parens
-            defined_pos = self.pos
-            try:
-                self.match_value(Punctuator, "(")
-                identifier = self.match_type(Identifier)
-                self.match_value(Punctuator, ")")
+    def __repr__(self):
+        return "MacroFunction(name={0!r},args={1!r},replacement={2!r})".format(
+            self.name, self.args, self.replacement)
 
-                value = platform.is_defined(str(identifier))
-                return NumericalConstant("EXPANSION", identifier.line,
-                                         identifier.prev_white, value)
-            except ParseError:
-                self.pos = defined_pos
+    def spelling(self):
+        replacement_str = " ".join([str(t) for t in self.replacement])
+        arg_str = ",".join([str(t) for t in self.args])
+        return ["{0!s}({1!s})={2!s}".format(self.name, arg_str, replacement_str)]
 
-            # Match an identifier without parens
-            try:
-                identifier = self.match_type(Identifier)
-                value = platform.is_defined(str(identifier))
-                return NumericalConstant("EXPANSION", identifier.line,
-                                         identifier.prev_white, value)
-            except ParseError:
-                raise ParseError("Expected identifier after \"defined\" operator")
-
-        except ParseError:
-            self.pos = initial_pos
-            raise ParseError("Not a defined operator.")
-
-    def __arg(self):
+    def replace(self, input_args):
         """
-        Match an argument to a function-like macro, where:
-        - An argument is a (potentially empty) list of tokens
-        - Arguments are separated by a ","
-        - "(" must be matched with a ")" within an argument
+        Return the substituted replacement for this macro.
+        input_args is expected to be a list of (original,
+        pre-expanded) arguments passed to this.
         """
-        arg = []
-        open_parens = 0
-        while not self.eol():
-            t = self.cursor()
-            if isinstance(t, Punctuator):
-                if t.token == "(":
-                    open_parens += 1
-                elif t.token == ")" and open_parens > 0:
-                    open_parens -= 1
-                elif (t.token == "," or t.token == ")") and open_parens == 0:
-                    return arg
-            arg.append(t)
-            self.pos += 1
-
-        if open_parens > 0:
-            raise ParseError("Mismatched parentheses in macro argument.")
-        raise ParseError("Invalid macro argument.")
-
-    def __arg_list(self):
-        """
-        Match a list of function-like macro arguments.
-        """
-        arg = self.__arg()
-        args = [arg]
-        try:
-            while not self.eol():
-                self.match_value(Punctuator, ",")
-                arg = self.__arg()
-                args.append(arg)
-        except ParseError:
-            pass
-        return args
-
-    @staticmethod
-    def grow_token_list(token_list, extension):
-        """
-        Copy tokens from extension into token_list.
-        extension can be a single token or a list of tokens.
-        """
-        if isinstance(extension, list):
-            token_list.extend(extension)
-        else:
-            token_list.append(extension)
-
-    def function_macro(self, platform, stack):
-        """
-        Expand a function-like macro.
-
-        Follows the rules outlined in:
-        https://gcc.gnu.org/onlinedocs/cpp/Macro-Arguments.html#Macro-Arguments
-        """
-        initial_pos = self.pos
-        try:
-            identifier = self.match_type(Identifier)
-            if identifier in stack:
-                raise ParseError('Cannot expand token')
-
-            self.match_value(Punctuator, "(")
-            args = self.__arg_list()
-            self.match_value(Punctuator, ")")
-        except ParseError:
-            self.pos = initial_pos
-            raise ParseError("Not a function-like macro.")
-
-        macro = platform.get_macro(str(identifier))
-        if not macro:
-            raise ParseError("Not a function-like macro.")
-
-        # Argument pre-scan
-        # Macro arguments are macro-expanded before substitution
-        expanded_args = [MacroExpander(arg).expand(platform) for arg in args]
-
         # Combine variadic arguments into one, separated by commas
-        va_args = None
-        if macro.is_variadic():
-            va_args = util.interleave(expanded_args[len(macro.args) - 1:],
-                                      Punctuator("EXPANSION", -1, False, ","))
-            va_args = va_args[:-1]  # Remove final comma
+        if self.variadic:
+            comma = Punctuator("EXPANSION", -1, False, ",")
+            va_args_raw = []
+            va_args_exp = []
+            for idx in range(len(self.args) - 1, len(input_args) - 1):
+                va_args_raw.extend(input_args[idx][0])
+                va_args_raw.append(comma)
+                va_args_exp.extend(input_args[idx][1])
+                va_args_exp.append(comma)
+            if len(self.args) - 1 < len(input_args):
+                va_args_raw.extend(input_args[-1][0])
+                va_args_exp.extend(input_args[-1][1])
 
-        # Substitute each occurrence of an argument in the expansion
+            input_args[len(self.args) - 1:] = [(va_args_raw, va_args_exp)]
+
+        if self.has_strcat:
+            res_tokens = []
+            last_cat = False
+            idx = 0
+
+            while idx < len(self.replacement):
+                tok = self.replacement[idx]
+                if tok.token == '##':
+                    last = res_tokens.pop()
+                    prev_white = last.prev_white
+                    if not last_cat:
+                        try:
+                            argidx = self.args.index(last.token)
+                            last = input_args[argidx][0]  # Unexpanded arg
+                        except ValueError:
+                            last = [last]
+                    else:
+                        last = [last]
+                    idx += 1
+                    nexttok = self.replacement[idx]
+                    try:
+                        argidx = self.args.index(nexttok.token)
+                        nexttok = input_args[argidx][0]  # Unexpanded arg
+                    except ValueError:
+                        nexttok = [nexttok]
+                    if len(last) > 0:
+                        lex = Lexer(last[-1].token + nexttok[0].token)
+                        tok = lex.tokenize_one()
+                        if tok is None:
+                            raise ParseError(
+                                f"Concatenation didn't result in valid token {lex.string}")
+                        tok.prev_white = last[-1].prev_white
+                        toadd = last[:-1] + [tok] + nexttok[1:]
+                        if toadd[0].prev_white != prev_white:
+                            cp = copy(toadd[0])
+                            cp.prev_white = prev_white
+                            toadd[0].prev_white = prev_white
+                        res_tokens.extend(toadd)
+                    else:
+                        res_tokens.extend(nexttok)
+                    last_cat = True
+                elif tok.token == '#':
+                    idx += 1
+                    if idx == len(self.replacement):
+                        raise ParseError("Found # at end of macro replacement!")
+                    nexttok = self.replacement[idx]
+                    try:
+                        argidx = self.args.index(nexttok.token)
+                        tok = input_args[argidx][0]  # Unexpanded arg
+                    except ValueError:
+                        raise ParseError(f"# was not followed by a macro argument.")
+                    tok = Lexer.stringify(tok)
+                    tok.prev_white = tok.prev_white
+                    last_cat = True
+                    res_tokens.append(tok)
+                else:
+                    last_cat = False
+                    res_tokens.append(tok)
+                idx += 1
+        else:
+            res_tokens = copy(self.replacement)
+
+        # Substitute each occurrence of an argument in the replacement
         substituted_tokens = []
-        for token in macro.expansion:
-
+        for token in res_tokens:
             substitution = []
 
             # If a token matches an argument, it is substituted;
             # otherwise it passes through
             try:
-                substitution = expanded_args[macro.args.index(token.token)]
+                substitution = input_args[self.args.index(token.token)][1]
+                if len(substitution) > 0:
+                    substitution[0] = copy(substitution[0])
+                    substitution[0].prev_white = token.prev_white
             except (ValueError, ParseError):
-                substitution = token
+                substitution = [token]
 
-            # If a token matches the variable argument, substitute
-            # precomputed va_args
-            if macro.is_variadic() and token.token == macro.variable_argument() and va_args:
+            substituted_tokens.extend(substitution)
 
-                # Whether the token was preceded by whitespace should be
-                # tracked through substitution
-                for t in va_args[0]:
-                    t.prev_white = token.prev_white
-                substitution = va_args
+        return substituted_tokens
 
-            self.grow_token_list(substituted_tokens, substitution)
 
-        # Check the expansion for macros to expand
-        stack.push(identifier)
-        expansion = MacroExpander(substituted_tokens).expand(platform, stack)
-        stack.pop()
-        return expansion
+class ExpanderHelper:
+    """
+    Class to act as token stream for expansion stack.
+    """
 
-    def macro(self, platform, stack):
+    def __init__(self, tokens):
+        self.tokens = copy(tokens)
+        self.pos = 0
+        self.pre_expand = False
+
+    def eol(self):
         """
-        Expand a macro.
+        Returns boolean value of the read point being past end of stream.
         """
-        initial_pos = self.pos
-        try:
-            identifier = self.match_type(Identifier)
-            if identifier in stack:
-                raise ParseError('Cannot expand this token')
 
-            macro = platform.get_macro(str(identifier))
-            if not macro:
-                raise TokenError('Not a macro.')
+        return self.pos >= len(self.tokens)
 
-            stack.push(identifier)
-            expansion = MacroExpander(macro.expansion).expand(platform, stack)
-            stack.pop()
-            return expansion
-        except TokenError:
-            self.pos = initial_pos
-            raise ParseError("Not a macro.")
+    def splice(self, upper_helper):
+        """
+        Insert upper_helper ExpanderHelper into this
+        stream's pos, advancing pos to end of insertion.
+        """
 
-    def expand(self, platform, stack=None):
+        start = list(filter(None, self.tokens[:self.pos]))
+
+        self.tokens = start + list(filter(None, upper_helper.tokens)) + \
+            list(filter(None, self.tokens[self.pos:]))
+        self.pos = len(start)
+
+    def peek_tok(self):
+        """
+        Return at the current token without advancing.
+        """
+
+        t = self.tokens[self.pos]
+        return t
+
+    def consume_tok(self):
+        """
+        Consume the current token, advance, and return it.
+        """
+
+        t = self.tokens[self.pos]
+        self.tokens[self.pos] = None
+        self.pos += 1
+        return t
+
+    def replace_tok(self, item):
+        """
+        Replace the token at the current position with item. Advance.
+        """
+
+        self.tokens[self.pos] = item
+        self.pos += 1
+
+
+class MacroExpander:
+    """
+    A specialized token parser for recognizing and expanding macros.
+    """
+
+    def __init__(self, platform):
+        self.platform = platform
+        self.parser_stack = []
+        self.no_expand = []
+
+        # Prevent infinite recursion. CPP standard requires this be at
+        # least 15, but cpp has been implemented to handle 200.
+        self.max_level = 200
+
+    def pop(self):
+        """
+        Pop top of parser stack off and splice tokens in it into below parser.
+        If top of stack is also bottom, instead throw EndofParse.
+        """
+        if len(self.parser_stack) == 1 or self.parser_stack[-1].pre_expand:
+            raise EndofParse("Hit end of input streams")
+        top_toks = self.parser_stack[-1]
+        self.parser_stack.pop()
+        self.no_expand.pop()
+        self.parser_stack[-1].splice(top_toks)
+
+    def push(self, tokens, ident=None):
+        """
+        Push a new ExpanderHelper for tokens with new no_expand ident onto stack.
+        """
+        self.parser_stack.append(ExpanderHelper(tokens))
+        self.parser_stack[-1].pre_expand = False
+        self.no_expand.append(ident)
+        self.overflow_check()
+
+    def advance_tok(self):
+        """
+        Advance top expander's position, possibly popping to get to where that can be done.
+        """
+        while self.parser_stack[-1].eol():
+            self.pop()
+        self.parser_stack[-1].pos += 1
+
+    def peek_tok_pop(self):
+        """
+        Peek at top expander's token, possibly popping to get to where that can be done.
+        """
+        while self.parser_stack[-1].eol():
+            self.pop()
+        return self.parser_stack[-1].peek_tok()
+
+    def peek_tok(self):
+        """
+        Return the next logical token, or None if exhausted
+        This may require us to peek 'down' in the stack.
+        """
+        pos = len(self.parser_stack) - 1
+        while True:
+            if self.parser_stack[pos].eol():
+                if pos == 0 or self.parser_stack[pos].pre_expand:
+                    return None
+                else:
+                    pos -= 1
+            else:
+                return self.parser_stack[pos].peek_tok()
+
+    def consume_tok(self):
+        """
+        Consume top parser's current token, possibly popping to get where that can be done.
+        """
+        while self.parser_stack[-1].eol():
+            self.pop()
+        return self.parser_stack[-1].consume_tok()
+
+    def replace_tok(self, tok):
+        """
+        Replace top parser's current token with tok, possibly popping to get where that can be done.
+        """
+        while self.parser_stack[-1].eol():
+            self.pop()
+        self.parser_stack[-1].replace_tok(tok)
+
+    def overflow_check(self):
+        """
+        Raise MacroExpandOverflow if we exceed the allowable # of levels.
+        """
+        if len(self.parser_stack) >= self.max_level:
+            raise MacroExpandOverflow
+
+    def not_expandable(self, ident):
+        """
+        Return if this token is in the no-expansion list.
+        """
+        return not ident.expandable or ident.token in self.no_expand
+
+    def defined(self, identifier):
+        """
+        Expand a call to defined(X) or defined X.
+        """
+        value = self.platform.is_defined(str(identifier))
+        return NumericalConstant("EXPANSION", identifier.line,
+                                 identifier.prev_white, value)
+
+    def expand(self, tokens, ident=None, pre_expand=False):
         """
         Expand a list of input tokens using the specified definitions.
         Return a list of new tokens, representing the result of macro
         expansion.
         """
-        if not stack:
-            stack = MacroStack(0, [])
+        self.overflow_check()
 
-        if stack.overflow():
-            return NumericalConstant("EXPANSION", -1, False, "0")
+        if len(tokens) == 0:
+            return tokens
+
+        self.parser_stack.append(ExpanderHelper(tokens))
+        self.parser_stack[-1].pre_expand = pre_expand
+        self.no_expand.append(str(ident))
 
         try:
-            expanded_tokens = []
-            while not self.eol():
-                # Match and expand special tokens
-                expansion = None
-                test_pos = self.pos
 
-                candidates = [self.defined, self.function_macro, self.macro]
-                for f in candidates:
+            while True:
+                ctok = self.peek_tok_pop()
+
+                if not isinstance(ctok, Identifier):
+                    self.advance_tok()
+                    continue
+
+                _ = self.consume_tok()
+                if ctok.token == 'defined':
                     try:
-                        expansion = f(platform, stack)
-                        break
-                    except ParseError:
-                        self.pos = test_pos
+                        tok = self.peek_tok()
+                        if tok.token == '(':
+                            _ = self.consume_tok()
+                            ident = self.consume_tok()
+                            paren = self.peek_tok()
+                            if paren.token != ')':
+                                raise ParserError(
+                                    "Expected closing paren to follow identifier following 'defined'")
+                        else:
+                            ident = tok
+                        if not isinstance(ident, Identifier):
+                            raise ParserError("Expected 'defined' to be followed by identifier")
+                        self.replace_tok(self.defined(ident))
+                    except IndexError:
+                        raise ParserError("Expected 'defined' to be followed by identifier")
+                    continue
 
-                # Pass all other tokens through unmodified
-                if expansion is None:
-                    expansion = self.cursor()
-                    self.pos += 1
+                if self.not_expandable(ctok):
+                    itok = copy(ctok)
+                    itok.expandable = False
+                    self.parser_stack[-1].pos -= 1
+                    self.replace_tok(itok)
+                    continue
 
-                self.grow_token_list(expanded_tokens, expansion)
-            return expanded_tokens
-        except ParseError:
-            raise ValueError("Error in macro expansion.")
+                macro_lookup = self.platform.get_macro(ctok.token)
+                if not macro_lookup:
+                    self.parser_stack[-1].pos -= 1
+                    self.replace_tok(ctok)
+                    continue
+
+                if isinstance(macro_lookup, MacroFunction):
+                    paren = self.peek_tok()
+                    if not paren or paren.token != '(':
+                        self.parser_stack[-1].pos -= 1
+                        self.replace_tok(ctok)
+                        continue
+                    else:
+                        _ = self.consume_tok()
+                    args = []
+                    current_arg = []
+                    open_paren_count = 1
+
+                    while True:
+                        tok = self.consume_tok()
+                        if tok.token == ',' and open_paren_count == 1:
+                            args.append(current_arg)
+                            current_arg = []
+                            continue
+
+                        if tok.token == '(':
+                            open_paren_count += 1
+                        elif tok.token == ')':
+                            open_paren_count -= 1
+                            if open_paren_count == 0:
+                                args.append(current_arg)
+                                break
+
+                        current_arg.append(tok)
+
+                    pre_expanded = []
+                    for i, arg in enumerate(args):
+                        if i >= len(
+                                macro_lookup.arg_needs_expansion) or macro_lookup.arg_needs_expansion[i]:
+                            arg_expansion = self.expand(arg, ident=None, pre_expand=True)
+                            pre_expanded.append((arg, arg_expansion))
+                        else:
+                            pre_expanded.append((arg,))
+                    # Proper expand
+                    replacement = macro_lookup.replace(pre_expanded)
+                    if isinstance(replacement, list) and len(replacement) > 0:
+                        replacement[0] = copy(replacement[0])
+                        replacement[0].prev_white = ctok.prev_white
+                    self.push(replacement, macro_lookup.name)
+                elif type(macro_lookup) == Macro:
+                    replacement = macro_lookup.replace()
+                    if isinstance(replacement, list) and len(replacement) > 0:
+                        replacement[0] = copy(replacement[0])
+                        replacement[0].prev_white = ctok.prev_white
+                    self.push(replacement, macro_lookup.name)
+                else:
+                    raise ParseError("Unexpected error in macro expansion")
+        except EndofParse:
+            res_tokens = list(filter(None, self.parser_stack[-1].tokens))
+            self.parser_stack.pop()
+            self.no_expand.pop()
+            return res_tokens
+        except MacroExpandOverflow:
+            self.__init__(self.platform)
+            return [NumericalConstant("EXPANSION", -1, False, "0")]
 
 
 class ExpressionEvaluator(Parser):
@@ -1710,12 +2012,12 @@ class ExpressionEvaluator(Parser):
         exprs = []
         try:
             expr = self.expression()
-            exprs.extend(expr)
+            exprs.append(expr)
 
             while True:
                 self.match_value(Punctuator, ",")
                 expr = self.expression()
-                exprs.extend(expr)
+                exprs.append(expr)
         except ParseError:
             return exprs
 
@@ -1857,136 +2159,3 @@ class SourceTree():
                 self.__insert_in_place(new_node, self._latest_node)
             else:
                 self.__insert_in_place(new_node, self._latest_node.parent)
-
-
-class CommentCleaner:
-    """
-    Strip C or Fortran style comments from a source line.
-    """
-
-    def __init__(self, _file_extension):
-        self._in_block_comment = False
-
-        if _file_extension in ['.f90', '.F90', '.f', '.F', '.F95', '.f95']:
-            self.filetype = 'fortran'
-        elif _file_extension in ['.cpp', '.c', '.cc', '.cu', '.cl',
-                                 '.cuh', 'clh', '.cxx', '.h', '.hpp', '.hh']:
-            self.filetype = 'c'
-        else:
-            log.fatal('File extension %s not recognized.', _file_extension)
-
-    def strip_comments(self, line):
-        if self.filetype == 'c':
-            out_line = self.__remove_c_comments(line)
-        elif self.filetype == 'fortran':
-            out_line = self.__remove_fortran_comments(line)
-        return out_line
-
-    def __ingest_c_block_comments(self, line, position):
-        """
-        ingests block comments until either the line, or the comment is
-        exhausted.
-
-        Return the number of ingested characters.
-        """
-
-        pos = position
-        while self._in_block_comment and pos < len(line):
-            if pos + 1 < len(line) and line[pos] == '*' and line[pos + 1] == '/':
-                self._in_block_comment = False
-                pos += 2
-            pos += 1
-        return pos - position
-
-    @staticmethod
-    def __ingest_whitespace(line, position):
-        """
-        ingest all contiguous whitespace characters.
-
-        Return the number of ingested characters.
-        """
-        pos = position
-        while line[pos] == ' ':
-            pos += 1
-        return pos - position
-
-    def __ingest_c_comment_start(self, line, pos):
-        """
-        ingests the beginning of either a line or a block comment.
-
-        Return the number of ingested characters for block comments, and
-        -1 for the start of a line comment.
-        """
-
-        if line[pos] == '/' and len(line) > pos + 1:
-            if line[pos + 1] == '/':
-                return -1
-            elif line[pos + 1] == '*':
-                self._in_block_comment = True
-                return 2
-        return 0
-
-    def __remove_c_comments(self, line):
-        """
-        Remove C style comments. Return the stripped line. Set
-        self._in_block_comment if a block comment was started, but not
-        ended.
-        """
-        new_chars = []
-        i = 0
-        while i < len(line):
-            blocks = self.__ingest_c_block_comments(line, i)
-            if blocks > 0:
-                i += blocks
-                continue
-
-            whitespace = self.__ingest_whitespace(line, i)
-            if whitespace > 0:
-                new_chars.append(' ')
-                i += whitespace
-                continue
-
-            comm_start = self.__ingest_c_comment_start(line, i)
-            if comm_start == -1:
-                new_chars.append(' ')
-                break
-            elif comm_start > 0:
-                new_chars.append(' ')
-                i += comm_start
-
-            if blocks + whitespace + comm_start == 0:
-                new_chars.append(line[i])
-                i += 1
-
-        new_line = ''.join(new_chars)
-        return new_line
-
-    def __remove_fortran_comments(self, line):
-        """
-        Remove Fortran style comments. Only obeys '!' line comments.
-        self._in_block_comment makes no sense in Fortran codes, so it
-        should be false both on entry and exit of this function.
-        """
-        if self._in_block_comment:
-            log.error('Before Fortran line is processed, in a block comment?')
-
-        new_chars = []
-        line_len = len(line)
-        ignore_spaces = False
-        for i in range(line_len):
-            if line[i] == ' ':
-                if not ignore_spaces:
-                    ignore_spaces = True
-                    new_chars.append(' ')
-            elif line[i] == '!':
-                new_chars.append(' ')
-                break
-            else:
-                ignore_spaces = False
-                new_chars.append(line[i])
-
-        if self._in_block_comment:
-            log.error('Processing Fortran comment left state in a block comment?')
-
-        new_line = ''.join(new_chars)
-        return new_line

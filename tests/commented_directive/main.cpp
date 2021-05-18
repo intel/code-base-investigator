@@ -12,3 +12,9 @@ void defines_and_comments() {
 #define BAZ 3
  * ******/
 }
+
+ #define FAR 4
+// #define NONE ""
+/*
+ Blanks
+*/   #define FAM 5

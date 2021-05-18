@@ -23,7 +23,8 @@ import os
 import sys
 import logging
 
-from codebasin import config, finder, report, util, walkers
+from codebasin import config, finder, report, util
+from codebasin.walkers.platform_mapper import PlatformMapper
 
 version = 1.05
 
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     state = finder.find(rootdir, codebase, configuration)
 
     # Count lines for platforms
-    platform_mapper = walkers.PlatformMapper(codebase)
+    platform_mapper = PlatformMapper(codebase)
     setmap = platform_mapper.walk(state)
 
     output_prefix = os.path.realpath(guess_project_name(config_file))
