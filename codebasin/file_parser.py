@@ -21,6 +21,7 @@ class LineGroup:
         self.line_count = 0
         self.start_line = -1
         self.end_line = -1
+        self.body = []
 
     def empty(self):
         """
@@ -31,7 +32,7 @@ class LineGroup:
             return False
         return True
 
-    def add_line(self, phys_int, sloc_count):
+    def add_line(self, phys_int, sloc_count, source=None):
         """
         Add a line to this line group. Update the extent appropriately,
         and if it's a countable line, add it to the line count.
@@ -44,6 +45,8 @@ class LineGroup:
             self.end_line = phys_int[1] - 1
 
         self.line_count += sloc_count
+        if source is not None:
+            self.body.append(source)
 
     def reset(self):
         """
@@ -52,6 +55,7 @@ class LineGroup:
         self.line_count = 0
         self.start_line = -1
         self.end_line = -1
+        self.body = []
 
     def merge(self, line_group):
         """
@@ -65,6 +69,8 @@ class LineGroup:
         elif line_group.start_line == -1:
             line_group.start_line = self.start_line
         self.start_line = min(self.start_line, line_group.start_line)
+
+        self.body.extend(line_group.body)
 
         self.end_line = max(self.end_line, line_group.end_line)
         line_group.reset()
@@ -104,7 +110,7 @@ class FileParser:
         Build a code node, and insert it into the source tree
         """
         new_node = preprocessor.CodeNode(
-            line_group.start_line, line_group.end_line, line_group.line_count)
+            line_group.start_line, line_group.end_line, line_group.line_count, line_group.body)
         tree.insert(new_node)
 
     @staticmethod
@@ -120,18 +126,19 @@ class FileParser:
         new_node.num_lines = line_group.line_count
         tree.insert(new_node)
 
-    def parse_file(self):
+    def parse_file(self, *, summarize_only=True):
         """
         Parse the file that this parser points at, build a SourceTree
         representing this file, and return it.
         """
 
-        out_tree = preprocessor.SourceTree(self._filename)
-        file_source = get_file_source(self._filename)
+        filename = self._filename
+        out_tree = preprocessor.SourceTree(filename)
+        file_source = get_file_source(filename)
         if not file_source:
-            raise RuntimeError(f"{self._filename} doesn't appear " +
+            raise RuntimeError(f"{filename} doesn't appear " +
                                "to be a language this tool can process")
-        with util.safe_open_read_nofollow(self._filename, mode='r', errors='replace') as source_file:
+        with util.safe_open_read_nofollow(filename, mode='r', errors='replace') as source_file:
 
             groups = {'code': LineGroup(),
                       'directive': LineGroup(),
@@ -149,13 +156,19 @@ class FileParser:
                         # Add this into the directive lines, even if it
                         # might not be a directive we count
 
-                        groups['directive'].add_line(phys_int, logical_line.local_sloc)
+                        groups['directive'].add_line(
+                            phys_int, logical_line.local_sloc, logical_line.flushed_line)
 
                         FileParser.handle_directive(out_tree, groups, logical_line.flushed_line)
 
                         # FallBack is that this line is a simple code line.
                     else:
-                        groups['code'].add_line(phys_int, logical_line.local_sloc)
+                        if summarize_only:
+                            groups['code'].add_line(
+                                phys_int, logical_line.local_sloc)
+                        else:
+                            groups['code'].add_line(
+                                phys_int, logical_line.local_sloc, logical_line.flushed_line)
             except StopIteration as it:
                 # pylint: disable=unpacking-non-sequence
                 _, physical_loc = it.value

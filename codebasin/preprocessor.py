@@ -14,7 +14,7 @@ import hashlib
 import numpy as np
 from copy import copy
 from . import util
-from . import walkers
+from .walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger('codebasin')
 
@@ -67,7 +67,14 @@ class Token():
             self.line, self.col, self.prev_white, self.token)
 
     def __str__(self):
-        return str(self.token)
+        return "\n".join(self.spelling())
+
+    def spelling(self):
+        """
+        Return the string representation of this token in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return [str(self.token)]
 
     def sanitized_str(self):
         """
@@ -107,8 +114,12 @@ class StringConstant(Token):
         return "StringConstant(line={!r},col={!r},prev_white={!r},token={!r})".format(
             self.line, self.col, self.prev_white, self.token)
 
-    def __str__(self):
-        return "\"{!s}\"".format(self.token)
+    def spelling(self):
+        """
+        Return the string representation of this token in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["\"{!s}\"".format(self.token)]
 
     def sanitized_str(self):
         """
@@ -152,9 +163,6 @@ class Operator(Token):
     def __repr__(self):
         return "Operator(line={!r},col={!r},prev_white={!r},token={!r})".format(
             self.line, self.col, self.prev_white, self.token)
-
-    def __str__(self):
-        return str(self.token)
 
 
 class Punctuator(Token):
@@ -554,14 +562,16 @@ class FileNode(Node):
 class CodeNode(Node):
     """
     Represents any line of code. Contains a start and end line, and the
-    number of countable lines occurring between them.
+    number of countable lines occurring between them. Optionally contains
+    the original source.
     """
 
-    def __init__(self, start_line=-1, end_line=-1, num_lines=0):
+    def __init__(self, start_line=-1, end_line=-1, num_lines=0, source=None):
         super().__init__()
         self.start_line = start_line
         self.end_line = end_line
         self.num_lines = num_lines
+        self.source = source
 
     def __repr__(self):
         return "CodeNode(start={0!r},end={1!r},lines={2!r}".format(
@@ -569,6 +579,20 @@ class CodeNode(Node):
 
     def __str__(self):
         return "Lines {}-{}; SLOC = {};".format(self.start_line, self.end_line, self.num_lines)
+
+    def spelling(self):
+        """
+        Return the string representation of this code block in the input code.
+        Useful primarily for debugging and generating error messages.
+
+        If configured to summarize the input code, the spelling of a CodeNode
+        reflects only the total number of lines between preprocessor
+        directives.
+        """
+        if self.source:
+            return self.source
+        else:
+            return ["/* {} SLOC omitted */".format(self.num_lines)]
 
 
 class DirectiveNode(CodeNode):
@@ -595,8 +619,12 @@ class UnrecognizedDirectiveNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={!r},tokens={!r})".format(self.kind, self.tokens)
 
-    def __str__(self):
-        return "{}".format(" ".join([str(t) for t in self.tokens]))
+    def spelling(self):
+        """
+        Return the string representation of this directive in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["{}".format(" ".join([str(t) for t in self.tokens]))]
 
 
 class PragmaNode(DirectiveNode):
@@ -612,8 +640,12 @@ class PragmaNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},tokens={1!r})".format(self.kind, self.tokens)
 
-    def __str__(self):
-        return "#pragma {0!s}".format(" ".join([str(t) for t in self.tokens]))
+    def spelling(self):
+        """
+        Return the string representation of this pragma in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["#pragma {0!s}".format(" ".join([str(t) for t in self.tokens]))]
 
     def evaluate_for_platform(self, **kwargs):
         if self.tokens and str(self.tokens[0]) == 'once':
@@ -636,16 +668,20 @@ class DefineNode(DirectiveNode):
         return "DirectiveNode(kind={0!r},identifier={1!r},args={2!r},value={3!r})".format(
             self.kind, self.identifier, self.args, self.value)
 
-    def __str__(self):
+    def spelling(self):
+        """
+        Return the string representation of this define in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
         value_str = "".join([str(v) for v in self.value])
 
         if self.args is None:
-            return "#define {0!s} {1!s}".format(self.identifier, value_str)
+            return ["#define {0!s} {1!s}".format(self.identifier, value_str)]
         elif self.args == []:
-            return "#define {0!s}() {1!s}".format(self.identifier, value_str)
+            return ["#define {0!s}() {1!s}".format(self.identifier, value_str)]
         else:
             arg_str = ", ".join([str(arg) for arg in self.args])
-            return "#define {0!s}({1!s}) {2!s}".format(self.identifier, arg_str, value_str)
+            return ["#define {0!s}({1!s}) {2!s}".format(self.identifier, arg_str, value_str)]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -669,8 +705,12 @@ class UndefNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},identifier={1!r})".format(self.kind, self.identifier)
 
-    def __str__(self):
-        return "#undef {0!s}".format(self.identifier)
+    def spelling(self):
+        """
+        Return the string representation of this undef in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["#undef {0!s}".format(self.identifier)]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -692,10 +732,17 @@ class IncludePath():
     def __repr__(self):
         return "IncludePath(path={!r},system={!r})".format(self.path, self.system)
 
-    def __str__(self):
+    def spelling(self):
+        """
+        Return the string representation of this path in the input code.
+        Useful primarily for debugging and generating error messages.
+
+        Assumes that system includes are declared in <>, while non-system
+        includes are declared in quotes.
+        """
         if self.system:
-            return "<{0!s}>".format(self.path)
-        return "\"{0!s}\"".format(self.path)
+            return ["<{0!s}>".format(self.path)]
+        return ["\"{0!s}\"".format(self.path)]
 
     def is_system_path(self):
         return self.system
@@ -715,8 +762,12 @@ class IncludeNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},value={1!r})".format(self.kind, self.value)
 
-    def __str__(self):
-        return "#include {0!s}".format(self.value)
+    def spelling(self):
+        """
+        Return the string representation of this include in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["#include {0!s}".format(self.value)]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -742,7 +793,7 @@ class IncludeNode(DirectiveNode):
         if include_file and kwargs['platform'].process_include(include_file):
             kwargs['state'].insert_file(include_file)
 
-            associator = walkers.TreeAssociator(kwargs['state'].get_tree(
+            associator = TreeAssociator(kwargs['state'].get_tree(
                 include_file), kwargs['state'].get_map(include_file))
             associator.walk(kwargs['platform'], kwargs['state'])
 
@@ -764,8 +815,12 @@ class IfNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r},tokens={1!r})".format(self.kind, self.tokens)
 
-    def __str__(self):
-        return "#if {0!s}".format(" ".join([str(t) for t in self.tokens]))
+    def spelling(self):
+        """
+        Return the string representation of this if in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["#if {0!s}".format(" ".join([str(t) for t in self.tokens]))]
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
@@ -809,8 +864,12 @@ class ElseNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r})".format(self.kind)
 
-    def __str__(self):
-        return "#else"
+    def spelling(self):
+        """
+        Return the string representation of this else in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["#else"]
 
     def evaluate_for_platform(self, **kwargs):
         return True
@@ -832,8 +891,12 @@ class EndIfNode(DirectiveNode):
     def __repr__(self):
         return "DirectiveNode(kind={0!r})".format(self.kind)
 
-    def __str__(self):
-        return "#endif"
+    def spelling(self):
+        """
+        Return the string representation of this endif in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
+        return ["#endif"]
 
 
 class Parser:
@@ -1402,6 +1465,10 @@ class MacroFunction(Macro):
             self.name, self.args, self.replacement)
 
     def spelling(self):
+        """
+        Return the string representation of this macro in the input code.
+        Useful primarily for debugging and generating error messages.
+        """
         replacement_str = " ".join([str(t) for t in self.replacement])
         arg_str = ",".join([str(t) for t in self.args])
         return ["{0!s}({1!s})={2!s}".format(self.name, arg_str, replacement_str)]

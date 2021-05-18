@@ -6,11 +6,12 @@ and parsing source files as part of a code base.
 """
 
 import logging
+import collections
 
 from . import file_parser
 from . import platform
 from . import preprocessor
-from . import walkers
+from .walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger("codebasin")
 
@@ -23,9 +24,10 @@ class ParserState():
     platforms.
     """
 
-    def __init__(self):
+    def __init__(self, summarize_only):
         self.trees = {}
         self.maps = {}
+        self.summarize_only = summarize_only
 
     def insert_file(self, fn):
         """
@@ -34,8 +36,8 @@ class ParserState():
         """
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
-            self.trees[fn] = parser.parse_file()
-            self.maps[fn] = walkers.NodeAssociationMap()
+            self.trees[fn] = parser.parse_file(summarize_only=self.summarize_only)
+            self.maps[fn] = collections.defaultdict(set)
 
     def get_filenames(self):
         """
@@ -60,14 +62,14 @@ class ParserState():
         return self.maps[fn]
 
 
-def find(rootdir, codebase, configuration):
+def find(rootdir, codebase, configuration, *, summarize_only=True):
     """
     Find codepaths in the files provided and return a mapping of source
     lines to platforms.
     """
 
     # Build a tree for each unique file for all platforms.
-    state = ParserState()
+    state = ParserState(summarize_only)
     for f in codebase["files"]:
         state.insert_file(f)
     for p in configuration:
@@ -98,13 +100,13 @@ def find(rootdir, codebase, configuration):
                 if include_file:
                     state.insert_file(include_file)
 
-                    associator = walkers.TreeAssociator(state.get_tree(
+                    associator = TreeAssociator(state.get_tree(
                         include_file), state.get_map(include_file))
                     associator.walk(file_platform, state)
 
             # Process the file, to build a list of associate nodes
-            associator = walkers.TreeAssociator(state.get_tree(e['file']),
-                                                state.get_map(e['file']))
+            associator = TreeAssociator(state.get_tree(e['file']),
+                                        state.get_map(e['file']))
             associator.walk(file_platform, state)
 
     return state

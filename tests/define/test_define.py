@@ -4,6 +4,7 @@
 import unittest
 import logging
 from codebasin import config, finder, walkers
+from codebasin.walkers.platform_mapper import PlatformMapper
 
 
 class TestExampleFile(unittest.TestCase):
@@ -22,7 +23,7 @@ class TestExampleFile(unittest.TestCase):
         """define/define.yaml"""
         codebase, configuration = config.load("./tests/define/define.yaml", self.rootdir)
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = walkers.PlatformMapper(codebase)
+        mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
 
