@@ -108,7 +108,9 @@ def clustering(output_name, setmap):
     """
     Produce a clustering report for the platform set
     """
-    platforms = extract_platforms(setmap)
+    # Sort the platform list to ensure that the ordering of platforms in the
+    # distance matrix and dendrogram do not change from run to run
+    platforms = sorted(extract_platforms(setmap))
 
     if len(platforms) == 1:
         log.error("Error: clustering is not supported for a single platform.")
