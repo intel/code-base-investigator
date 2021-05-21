@@ -68,6 +68,7 @@ CPU 2 0.70  0.12  0.61  0.61  0.00
 ```
 
 The distances can also be used to produce a dendrogram, showing the result of hierarchical clustering by platform similarity:
+
 ![Dendrogram](./docs/example-dendrogram.png)
 
 ## Dependencies

@@ -108,7 +108,9 @@ def clustering(output_name, setmap):
     """
     Produce a clustering report for the platform set
     """
-    platforms = extract_platforms(setmap)
+    # Sort the platform list to ensure that the ordering of platforms in the
+    # distance matrix and dendrogram do not change from run to run
+    platforms = sorted(extract_platforms(setmap))
 
     if len(platforms) == 1:
         log.error("Error: clustering is not supported for a single platform.")
@@ -123,6 +125,10 @@ def clustering(output_name, setmap):
     import matplotlib
     matplotlib.use("Agg")
     from matplotlib import pyplot as plt
+
+    # Remove misleading axes
+    for axis in ["left", "right", "top"]:
+        matplotlib.rcParams["axes.spines." + axis] = False
 
     from scipy.cluster import hierarchy
     from scipy.spatial.distance import squareform
@@ -142,12 +148,11 @@ def clustering(output_name, setmap):
 
     # Plot dendrogram of hierarchical clustering
     fig, ax = plt.subplots()
-    hierarchy.dendrogram(clusters, labels=platforms)
-    ax.set_ylim(ymin=0, ymax=1)
-    ax.axhline(y=divergence(setmap), linestyle='--', label="Average")
-    ax.legend()
-    plt.xlabel("Platform")
-    plt.ylabel("Code Divergence")
+    hierarchy.dendrogram(clusters, labels=platforms, orientation="right")
+    ax.set_xlim(xmin=0, xmax=1)
+    ax.axvline(x=divergence(setmap), linestyle='--', label="Average")
+    plt.text(divergence(setmap), ax.get_ylim()[1], "Average", ha="center", va="bottom")
+    plt.xlabel("Code Divergence")
     with util.safe_open_write_binary(output_name) as fp:
         fig.savefig(fp)
 
