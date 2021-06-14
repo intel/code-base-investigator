@@ -43,10 +43,13 @@ A `codebase` key is required, which should contain a mapping containing: the key
     codebase:
         files: [ <file-spec>,+ ]
         platforms: [ <platform-name>,+ ]
+        exclude_files: [ <exclude-spec>,* ]
 
 The `<file-spec>` is a string that specifies a (relative) path to files in the source tree. It can be a literal path to a file, or globs are supported (for Python 3.5 and later).  The files are expanded with respect to the `--rootdir` specified on the commandline at invocation, or the default, which is the working directory where Code Base Investigator was invoked.
 
 `<platform-name>` can be any string; they are referred to by later platform definitions in the configuration file.
+
+The `exclude_files` entry is optional. If given, the contents (given by a list of `<exclude_spec>` file globs) will be excluded from all consideration by CBI during processing. This is useful if the globs in `files` end up being overly inclusive in large projects.
 
 ### Platform Mappings
 

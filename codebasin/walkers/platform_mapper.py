@@ -26,7 +26,7 @@ class PlatformMapper(TreeMapper):
         """
         # Do not map files that the user does not consider to be part of
         # the codebase
-        if isinstance(_node, FileNode) and _node.filename not in self.codebase["files"]:
+        if isinstance(_node, FileNode) and (_node.filename not in self.codebase["files"] or _node.filename in self.codebase["exclude_files"]):
             return
 
         if isinstance(_node, CodeNode):
