@@ -49,7 +49,7 @@ The `<file-spec>` is a string that specifies a (relative) path to files in the s
 
 `<platform-name>` can be any string; they are referred to by later platform definitions in the configuration file.
 
-The `exclude_files` entry is optional. If given, the contents (given by a list of `<exclude_spec>` file globs) will be excluded from all consideration by CBI during processing. This is useful if the globs in `files` end up being overly inclusive in large projects.
+The `exclude_files` entry is optional. If given, the contents (a list of `<exclude_spec>` file globs) will be excluded from all consideration by Code Base Investigator during processing. This is useful if the globs in `files` end up being overly inclusive in large projects.
 
 ### Platform Mappings
 
