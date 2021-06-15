@@ -120,6 +120,12 @@ def load_codebase(config, rootdir):
                                          for f in cfg_codebase["files"]))),
                 "platforms": cfg_codebase["platforms"]}
 
+    if "exclude_files" in cfg_codebase:
+        codebase["exclude_files"] = frozenset(it.chain(*(expand_path(os.path.join(rootdir, f))
+                                                         for f in cfg_codebase["exclude_files"])))
+    else:
+        codebase["exclude_files"] = frozenset([])
+
     # Ensure that the codebase actually specifies valid files
     if not codebase["files"]:
         raise RuntimeError("Specified codebase contains no valid files -- " +

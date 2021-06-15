@@ -8,6 +8,8 @@ from codebasin.preprocessor import FileNode, CodeNode
 
 log = logging.getLogger('codebasin')
 
+def exclude(filename, cb):
+    return (filename not in cb["files"] or filename in cb["exclude_files"])
 
 class PlatformMapper(TreeMapper):
     """
@@ -26,7 +28,7 @@ class PlatformMapper(TreeMapper):
         """
         # Do not map files that the user does not consider to be part of
         # the codebase
-        if isinstance(_node, FileNode) and _node.filename not in self.codebase["files"]:
+        if isinstance(_node, FileNode) and exclude(_node.filename, self.codebase):
             return
 
         if isinstance(_node, CodeNode):
