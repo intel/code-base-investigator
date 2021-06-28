@@ -44,7 +44,7 @@ def ensure_png(fname):
 
 def ensure_source(fname):
     """Return true if the path passed in specifies a source file"""
-    extensions = [".c", ".cpp", ".cxx", ".c++", ".cc",
+    extensions = [".s", ".asm", ".c", ".cpp", ".cxx", ".c++", ".cc",
                   ".h", ".hpp", ".hxx", ".h++", ".hh",
                   ".inc", ".inl", ".tcc", ".icc", ".ipp"]
     return ensure_ext(fname, extensions)

@@ -17,7 +17,7 @@ class FileLanguage:
     Represents the language and modifiers for a given filename
     """
 
-    _supported_languages = ['fortran-free', 'fortran-fixed', 'c', 'c++']
+    _supported_languages = ['fortran-free', 'fortran-fixed', 'c', 'c++', 'asm']
 
     _language_extensions = {}
     _language_extensions['fortran-free'] = ['.f90', '.F90']
@@ -27,6 +27,7 @@ class FileLanguage:
                                    '.hpp', '.hxx', '.h++', '.hh',
                                    '.inc', '.inl', '.tcc', '.icc',
                                    '.ipp', '.cu', '.cuh', '.cl']
+    _language_extensions['asm'] = ['.s', '.S', '.asm']
 
     def __init__(self, filename):
         self._filename = filename
