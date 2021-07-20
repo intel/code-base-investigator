@@ -22,6 +22,7 @@ import argparse
 import os
 import sys
 import logging
+import json
 
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
@@ -104,6 +105,15 @@ if __name__ == '__main__':
     setmap = platform_mapper.walk(state)
 
     output_prefix = os.path.realpath(guess_project_name(config_file))
+
+    outlist = []
+    for fname in state.get_filenames():
+        source_tree = state.get_tree(fname)
+        node_associations = state.get_map(fname)
+        outlist.append(source_tree.root.to_json(node_associations))
+
+    with open(output_prefix + ".json", 'w') as fp:
+        fp.write(json.dumps(outlist, indent=2))
 
     if args.batchmode and (report_enabled("summary") or report_enabled("clustering")):
         print(f"Config file: {config_file}")

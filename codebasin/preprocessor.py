@@ -12,6 +12,7 @@ import logging
 import collections
 import hashlib
 import numpy as np
+import os
 from copy import copy
 import os
 
@@ -489,6 +490,12 @@ class Node():
         self.children.append(child)
         child.parent = self
 
+    def to_json(self, assoc):
+        return {
+            'platforms': list(assoc[self]),
+            'children': [x.to_json(assoc) for x in self.children]
+        }
+
     @staticmethod
     def is_start_node():
         """
@@ -547,6 +554,15 @@ class FileNode(Node):
 
         return hasher.hexdigest()
 
+    def to_json(self, assoc):
+        parent_json = super().to_json(assoc)
+        mydict = {'type': 'file',
+                  'file': self.filename,
+                  'name': os.path.basename(self.filename),
+                  'sloc': self.total_sloc}
+        parent_json.update(mydict)
+        return parent_json
+
     def __repr__(self):
         return "FileNode(filename={0!r})".format(self.filename)
 
@@ -574,6 +590,21 @@ class CodeNode(Node):
         self.end_line = end_line
         self.num_lines = num_lines
         self.source = source
+
+    def to_json(self, assoc):
+        parent_json = super().to_json(assoc)
+        if self.source:
+            source = "\n".join(self.source)
+        else:
+            source = None
+
+        mydict = {'type': 'code',
+                  'start_line': self.start_line,
+                  'end_line': self.end_line,
+                  'sloc': self.num_lines,
+                  'source': source}
+        parent_json.update(mydict)
+        return parent_json
 
     def __repr__(self):
         return "CodeNode(start={0!r},end={1!r},lines={2!r}".format(
@@ -606,6 +637,13 @@ class DirectiveNode(CodeNode):
 
     def __init__(self):
         super().__init__()
+
+    def to_json(self, assoc):
+        parent_json = super().to_json(assoc)
+        mydict = {'type': 'directive',
+                  'source': "\n".join(self.spelling())}
+        parent_json.update(mydict)
+        return parent_json
 
 
 class UnrecognizedDirectiveNode(DirectiveNode):
@@ -769,7 +807,12 @@ class IncludeNode(DirectiveNode):
         Return the string representation of this include in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["#include {0!s}".format(self.value)]
+        if isinstance(self.value, list):
+            str_rep = " ".join([str(t) for t in self.value])
+        else:
+            str_rep = " ".join(self.value.spelling())
+
+        return ["#include {0!s}".format(str_rep)]
 
     def evaluate_for_platform(self, **kwargs):
         """
