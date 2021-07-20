@@ -9,12 +9,35 @@ Contains utility functions for common operations, including:
 
 from os.path import splitext
 import os
-import itertools as it
+import collections
 from collections.abc import Iterable
+import hashlib
 
 import logging
 
 log = logging.getLogger("codebasin")
+
+
+# If we've encountered exactly the same include in two places, don't double-count
+# This is a simple prototype to evaluate the utility of this approach
+file_cache = collections.defaultdict(list)
+
+
+def compute_file_hash(filename):
+    chunk_size = 4096
+    hasher = hashlib.sha512()
+    with safe_open_read_nofollow(filename, 'rb') as in_file:
+        for chunk in iter(lambda: in_file.read(chunk_size), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+# For now, map to the first instance of the duplicated include
+def unique_filename(filename):
+    key = compute_file_hash(filename)
+    if filename not in file_cache[key]:
+        file_cache[key].append(filename)
+    return file_cache[key][0]
 
 
 def ensure_ext(fname, extensions):

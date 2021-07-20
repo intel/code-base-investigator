@@ -132,7 +132,7 @@ class FileParser:
         representing this file, and return it.
         """
 
-        filename = self._filename
+        filename = util.unique_filename(self._filename)
         out_tree = preprocessor.SourceTree(filename)
         file_source = get_file_source(filename)
         if not file_source:
