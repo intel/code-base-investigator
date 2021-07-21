@@ -156,7 +156,8 @@ def find(rootdir, codebase, configuration, *, summarize_only=True):
             # These modify the file_platform instance, but we throw away
             # the active nodes after processing is complete.
             for include in e['include_files']:
-                include_file = file_platform.find_include_file(include)
+                include_file = file_platform.find_include_file(include,
+                                                               os.path.dirname(e["file"]))
                 if include_file:
                     state.insert_file(include_file)
 

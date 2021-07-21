@@ -13,6 +13,8 @@ import collections
 import hashlib
 import numpy as np
 from copy import copy
+import os
+
 from . import util
 from .walkers.tree_associator import TreeAssociator
 
@@ -788,7 +790,9 @@ class IncludeNode(DirectiveNode):
             include_path = path_obj.path
             is_system_include = path_obj.system
 
-        include_file = kwargs['platform'].find_include_file(include_path, is_system_include)
+        this_path = os.path.dirname(kwargs['filename'])
+        include_file = kwargs['platform'].find_include_file(
+            include_path, this_path, is_system_include)
 
         if include_file and kwargs['platform'].process_include(include_file):
             kwargs['state'].insert_file(include_file)
