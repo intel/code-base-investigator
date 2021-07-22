@@ -789,8 +789,6 @@ class IncludeNode(DirectiveNode):
             is_system_include = path_obj.system
 
         include_file = kwargs['platform'].find_include_file(include_path, is_system_include)
-        if include_file is not None:
-            include_file = util.unique_filename(include_file)
 
         if include_file and kwargs['platform'].process_include(include_file):
             kwargs['state'].insert_file(include_file)

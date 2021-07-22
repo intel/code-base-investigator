@@ -11,6 +11,7 @@ import collections
 from . import file_parser
 from . import platform
 from . import preprocessor
+from . import util
 from .walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger("codebasin")
@@ -34,6 +35,7 @@ class ParserState():
         Build a new tree for a source file, and create an association
         map for it.
         """
+        fn = util.unique_filename(fn)
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
             self.trees[fn] = parser.parse_file(summarize_only=self.summarize_only)
@@ -49,6 +51,7 @@ class ParserState():
         """
         Return the SourceTree associated with a filename
         """
+        fn = util.unique_filename(fn)
         if fn not in self.trees:
             return None
         return self.trees[fn]
@@ -57,6 +60,7 @@ class ParserState():
         """
         Return the NodeAssociationMap associated with a filename
         """
+        fn = util.unique_filename(fn)
         if fn not in self.maps:
             return None
         return self.maps[fn]
