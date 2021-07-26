@@ -22,7 +22,6 @@ import argparse
 import os
 import sys
 import logging
-import json
 
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
@@ -74,6 +73,9 @@ if __name__ == '__main__':
     parser.add_argument('-R', '--report', dest='reports', metavar='REPORT', default=['all'],
                         choices=['all', 'summary', 'clustering'], nargs='+',
                         help='desired output reports (default: all)')
+    parser.add_argument('-a', '--annotation-dump', dest='annotation_dump', metavar='<file.json>',
+                        action='store',
+                        help='write out annotated platform/parsing tree to <file.json>')
     parser.add_argument('--batchmode', dest='batchmode', action='store_true', default=False,
                         help="Set batch mode (additional output for bulk operation.)")
     args = parser.parse_args()
@@ -104,16 +106,12 @@ if __name__ == '__main__':
     platform_mapper = PlatformMapper(codebase)
     setmap = platform_mapper.walk(state)
 
-    output_prefix = os.path.realpath(guess_project_name(config_file))
-
-    outlist = []
-    for fname in state.get_filenames():
-        source_tree = state.get_tree(fname)
-        node_associations = state.get_map(fname)
-        outlist.append(source_tree.root.to_json(node_associations))
-
-    with open(output_prefix + ".json", 'w') as fp:
-        fp.write(json.dumps(outlist, indent=2))
+    if args.annotation_dump:
+        if util.ensure_json(args.annotation_dump):
+            report.annotated_dump(args.annotation_dump, state)
+        else:
+            logging.getLogger("codebasin").warning(
+                f"Output path for annotation dump must end with .json (got {args.annotation_dump}); skipping dump.")
 
     if args.batchmode and (report_enabled("summary") or report_enabled("clustering")):
         print(f"Config file: {config_file}")
@@ -127,6 +125,7 @@ if __name__ == '__main__':
 
     # Print clustering report
     if report_enabled("clustering"):
+        output_prefix = os.path.realpath(guess_project_name(config_file))
         clustering_output_name = output_prefix + "-dendrogram.png"
         clustering = report.clustering(clustering_output_name, setmap)
         if clustering is not None:

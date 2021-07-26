@@ -55,6 +55,11 @@ def ensure_yaml(fname):
     return ensure_ext(fname, ".yaml")
 
 
+def ensure_json(fname):
+    """Return true if the path passed in specifies a JSON file"""
+    return ensure_ext(fname, ".json")
+
+
 def safe_open_write_binary(fname):
     """Open fname for (binary) writing. Truncate if not a symlink."""
     fpid = os.open(fname, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o666)
