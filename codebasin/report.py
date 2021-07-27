@@ -5,8 +5,8 @@ Contains functions for generating command-line reports.
 """
 
 import itertools as it
-import logging
 import json
+import logging
 
 from . import util
 

@@ -4,7 +4,7 @@
 """
 This script is the main executable of Code Base Investigator.
 
-usage: codebasin.py [-h] [-c FILE] [-v] [-q] [-r DIR] [-R REPORT [REPORT ...]]
+usage: codebasin.py [-h] [-c FILE] [-v] [-q] [-r DIR] [-R REPORT [REPORT ...]] [-d DUMPFILE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -16,6 +16,8 @@ optional arguments:
                         Set working root directory (default .)
   -R REPORT [REPORT ...], --report REPORT [REPORT ...]
                         desired output reports (default: all)
+  -d DUMPFILE, --dump DUMPFILE
+                        dump annotated parse tree to DUMPFILE
 """
 
 import argparse
@@ -73,9 +75,9 @@ if __name__ == '__main__':
     parser.add_argument('-R', '--report', dest='reports', metavar='REPORT', default=['all'],
                         choices=['all', 'summary', 'clustering'], nargs='+',
                         help='desired output reports (default: all)')
-    parser.add_argument('-a', '--annotation-dump', dest='annotation_dump', metavar='<file.json>',
+    parser.add_argument('-d', '--dump', dest='dump', metavar='<file.json>',
                         action='store',
-                        help='write out annotated platform/parsing tree to <file.json>')
+                        help='dump out annotated platform/parsing tree to <file.json>')
     parser.add_argument('--batchmode', dest='batchmode', action='store_true', default=False,
                         help="Set batch mode (additional output for bulk operation.)")
     args = parser.parse_args()
@@ -106,12 +108,12 @@ if __name__ == '__main__':
     platform_mapper = PlatformMapper(codebase)
     setmap = platform_mapper.walk(state)
 
-    if args.annotation_dump:
-        if util.ensure_json(args.annotation_dump):
-            report.annotated_dump(args.annotation_dump, state)
+    if args.dump:
+        if util.ensure_json(args.dump):
+            report.annotated_dump(args.dump, state)
         else:
             logging.getLogger("codebasin").warning(
-                f"Output path for annotation dump must end with .json (got {args.annotation_dump}); skipping dump.")
+                f"Output path for annotation dump must end with .json (got {args.dump}); skipping dump.")
 
     if args.batchmode and (report_enabled("summary") or report_enabled("clustering")):
         print(f"Config file: {config_file}")
