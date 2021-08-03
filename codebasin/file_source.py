@@ -598,19 +598,30 @@ class asm_cleaner:
 
     def process(self, lineiter):
         """
-        Add contents of lineiter to current line, removing contents and
-        handling continuations.
+        Add contents of lineiter to current line
         """
-        # pylint: disable=too-many-branches,too-many-statements
         inbuffer = iter_keep1(lineiter)
         try:
             while True:
                 char = next(inbuffer)
-                if char == ';' or char == '#':
-                    self.outbuf.append_space()
-                    return
-                else:
-                    self.outbuf.append_char(char)
+
+                if self.state[-1] == "TOPLEVEL":
+                    if char in ';#':
+                        self.outbuf.append_space()
+                        return
+                    elif char == '/':
+                        self.state.append("FOUND_SLASH")
+                    else:
+                        self.outbuf.append_char(char)
+                elif self.state[-1] == "FOUND_SLASH":
+                    if char == '/':
+                        self.state.pop()
+                        self.outbuf.append_space()
+                        return
+                    else:
+                        self.state.pop()
+                        self.outbuf.append_char('/')
+                        inbuffer.putback(char)
         except StopIteration:
             pass
 
