@@ -27,6 +27,13 @@ class TestExampleFile(unittest.TestCase):
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
 
+    def test_ptx(self):
+        """basic_asm/basic_asm_ptx.yaml"""
+        codebase, configuration = config.load(
+            "./tests/basic_asm/basic_asm_ptx.yaml", self.rootdir)
+        self.assertRaises(RuntimeError, finder.find, self.rootdir, codebase, configuration)
+
+
 
 if __name__ == '__main__':
     unittest.main()
