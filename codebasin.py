@@ -28,7 +28,7 @@ import logging
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
 
-version = 1.05
+version = "1.1.0-rc0"
 
 
 def report_enabled(name):
