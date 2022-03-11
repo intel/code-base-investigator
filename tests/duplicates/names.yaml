@@ -1,0 +1,11 @@
+codebase:
+    files: [ build1/foo.*, build2/foo.* ]
+    platforms: [ P0, P1 ]
+
+P0:
+    files: [ build1/foo.c ]
+    include_paths: [ build1 ]
+
+P1:
+    files: [ build2/foo.c ]
+    include_paths: [ build2 ]

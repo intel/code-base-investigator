@@ -5,11 +5,23 @@ Contains functions for generating command-line reports.
 """
 
 import itertools as it
+import json
 import logging
 
 from . import util
 
 log = logging.getLogger("codebasin")
+
+
+def annotated_dump(output_file, state):
+    outlist = []
+    for fname in state.get_filenames():
+        source_tree = state.get_tree(fname)
+        node_associations = state.get_map(fname)
+        outlist.append(source_tree.root.to_json(node_associations))
+
+    with open(output_file, 'w') as fp:
+        fp.write(json.dumps(outlist, indent=2))
 
 
 def extract_platforms(setmap):

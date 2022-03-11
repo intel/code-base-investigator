@@ -9,12 +9,23 @@ Contains utility functions for common operations, including:
 
 from os.path import splitext
 import os
-import itertools as it
+import collections
 from collections.abc import Iterable
+import hashlib
 
 import logging
 
 log = logging.getLogger("codebasin")
+
+
+def compute_file_hash(fname):
+    """Return sha512 for fname"""
+    chunk_size = 4096
+    hasher = hashlib.sha512()
+    with safe_open_read_nofollow(fname, 'rb') as in_file:
+        for chunk in iter(lambda: in_file.read(chunk_size), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
 
 def ensure_ext(fname, extensions):
@@ -33,7 +44,7 @@ def ensure_png(fname):
 
 def ensure_source(fname):
     """Return true if the path passed in specifies a source file"""
-    extensions = [".c", ".cpp", ".cxx", ".c++", ".cc",
+    extensions = [".s", ".asm", ".c", ".cpp", ".cxx", ".c++", ".cc",
                   ".h", ".hpp", ".hxx", ".h++", ".hh",
                   ".inc", ".inl", ".tcc", ".icc", ".ipp"]
     return ensure_ext(fname, extensions)
@@ -42,6 +53,11 @@ def ensure_source(fname):
 def ensure_yaml(fname):
     """Return true if the path passed in specifies a YAML file"""
     return ensure_ext(fname, ".yaml")
+
+
+def ensure_json(fname):
+    """Return true if the path passed in specifies a JSON file"""
+    return ensure_ext(fname, ".json")
 
 
 def safe_open_write_binary(fname):

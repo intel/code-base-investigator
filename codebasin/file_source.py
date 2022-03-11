@@ -585,6 +585,91 @@ def fortran_file_source(fp, relaxed=False):
     return (total_sloc, total_physical_lines)
 
 
+class asm_cleaner:
+    """
+    'Cleans' source to remove comments and blanks while preserving
+    directives and handling strings and continuations properly.
+    Expects to have c defines already processed.
+    """
+
+    def __init__(self, outbuf):
+        self.state = ["TOPLEVEL"]
+        self.outbuf = outbuf
+
+    def process(self, lineiter):
+        """
+        Add contents of lineiter to current line
+        """
+        inbuffer = iter_keep1(lineiter)
+        try:
+            while True:
+                char = next(inbuffer)
+
+                if self.state[-1] == "TOPLEVEL":
+                    if char in ';#':
+                        self.outbuf.append_space()
+                        return
+                    elif char == '/':
+                        self.state.append("FOUND_SLASH")
+                    else:
+                        self.outbuf.append_char(char)
+                elif self.state[-1] == "FOUND_SLASH":
+                    if char == '/':
+                        self.state.pop()
+                        self.outbuf.append_space()
+                        return
+                    else:
+                        self.state.pop()
+                        self.outbuf.append_char('/')
+                        inbuffer.putback(char)
+        except StopIteration:
+            pass
+
+
+def asm_file_source(fp, relaxed=False):
+    """
+    Process file fp in terms of logical (sloc) and physical lines of ASM code.
+    Yield blocks of logical lines of code with physical extents.
+    Return total lines at exit.
+    Does not understand NASM-style %if directives
+    """
+    current_physical_line = one_space_line()
+    cleaner = asm_cleaner(current_physical_line)
+
+    curr_line = line_info()
+
+    total_sloc = 0
+
+    physical_line_num = 0
+    for (physical_line_num, line) in enumerate(fp, start=1):
+        current_physical_line.__init__()
+        end = len(line)
+        if line[-1] == '\n':
+            end -= 1
+        cleaner.process(it.islice(line, 0, end))
+
+        if not current_physical_line.category() == "BLANK":
+            curr_line.physical_nonblank(1)
+
+        curr_line.join(current_physical_line)
+
+        curr_line.physical_update(physical_line_num + 1)
+        if curr_line.category != "BLANK":
+            yield curr_line
+
+        total_sloc += curr_line.physical_reset()
+
+    total_physical_lines = physical_line_num
+
+    curr_line.physical_update(physical_line_num + 1)
+    if curr_line.category != "BLANK":
+        yield curr_line
+
+    total_sloc += curr_line.physical_reset()
+
+    return (total_sloc, total_physical_lines)
+
+
 def get_file_source(path):
     """
     Return a C or Fortran line source for path depending on
@@ -595,6 +680,8 @@ def get_file_source(path):
         return fortran_file_source
     elif lang.get_language() in ["c", "c++"]:
         return c_file_source
+    elif lang.get_language() in ["asm"]:
+        return asm_file_source
     else:
         raise RuntimeError(f"Language {lang.get_language()} in file " +
                            f"{path} is unsupported by code base investigator")

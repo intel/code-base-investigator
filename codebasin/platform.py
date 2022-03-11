@@ -76,7 +76,7 @@ class Platform():
             return self._definitions[identifier]
         return None
 
-    def find_include_file(self, filename, is_system_include=False):
+    def find_include_file(self, filename, this_path, is_system_include=False):
         """
         Determine and return the full path to an include file, named
         'filename' using the include paths for this platform.
@@ -93,7 +93,7 @@ class Platform():
 
         local_paths = []
         if not is_system_include:
-            local_paths += [self._root_dir]
+            local_paths += [this_path]
 
         # Determine the path to the include file, if it exists
         for path in local_paths + self._include_paths:

@@ -4,7 +4,7 @@
 """
 This script is the main executable of Code Base Investigator.
 
-usage: codebasin.py [-h] [-c FILE] [-v] [-q] [-r DIR] [-R REPORT [REPORT ...]]
+usage: codebasin.py [-h] [-c FILE] [-v] [-q] [-r DIR] [-R REPORT [REPORT ...]] [-d DUMPFILE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -16,6 +16,8 @@ optional arguments:
                         Set working root directory (default .)
   -R REPORT [REPORT ...], --report REPORT [REPORT ...]
                         desired output reports (default: all)
+  -d DUMPFILE, --dump DUMPFILE
+                        dump annotated parse tree to DUMPFILE
 """
 
 import argparse
@@ -26,7 +28,7 @@ import logging
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
 
-version = 1.05
+version = "1.1.0-rc0"
 
 
 def report_enabled(name):
@@ -73,6 +75,9 @@ if __name__ == '__main__':
     parser.add_argument('-R', '--report', dest='reports', metavar='REPORT', default=['all'],
                         choices=['all', 'summary', 'clustering'], nargs='+',
                         help='desired output reports (default: all)')
+    parser.add_argument('-d', '--dump', dest='dump', metavar='<file.json>',
+                        action='store',
+                        help='dump out annotated platform/parsing tree to <file.json>')
     parser.add_argument('--batchmode', dest='batchmode', action='store_true', default=False,
                         help="Set batch mode (additional output for bulk operation.)")
     args = parser.parse_args()
@@ -103,7 +108,12 @@ if __name__ == '__main__':
     platform_mapper = PlatformMapper(codebase)
     setmap = platform_mapper.walk(state)
 
-    output_prefix = os.path.realpath(guess_project_name(config_file))
+    if args.dump:
+        if util.ensure_json(args.dump):
+            report.annotated_dump(args.dump, state)
+        else:
+            logging.getLogger("codebasin").warning(
+                f"Output path for annotation dump must end with .json (got {args.dump}); skipping dump.")
 
     if args.batchmode and (report_enabled("summary") or report_enabled("clustering")):
         print(f"Config file: {config_file}")
@@ -117,6 +127,7 @@ if __name__ == '__main__':
 
     # Print clustering report
     if report_enabled("clustering"):
+        output_prefix = os.path.realpath(guess_project_name(config_file))
         clustering_output_name = output_prefix + "-dendrogram.png"
         clustering = report.clustering(clustering_output_name, setmap)
         if clustering is not None:
