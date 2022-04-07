@@ -10,6 +10,7 @@ import collections
 import glob
 import itertools as it
 import logging
+import shlex
 import sys
 
 import yaml
@@ -147,7 +148,7 @@ def load_database(dbpath, rootdir):
     for e in db:
         # Database may not have tokenized arguments
         if "command" in e:
-            args = e["command"].split()
+            args = shlex.split(e["command"])
         elif "arguments" in e:
             args = e["arguments"]
 

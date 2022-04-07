@@ -1,6 +1,6 @@
 [
 {
-  "command": "/usr/bin/c++ -DGPU -DCOMPUTED_INCLUDE=\"headers/gpu.h\" -I headers/ main.cpp",
+  "command": "/usr/bin/c++ -DGPU -DCOMPUTED_INCLUDE=\\\"headers/gpu.h\\\" -I headers/ main.cpp",
   "file": "main.cpp"
 }
 ]
