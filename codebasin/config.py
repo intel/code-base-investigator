@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2023 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Contains functions to build up a configuration dictionary,
@@ -14,10 +14,58 @@ import shlex
 import sys
 
 import yaml
+import json
+import jsonschema
 from . import util
 
 log = logging.getLogger("codebasin")
 
+_compiledb_schema_id = (
+    "https://raw.githubusercontent.com/intel/"
+    "code-base-investigator/schema/compilation-database.schema"
+)
+_compiledb_schema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": _compiledb_schema_id,
+    "title": "Compilation Database",
+    "description": "Compilation database format used by many projects.",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "directory": {
+                "type": "string"
+            },
+            "arguments": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "file": {
+                "type": "string"
+            },
+            "command": {
+                "type": "string"
+            },
+            "output": {
+                "type": "string"
+            },
+        },
+        "anyOf": [
+            {
+                "required": [
+                    "arguments",
+                ],
+            },
+            {
+                "required": [
+                    "command",
+                ]
+            }
+        ]
+    }
+}
 
 def extract_defines(args):
     """
@@ -142,7 +190,14 @@ def load_database(dbpath, rootdir):
     represented as a compilation database entry.
     """
     with util.safe_open_read_nofollow(dbpath, 'r') as fi:
-        db = yaml.safe_load(fi)
+        db = json.load(fi)
+
+    # Validate compilation database against schema
+    try:
+        jsonschema.validate(instance=db, schema=_compiledb_schema)
+    except Exception:
+        msg = "Compilation database failed schema validation"
+        raise ValueError(msg)
 
     configuration = []
     for e in db:

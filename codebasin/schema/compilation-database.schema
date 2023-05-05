@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/intel/code-base-investigator/schema/compilation-database.schema",
+  "title": "Compilation Database",
+  "description": "Compilation database format used by many projects.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "directory": {
+        "type": "string"
+      },
+      "arguments": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "file": {
+        "type": "string"
+      },
+      "command": {
+        "type": "string"
+      },
+      "output": {
+        "type": "string"
+      },
+    },
+    "anyOf": [
+      {
+        "required": [
+          "arguments",
+        ],
+      },
+      {
+        "required": [
+          "command",
+        ]
+      }
+    ]
+  }
+}
