@@ -62,5 +62,7 @@ if __name__ == '__main__':
             for region in exports[p][filename]:
                 covobject["regions"].append(region)
             covarray.append(covobject)
+        json_string = json.dumps(covarray)
+        util.validate_coverage_json(json_string)
         with open(covpath, 'w') as fp:
-            fp.write(json.dumps(covarray))
+            fp.write(json_string)
