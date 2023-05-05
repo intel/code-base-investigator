@@ -1,0 +1,13 @@
+[
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-o",
+            "output",
+            "test.cpp"
+        ],
+        "directory": "/path/containing/source/files/",
+        "file": "test.cpp"
+    }
+]
