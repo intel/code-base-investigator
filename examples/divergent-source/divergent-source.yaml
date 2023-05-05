@@ -5,11 +5,11 @@
 
 codebase:
     files: [ "*.cpp", "*.h" ]
-    platforms: [ CPU, GPU ]
+    platforms: [ "CPU", "GPU" ]
 
 CPU:
     files: [ "main.cpp", "private_histogram.cpp" ]
 
 GPU:
     files: [ "main.cpp", "shared_histogram.cpp" ]
-    defines: [ -DUSE_OFFLOAD ]
+    defines: [ "-DUSE_OFFLOAD" ]
