@@ -67,6 +67,93 @@ _compiledb_schema = {
     }
 }
 
+_config_schema_id = (
+    "https://raw.githubusercontent.com/intel/"
+    "code-base-investigator/schema/config.schema"
+)
+
+_config_schema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": _config_schema_id,
+    "title": "Code Base Investigator Configuration File",
+    "description": "Lists codebase files and compilation options",
+    "type": "object",
+    "properties": {
+        "codebase": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "platforms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "exclude_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "files",
+                "platforms"
+            ]
+        }
+    },
+    "patternProperties": {
+        ".*": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                         "type": "string"
+                    }
+                },
+                "defines": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "include_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "commands": {
+                    "type": "string"
+                }
+            },
+            "anyOf": [
+                {
+                    "required": [
+                        "files"
+                    ]
+                },
+                {
+                    "required": [
+                        "commands"
+                     ]
+                }
+            ]
+        }
+    },
+    "additionalProperties": False,
+    "required": [
+        "codebase"
+    ]
+}
+
+
 def extract_defines(args):
     """
     Extract definitions from command-line arguments.
@@ -310,6 +397,14 @@ def load(config_file, rootdir):
             config = yaml.safe_load(f)
     else:
         raise RuntimeError("Could not open {!s}.".format(config_file))
+
+    # Validate config against a schema
+    # We don't use any advanced features of YAML, so can use JSON here
+    try:
+        jsonschema.validate(instance=config, schema=_config_schema)
+    except Exception:
+        msg = "Configuration file failed schema validation"
+        raise ValueError(msg)
 
     # Read codebase definition
     if "codebase" in config:
