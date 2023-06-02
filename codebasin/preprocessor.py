@@ -1443,10 +1443,10 @@ class Macro:
                     continue
                 lex = Lexer(last.token + nexttok.token)
                 tok = lex.tokenize_one()
-                tok.prev_white = last.prev_white
                 if tok is None:
                     raise ParseError(
                         f"Concatenation didn't result in valid token {lex.string}")
+                tok.prev_white = last.prev_white
             elif tok.token == '#':
                 if isinstance(self, MacroFunction):
                     self.has_strcat = True
