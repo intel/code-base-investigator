@@ -5,7 +5,7 @@
 
 codebase:
     files: [ "cpu/*.cpp", "gpu/*.cpp" ]
-    platforms: [ CPU, GPU ]
+    platforms: [ "CPU", "GPU" ]
 
 CPU:
     files: [ "cpu/*.cpp" ]

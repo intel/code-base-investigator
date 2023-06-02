@@ -22,5 +22,6 @@ setup(name='codebasin',
       install_requires=['numpy',
                         'matplotlib',
                         'pyyaml',
-                        'scipy']
+                        'scipy',
+                        'jsonschema']
       )

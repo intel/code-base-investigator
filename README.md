@@ -77,8 +77,9 @@ The distances can also be used to produce a dendrogram, showing the result of hi
 ![Dendrogram](./docs/example-dendrogram.png)
 
 ## Dependencies
-- NumPy
+- jsonschema
 - Matplotlib
+- NumPy
 - Python 3
 - PyYAML
 - SciPy
