@@ -247,14 +247,14 @@ def load_codebase(config, rootdir):
     cfg_codebase = config["codebase"]
     if not cfg_codebase:
         raise RuntimeError("Empty 'codebase' section found in config file!")
-    if "files" not in cfg_codebase or cfg_codebase["files"] == []:
+    if "files" not in cfg_codebase:
         raise RuntimeError("Empty 'files' section found in codebase definition!")
     if "platforms" not in cfg_codebase or cfg_codebase["platforms"] == []:
         raise RuntimeError("Empty 'platforms' section found in codebase definition!")
 
-    codebase = {"files": list(it.chain(*(expand_path(os.path.join(rootdir, f))
-                                         for f in cfg_codebase["files"]))),
-                "platforms": cfg_codebase["platforms"]}
+    codebase = {}
+
+    codebase["platforms"] = cfg_codebase["platforms"]
 
     if "exclude_files" in cfg_codebase:
         codebase["exclude_files"] = frozenset(it.chain(*(expand_path(os.path.join(rootdir, f))
@@ -262,10 +262,21 @@ def load_codebase(config, rootdir):
     else:
         codebase["exclude_files"] = frozenset([])
 
-    # Ensure that the codebase actually specifies valid files
-    if not codebase["files"]:
-        raise RuntimeError("Specified codebase contains no valid files -- " +
-                           "regular expressions and/or working directory may be incorrect.")
+    if cfg_codebase["files"]:
+        codebase["files"] = list(it.chain(*(expand_path(os.path.join(rootdir, f))
+                                            for f in cfg_codebase["files"])))
+        if not codebase["files"]:
+          raise RuntimeError("Codebase configuration contains no valid files. " +
+                             "Check regular expressions and working directory.")
+
+        codebase["files"] = list(set(codebase["files"]).difference(codebase["exclude_files"]))
+        if not codebase["files"]:
+            raise RuntimeError("Codebase configuration contains no valid files " +
+                               "after processing 'exclude_files'.")
+    else:
+        codebase["files"] = list([])
+        log.warning("No files specified in codebase configuration. " +
+                    "Attempting to determine files automatically from platform configurations.")
 
     return codebase
 
@@ -415,8 +426,22 @@ def load(config_file, rootdir):
     log.info("Platforms: %s", ", ".join(codebase["platforms"]))
 
     # Read each platform definition and populate platform configuration
+    # If files was empty, populate it with the files we find here
+    populate_files = not codebase["files"]
+    found_files = set(codebase["files"])
     configuration = collections.defaultdict(list)
     for platform_name in codebase["platforms"]:
-        configuration[platform_name] = load_platform(config, rootdir, platform_name)
+        plat = load_platform(config, rootdir, platform_name)
+        if populate_files:
+            files = frozenset([p['file'] for p in plat] )
+            found_files.update(files)
+        configuration[platform_name] = plat
+
+    if len(found_files) == 0:
+        raise RuntimeError("No files found. Check regular expressions and working directory.")
+
+    codebase["files"] = list(found_files.difference(codebase["exclude_files"]))
+    if not codebase["files"]:
+        raise RuntimeError("No files remain after processing 'exclude_files'.")
 
     return codebase, configuration
