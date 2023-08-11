@@ -3,13 +3,27 @@
 
 import logging
 import collections
+import os
 from .tree_mapper import TreeMapper
 from codebasin.preprocessor import FileNode, CodeNode
 
 log = logging.getLogger('codebasin')
 
 def exclude(filename, cb):
-    return (filename not in cb["files"] or filename in cb["exclude_files"])
+
+    if filename in cb['exclude_files']:
+      log.info(f"Excluding {filename}; matches 'exclude_files'.")
+      return True
+    elif filename in cb['files']:
+      return False
+    else:
+      path = os.path.realpath(filename)
+      if not path.startswith(cb['rootdir']):
+        log.warning(f"Excluding {filename}; outside of root directory.")
+        return True
+
+    return False
+
 
 class PlatformMapper(TreeMapper):
     """

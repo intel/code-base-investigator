@@ -444,4 +444,8 @@ def load(config_file, rootdir):
     if not codebase["files"]:
         raise RuntimeError("No files remain after processing 'exclude_files'.")
 
+    # Store the rootdir in the codebase for use later in exclude()
+    if 'rootdir' not in codebase:
+        codebase['rootdir'] = os.path.realpath(rootdir)
+
     return codebase, configuration
