@@ -18,10 +18,10 @@ setup(name='codebasin',
                    'License :: OSI Approved :: BSD License',
                    'Programming Language :: Python',
                    'Topic :: Software Development'],
-      python_requires='>=3.6',
+      python_requires='>=3.9',
       install_requires=['numpy',
                         'matplotlib',
                         'pyyaml',
-                        'scipy',
+                        'scipy>=1.11.1',
                         'jsonschema']
       )
