@@ -7,20 +7,21 @@ An example codebase specializing some small regions of code for individual platf
 -----------------------
 Platform Set LOC % LOC
 -----------------------
-       {CPU}  19 26.39
-       {GPU}  11 15.28
-  {GPU, CPU}  42 58.33
+          {}   1  1.39
+       {GPU}  18 25.00
+       {CPU}  18 25.00
+  {CPU, GPU}  35 48.61
 -----------------------
-Code Divergence: 0.42
-Unused Code (%): 0.00
+Code Divergence: 0.51
+Unused Code (%): 1.39
 Total SLOC: 72
 
 Distance Matrix
 --------------
-     GPU  CPU
+     CPU  GPU
 --------------
-GPU 0.00 0.42
-CPU 0.42 0.00
+CPU 0.00 0.51
+GPU 0.51 0.00
 --------------
 ```
 
