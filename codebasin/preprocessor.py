@@ -838,7 +838,10 @@ class IncludeNode(DirectiveNode):
             include_path, this_path, is_system_include)
 
         if include_file and kwargs['platform'].process_include(include_file):
-            kwargs['state'].insert_file(include_file)
+            # include files use the same language as the file itself,
+            # irrespective of file extension.
+            lang = kwargs['state'].langs[kwargs['filename']]
+            kwargs['state'].insert_file(include_file, lang)
 
             associator = TreeAssociator(kwargs['state'].get_tree(
                 include_file), kwargs['state'].get_map(include_file))

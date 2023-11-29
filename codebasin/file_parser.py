@@ -126,7 +126,7 @@ class FileParser:
         new_node.num_lines = line_group.line_count
         tree.insert(new_node)
 
-    def parse_file(self, *, summarize_only=True):
+    def parse_file(self, *, summarize_only=True, language=None):
         """
         Parse the file that this parser points at, build a SourceTree
         representing this file, and return it.
@@ -134,7 +134,7 @@ class FileParser:
 
         filename = self._filename
         out_tree = preprocessor.SourceTree(filename)
-        file_source = get_file_source(filename)
+        file_source = get_file_source(filename, language)
         if not file_source:
             raise RuntimeError(f"{filename} doesn't appear " +
                                "to be a language this tool can process")

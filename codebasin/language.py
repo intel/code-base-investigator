@@ -32,7 +32,7 @@ class FileLanguage:
     def __init__(self, filename):
         self._filename = filename
         self._extension = os.path.splitext(self._filename)[1]
-        self._language = 'None'
+        self._language = None
 
         for lang in self._supported_languages:
             if self._extension in self._language_extensions[lang]:
