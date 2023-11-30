@@ -11,11 +11,6 @@ repos:
     rev: v2.4.0
     hooks:
       - id: setup-cfg-fmt
-  - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.10.0
-    hooks:
-      - id: reorder-python-imports
-        args: [--py38-plus, --add-import, "from __future__ import annotations"]
   - repo: https://github.com/asottile/add-trailing-comma
     rev: v3.0.1
     hooks:
