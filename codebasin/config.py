@@ -266,8 +266,8 @@ def load_codebase(config, rootdir):
         codebase["files"] = list(it.chain(*(expand_path(os.path.join(rootdir, f))
                                             for f in cfg_codebase["files"])))
         if not codebase["files"]:
-          raise RuntimeError("Codebase configuration contains no valid files. " +
-                             "Check regular expressions and working directory.")
+            raise RuntimeError("Codebase configuration contains no valid files. " +
+                               "Check regular expressions and working directory.")
 
         codebase["files"] = list(set(codebase["files"]).difference(codebase["exclude_files"]))
         if not codebase["files"]:
