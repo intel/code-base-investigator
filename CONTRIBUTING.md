@@ -28,4 +28,6 @@ A number of [Git hooks](./hooks) are available to assist contributors in adherin
 - post-commit:   
   Run the full test suite after every commit.
 
-See the [setup_git_hooks.sh script](./setup_git_hooks.sh) for more information on configuring these hooks.
+We use `pre-commit` to manage commit workflows to ensure uniform code style, linting, and testing.
+As part of getting started, install `pre-commit==3.5.0` and run `pre-commit install` which will
+create virtual environments for development packages and install `git commit` hooks.
