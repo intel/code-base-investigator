@@ -248,7 +248,7 @@ def load_codebase(config, rootdir):
     if not cfg_codebase:
         raise RuntimeError("Empty 'codebase' section found in config file!")
     if "files" not in cfg_codebase:
-        raise RuntimeError("Empty 'files' section found in codebase definition!")
+        raise RuntimeError("No 'files' section found in codebase definition!")
     if "platforms" not in cfg_codebase or cfg_codebase["platforms"] == []:
         raise RuntimeError("Empty 'platforms' section found in codebase definition!")
 
