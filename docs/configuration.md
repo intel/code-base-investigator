@@ -41,11 +41,11 @@ The configuration file is structured as a mapping at the top level. A single `co
 A `codebase` key is required, which should contain a mapping containing: the key `files`, which is a sequence of file specifiers, and `platforms`, which is a sequence of user-defined names for platforms to be considered.
 
     codebase:
-        files: [ <file-spec>,+ ]
+        files: [ <file-spec>,* ]
         platforms: [ <platform-name>,+ ]
         exclude_files: [ <exclude-spec>,* ]
 
-The `<file-spec>` is a string that specifies a (relative) path to files in the source tree. It can be a literal path to a file, or globs are supported (for Python 3.5 and later).  The files are expanded with respect to the `--rootdir` specified on the commandline at invocation, or the default, which is the working directory where Code Base Investigator was invoked.
+The `<file-spec>` is a string that specifies a (relative) path to files in the source tree. It can be a literal path to a file, or globs are supported (for Python 3.5 and later).  The files are expanded with respect to the `--rootdir` specified on the commandline at invocation, or the default, which is the working directory where Code Base Investigator was invoked. If `files` is an empty list, CBI will determine the contents of the codebase automatically based on the files in the platform definition(s).
 
 `<platform-name>` can be any string; they are referred to by later platform definitions in the configuration file.
 
