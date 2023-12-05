@@ -432,7 +432,7 @@ def recognize_compiler(args):
     compiler_name = os.path.basename(args[0])
     if compiler_name in ["clang", "clang++"]:
         compiler = ClangCompiler(args)
-    elif compiler_name in ["gcc", "gxx"]:
+    elif compiler_name in ["gcc", "g++"]:
         compiler = GnuCompiler(args)
     elif compiler_name in ["hipcc"]:
         compiler = HipCompiler(args)
