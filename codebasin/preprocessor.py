@@ -843,7 +843,8 @@ class IncludeNode(DirectiveNode):
             associator = TreeAssociator(kwargs['state'].get_tree(
                 include_file), kwargs['state'].get_map(include_file))
             associator.walk(kwargs['platform'], kwargs['state'])
-        else:
+
+        if not include_file:
             filename = kwargs['filename']
             line = self.start_line
             log.warning(f"{filename}:{line}: '{include_path}' not found")
