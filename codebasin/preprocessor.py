@@ -1352,8 +1352,13 @@ class DirectiveParser(Parser):
             # warnings for common directives that shouldn't impact
             # correctness.
             common_unhandled = ["line", "warning", "error"]
-            if len(self.tokens) > 2 and str(self.tokens[1]) not in common_unhandled:
-                log.warning("Unrecognized directive")
+            if len(self.tokens) >= 2 and str(self.tokens[1]) not in common_unhandled:
+                filename = "<unknown>"
+                line = self.tokens[0].line
+                column = self.tokens[0].col
+                spelling = toklist_print(self.tokens)
+                message = f"unrecognized directive '{spelling}'"
+                log.warning(f"{filename}:{line}:{column}: {message}")
             return UnrecognizedDirectiveNode(self.tokens)
         except ParseError:
             raise ParseError("Not a directive.")
