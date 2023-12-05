@@ -32,8 +32,31 @@ class TestCompilers(unittest.TestCase):
         defines = compiler.get_defines("default")
         self.assertEqual(defines, ["__SYCL_DEVICE_ONLY__"])
 
-    def test_intel(self):
-        """compilers/intel"""
+    def test_intel_sycl(self):
+        """compilers/intel_sycl"""
+        args = [
+            "icpx",
+            "-fsycl",
+            "test.cpp"
+        ]
+
+        compiler = config.recognize_compiler(args)
+        self.assertTrue(type(compiler) is config.IntelCompiler)
+
+        passes = compiler.get_passes()
+        self.assertEqual(passes, set(["default", "spir64"]))
+
+        expected = [
+            "__SYCL_DEVICE_ONLY__",
+            "__SPIR__",
+            "__SPIRV__"
+        ]
+        self.assertTrue(compiler.has_implicit_behavior("spir64"))
+        defines = compiler.get_defines("spir64")
+        self.assertEqual(defines, expected)
+
+    def test_intel_targets(self):
+        """compilers/intel_targets"""
         args = [
             "icpx",
             "-fsycl",

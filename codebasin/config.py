@@ -334,7 +334,7 @@ class ClangCompiler(Compiler):
         for arg in args:
 
             if arg == "-fsycl":
-                sycl = True
+                self.sycl = True
                 continue
 
             m = re.search("-fsycl-targets=", arg)
