@@ -19,7 +19,7 @@ def exclude(filename, cb):
     else:
       path = os.path.realpath(filename)
       if not path.startswith(cb['rootdir']):
-        log.warning(f"Excluding {filename}; outside of root directory.")
+        log.info(f"Excluding {filename}; outside of root directory.")
         return True
 
     return False
