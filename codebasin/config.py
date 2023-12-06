@@ -378,6 +378,11 @@ class GnuCompiler(Compiler):
     def __init__(self, args):
         super().__init__(args)
 
+        for arg in args:
+            if arg in ["-fopenmp"]:
+                self.defines.append("_OPENMP")
+                break
+
 
 class HipCompiler(Compiler):
     """
