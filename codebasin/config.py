@@ -409,11 +409,16 @@ class NvccCompiler(Compiler):
 
     def __init__(self, args):
         super().__init__(args)
+        self.omp = False
 
         for arg in args:
             archs = re.findall("sm_(\\d+)", arg)
             archs += re.findall("compute_(\\d+)", arg)
             self.passes |= set(archs)
+
+            if arg in ["-fopenmp", "-fiopenmp", "-qopenmp"]:
+                self.omp = True
+                continue
 
     def get_defines(self, pass_):
         defines = super().get_defines(pass_)
@@ -424,6 +429,9 @@ class NvccCompiler(Compiler):
         if pass_ != "default":
             arch = int(pass_) * 10
             defines.append(f"__CUDA_ARCH__={arch}")
+
+        if pass_ == "default" and self.omp:
+            defines.append("_OPENMP")
 
         return defines
 
