@@ -428,6 +428,7 @@ class NvccCompiler(Compiler):
         return defines
 
 
+_seen_compiler = collections.defaultdict(lambda: False)
 def recognize_compiler(args):
     """
     Attempt to recognize the compiler, given an argument list.
@@ -450,8 +451,10 @@ def recognize_compiler(args):
         log.info(f"Recognized compiler: {compiler.name}.")
     else:
         compiler = Compiler(args)
-        log.warning(f"Unrecognized compiler: {compiler_name}. " +
-                    "Some implicit behavior may be missed.")
+        if not _seen_compiler[compiler_name]:
+            log.warning(f"Unrecognized compiler: {compiler_name}. " +
+                        "Some implicit behavior may be missed.")
+            _seen_compiler[compiler_name] = True
     return compiler
 
 
