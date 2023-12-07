@@ -5,10 +5,13 @@ Contains classes and functions related to parsing a file,
 and building a tree of nodes from it.
 """
 
+import logging
 import os
 from codebasin.file_source import get_file_source
 from . import preprocessor  # pylint : disable=no-name-in-module
 from . import util  # pylint : disable=no-name-in-module
+
+log = logging.getLogger('codebasin')
 
 
 class LineGroup:
@@ -124,6 +127,20 @@ class FileParser:
         new_node.start_line = line_group.start_line
         new_node.end_line = line_group.end_line
         new_node.num_lines = line_group.line_count
+
+        # Issue a warning for unrecognized directives, but suppress warnings
+        # for common directives that shouldn't impact correctness.
+        if isinstance(new_node, preprocessor.UnrecognizedDirectiveNode):
+            tokens = new_node.tokens
+            unhandled = ["line", "warning", "error"]
+            if len(tokens) >= 2 and str(tokens[1]) not in unhandled:
+                filename = tree.root.filename
+                line = tokens[0].line
+                column = tokens[0].col
+                spelling = preprocessor.toklist_print(tokens)
+                message = f"unrecognized directive '{spelling}'"
+                log.warning(f"{filename}:{line}:{column}: {message}")
+
         tree.insert(new_node)
 
     def parse_file(self, *, summarize_only=True):
