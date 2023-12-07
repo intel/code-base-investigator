@@ -512,15 +512,16 @@ def recognize_compiler(args):
         compiler = IntelCompiler(args)
     elif compiler_name == "nvcc":
         compiler = NvccCompiler(args)
-
-    if compiler:
-        log.info(f"Recognized compiler: {compiler.name}.")
     else:
         compiler = Compiler(args)
-        if not _seen_compiler[compiler_name]:
+
+    if not _seen_compiler[compiler_name]:
+        if compiler:
+            log.info(f"Recognized compiler: {compiler.name}.")
+        else:
             log.warning(f"Unrecognized compiler: {compiler_name}. " +
                         "Some implicit behavior may be missed.")
-            _seen_compiler[compiler_name] = True
+        _seen_compiler[compiler_name] = True
     return compiler
 
 
