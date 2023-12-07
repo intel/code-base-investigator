@@ -154,6 +154,41 @@ _config_schema = {
     ]
 }
 
+_importcfg_schema_id = (
+    "https://raw.githubusercontent.com/intel/",
+    "code-base-investigator/schema/importcfg.schema"
+)
+
+_importcfg_schema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": _importcfg_schema_id,
+    "title": "Code Base Investigator Import Configuration File",
+    "description": "Configuration options for importing commands.",
+    "type": "object",
+    "properties": {
+        "compilers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": ["name", "options"],
+                "additionalProperties": False,
+            }
+        }
+    },
+    "required": ["compilers"],
+    "additionalProperties": False
+}
 
 def extract_defines(args):
     """
@@ -271,6 +306,25 @@ def load_codebase(config, rootdir):
     return codebase
 
 
+_importcfg = None
+def load_importcfg():
+    """
+    Load the import configuration file, if it exists.
+    """
+    global _importcfg
+    _importcfg = collections.defaultdict(list)
+    path = ".cbi/importcfg.json"
+    if os.path.exists(path):
+        log.info(f"Found import configuration file at {path}")
+        with open(path, "r") as f:
+            try:
+                _importcfg_json = json.load(f)
+                for compiler in _importcfg_json["compilers"]:
+                    _importcfg[compiler["name"]] = compiler["options"]
+            except BaseException:
+                log.error("importcfg file failed validation")
+
+
 class Compiler(object):
     """
     Represents the behavior of a specific compiler, including:
@@ -283,7 +337,11 @@ class Compiler(object):
         self.args = args
         self.passes = set(["default"])
 
-        self.defines = []
+        # Check for any user-defined compiler behavior.
+        # Currently, users can only override default defines.
+        if _importcfg is None:
+            load_importcfg()
+        self.defines = extract_defines(_importcfg[self.name])
 
     def get_passes(self):
         return self.passes.copy()
