@@ -1352,13 +1352,6 @@ class DirectiveParser(Parser):
                 except ParseError:
                     pass
 
-            # Any other line beginning with '#' is a preprocessor
-            # directive, we just don't handle it (yet). Suppress
-            # warnings for common directives that shouldn't impact
-            # correctness.
-            common_unhandled = ["line", "warning", "error"]
-            if len(self.tokens) > 2 and str(self.tokens[1]) not in common_unhandled:
-                log.warning("Unrecognized directive")
             return UnrecognizedDirectiveNode(self.tokens)
         except ParseError:
             raise ParseError("Not a directive.")
