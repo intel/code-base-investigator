@@ -6,7 +6,10 @@ C/C++ files as well as fixed-form Fortran
 """
 
 import itertools as it
+import logging
 from .language import FileLanguage
+
+log = logging.getLogger('codebasin')
 
 # This string was created by looking at all unicode code points
 # and checking to see if they are considered whitespace
@@ -670,18 +673,20 @@ def asm_file_source(fp, relaxed=False):
     return (total_sloc, total_physical_lines)
 
 
-def get_file_source(path):
+def get_file_source(path, assumed_lang=None):
     """
     Return a C or Fortran line source for path depending on
     the language we can detect, or fail.
     """
-    lang = FileLanguage(path)
-    if lang.get_language() == "fortran-free":
+    lang = FileLanguage(path).get_language()
+    if assumed_lang:
+        lang = assumed_lang
+
+    if lang == "fortran-free":
         return fortran_file_source
-    elif lang.get_language() in ["c", "c++"]:
+    elif lang in ["c", "c++"]:
         return c_file_source
-    elif lang.get_language() in ["asm"]:
+    elif lang in ["asm"]:
         return asm_file_source
     else:
-        raise RuntimeError(f"Language {lang.get_language()} in file " +
-                           f"{path} is unsupported by code base investigator")
+        raise RuntimeError(f"Could not determine language of {path}.")

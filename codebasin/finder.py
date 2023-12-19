@@ -13,6 +13,7 @@ from . import file_parser
 from . import platform
 from . import preprocessor
 from . import util
+from .language import FileLanguage
 from .walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger("codebasin")
@@ -40,6 +41,7 @@ class ParserState():
     def __init__(self, summarize_only):
         self.trees = {}
         self.maps = {}
+        self.langs = {}
         self.summarize_only = summarize_only
         self.fileinfo = collections.defaultdict(list)
         self.merge_duplicates = True
@@ -86,7 +88,7 @@ class ParserState():
         self.fileinfo[bn].append(FileInfo(fn, size, sha))
         return fn
 
-    def insert_file(self, fn):
+    def insert_file(self, fn, language=None):
         """
         Build a new tree for a source file, and create an association
         map for it.
@@ -94,8 +96,12 @@ class ParserState():
         fn = self._map_filename(fn)
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
-            self.trees[fn] = parser.parse_file(summarize_only=self.summarize_only)
+            self.trees[fn] = parser.parse_file(summarize_only=self.summarize_only, language=language)
             self.maps[fn] = collections.defaultdict(set)
+            if language:
+                self.langs[fn] = language
+            else:
+                self.langs[fn] = FileLanguage(fn).get_language()
 
     def get_filenames(self):
         """
