@@ -5,14 +5,11 @@ import logging
 import collections
 
 from .tree_walker import TreeWalker
+from .platform_mapper import exclude
 from codebasin.preprocessor import FileNode, CodeNode
 from codebasin import util
 
 log = logging.getLogger('codebasin')
-
-
-def exclude(filename, cb):
-    return (filename not in cb["files"] or filename in cb["exclude_files"])
 
 
 class Exporter(TreeWalker):
