@@ -679,7 +679,7 @@ def get_file_source(path, assumed_lang=None):
     the language we can detect, or fail.
     """
     lang = FileLanguage(path).get_language()
-    if not lang and assumed_lang:
+    if assumed_lang:
         lang = assumed_lang
 
     if lang == "fortran-free":
