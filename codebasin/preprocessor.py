@@ -36,6 +36,19 @@ def toklist_print(toklist):
     return "".join(out)
 
 
+def _representation_string(obj, *, name=None, attrs=None):
+    """
+    Helper function to build representation strings of the form:
+    Name(attribute={attribute!r},...)
+    """
+    if not name:
+        name = obj.__class__.__name__
+    if not attrs:
+        attrs = obj.__dict__
+    properties = ",".join(f"{a}={getattr(obj, a)!r}" for a in attrs)
+    return f"{name}({properties})"
+
+
 class TokenError(ValueError):
     """
     Represents an error encountered during tokenization.
@@ -66,12 +79,7 @@ class Token:
         self.token = token
 
     def __repr__(self):
-        return "Token(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line,
-            self.col,
-            self.prev_white,
-            self.token,
-        )
+        return _representation_string(self)
 
     def __str__(self):
         return "\n".join(self.spelling())
@@ -96,12 +104,7 @@ class CharacterConstant(Token):
     """
 
     def __repr__(self):
-        return "CharacterConstant(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line,
-            self.col,
-            self.prev_white,
-            self.token,
-        )
+        return _representation_string(self)
 
 
 class NumericalConstant(Token):
@@ -112,12 +115,7 @@ class NumericalConstant(Token):
     """
 
     def __repr__(self):
-        return "NumericalConstant(line={!r},col={!r},prev_white={!r},value={!r})".format(
-            self.line,
-            self.col,
-            self.prev_white,
-            self.token,
-        )
+        return _representation_string(self)
 
 
 class StringConstant(Token):
@@ -126,12 +124,7 @@ class StringConstant(Token):
     """
 
     def __repr__(self):
-        return "StringConstant(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line,
-            self.col,
-            self.prev_white,
-            self.token,
-        )
+        return _representation_string(self)
 
     def spelling(self):
         """
@@ -170,13 +163,7 @@ class Identifier(Token):
         self.expandable = True
 
     def __repr__(self):
-        return "Identifier(line={!r},col={!r},prev_white={!r},expandable={!r},token={!r})".format(
-            self.line,
-            self.col,
-            self.prev_white,
-            self.expandable,
-            self.token,
-        )
+        return _representation_string(self)
 
 
 class Operator(Token):
@@ -185,14 +172,7 @@ class Operator(Token):
     """
 
     def __repr__(self):
-        return (
-            "Operator(line={!r},col={!r},prev_white={!r},token={!r})".format(
-                self.line,
-                self.col,
-                self.prev_white,
-                self.token,
-            )
-        )
+        return _representation_string(self)
 
 
 class Punctuator(Token):
@@ -201,14 +181,7 @@ class Punctuator(Token):
     """
 
     def __repr__(self):
-        return (
-            "Punctuator(line={!r},col={!r},prev_white={!r},token={!r})".format(
-                self.line,
-                self.col,
-                self.prev_white,
-                self.token,
-            )
-        )
+        return _representation_string(self)
 
 
 class Unknown(Token):
@@ -217,12 +190,7 @@ class Unknown(Token):
     """
 
     def __repr__(self):
-        return "Unknown(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line,
-            self.col,
-            self.prev_white,
-            self.token,
-        )
+        return _representation_string(self)
 
 
 class Lexer:
@@ -659,7 +627,7 @@ class FileNode(Node):
         return parent_json
 
     def __repr__(self):
-        return f"FileNode(filename={self.filename!r})"
+        return _representation_string(self, attrs="filename")
 
     def __str__(self):
         return f"{str(self.filename)}; Hash: {str(self.file_hash)}"
@@ -704,10 +672,9 @@ class CodeNode(Node):
         return parent_json
 
     def __repr__(self):
-        return "CodeNode(start={!r},end={!r},lines={!r}".format(
-            self.start_line,
-            self.end_line,
-            self.num_lines,
+        return _representation_string(
+            self,
+            attrs=["start_line", "end_line", "num_lines"],
         )
 
     def __str__(self):
@@ -756,14 +723,14 @@ class UnrecognizedDirectiveNode(DirectiveNode):
         self.tokens = tokens
 
     def __repr__(self):
-        return f"DirectiveNode(kind={self.kind!r},tokens={self.tokens!r})"
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
         Return the string representation of this directive in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["{}".format(" ".join([str(t) for t in self.tokens]))]
+        return [" ".join([str(t) for t in self.tokens])]
 
 
 class PragmaNode(DirectiveNode):
@@ -777,14 +744,15 @@ class PragmaNode(DirectiveNode):
         self.tokens = tokens
 
     def __repr__(self):
-        return f"DirectiveNode(kind={self.kind!r},tokens={self.tokens!r})"
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
         Return the string representation of this pragma in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["#pragma {!s}".format(" ".join([str(t) for t in self.tokens]))]
+        rest = " ".join([str(t) for t in self.tokens])
+        return [f"#pragma {rest}"]
 
     def evaluate_for_platform(self, **kwargs):
         if self.tokens and str(self.tokens[0]) == "once":
@@ -804,12 +772,7 @@ class DefineNode(DirectiveNode):
         self.value = value
 
     def __repr__(self):
-        return "DirectiveNode(kind={!r},identifier={!r},args={!r},value={!r})".format(
-            self.kind,
-            self.identifier,
-            self.args,
-            self.value,
-        )
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
@@ -846,9 +809,7 @@ class UndefNode(DirectiveNode):
         self.identifier = identifier
 
     def __repr__(self):
-        return (
-            f"DirectiveNode(kind={self.kind!r},identifier={self.identifier!r})"
-        )
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
@@ -875,7 +836,7 @@ class IncludePath:
         self.system = system
 
     def __repr__(self):
-        return f"IncludePath(path={self.path!r},system={self.system!r})"
+        return _representation_string(self)
 
     def spelling(self):
         """
@@ -905,7 +866,7 @@ class IncludeNode(DirectiveNode):
         self.value = value
 
     def __repr__(self):
-        return f"DirectiveNode(kind={self.kind!r},value={self.value!r})"
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
@@ -978,14 +939,15 @@ class IfNode(DirectiveNode):
         return True
 
     def __repr__(self):
-        return f"DirectiveNode(kind={self.kind!r},tokens={self.tokens!r})"
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
         Return the string representation of this if in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["#if {!s}".format(" ".join([str(t) for t in self.tokens]))]
+        rest = " ".join([str(t) for t in self.tokens])
+        return [f"#if {rest}"]
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
@@ -1027,7 +989,7 @@ class ElseNode(DirectiveNode):
         return True
 
     def __repr__(self):
-        return f"DirectiveNode(kind={self.kind!r})"
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
@@ -1054,7 +1016,7 @@ class EndIfNode(DirectiveNode):
         return True
 
     def __repr__(self):
-        return f"DirectiveNode(kind={self.kind!r})"
+        return _representation_string(self, name="DirectiveNode")
 
     def spelling(self):
         """
@@ -1596,10 +1558,7 @@ class Macro:
         self.replacement = res_tokens
 
     def __repr__(self):
-        return "Macro(name={!r},replacement={!r})".format(
-            self.name,
-            self.replacement,
-        )
+        return _representation_string(self)
 
     def spelling(self):
         """
@@ -1647,10 +1606,9 @@ class MacroFunction(Macro):
             return -1
 
     def __repr__(self):
-        return "MacroFunction(name={!r},args={!r},replacement={!r})".format(
-            self.name,
-            self.args,
-            self.replacement,
+        return _representation_string(
+            self,
+            attrs=["name", "args", "replacement"],
         )
 
     def spelling(self):
