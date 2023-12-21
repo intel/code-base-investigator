@@ -205,11 +205,11 @@ def flatten(nested_list):
     Nesting may occur when anchors are used inside a YAML list.
     """
     flattened = []
-    for l in nested_list:
-        if isinstance(l, list):
-            flattened.extend(flatten(l))
+    for item in nested_list:
+        if isinstance(item, list):
+            flattened.extend(flatten(item))
         else:
-            flattened.append(l)
+            flattened.append(item)
     return flattened
 
 
