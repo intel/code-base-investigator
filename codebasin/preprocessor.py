@@ -2047,7 +2047,7 @@ class MacroExpander:
                         replacement[0] = copy(replacement[0])
                         replacement[0].prev_white = ctok.prev_white
                     self.push(replacement, macro_lookup.name)
-                elif type(macro_lookup) == Macro:
+                elif isinstance(macro_lookup, Macro):
                     replacement = macro_lookup.replace()
                     if isinstance(replacement, list) and len(replacement) > 0:
                         replacement[0] = copy(replacement[0])
