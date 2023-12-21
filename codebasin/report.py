@@ -127,13 +127,11 @@ def clustering(output_name, setmap):
     platforms = sorted(extract_platforms(setmap))
 
     if len(platforms) == 1:
-        log.error("Error: clustering is not supported for a single platform.")
+        log.error("clustering is not supported for a single platform.")
         return None
 
     if not util.ensure_png(output_name):
-        log.error(
-            "Error: clustering output file name is not a png; skipping creation.",
-        )
+        log.error("clustering output file name must end in '.png'.")
         return None
 
     # Import additional modules required by clustering report

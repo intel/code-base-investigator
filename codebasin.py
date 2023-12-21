@@ -3,21 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """
 This script is the main executable of Code Base Investigator.
-
-usage: codebasin.py [-h] [-c FILE] [-v] [-q] [-r DIR] [-R REPORT [REPORT ...]] [-d DUMPFILE]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -c FILE, --config FILE
-                        configuration file (default: <DIR>/config.yaml)
-  -v, --verbose         verbosity level
-  -q, --quiet           quiet level
-  -r DIR, --rootdir DIR
-                        Set working root directory (default .)
-  -R REPORT [REPORT ...], --report REPORT [REPORT ...]
-                        desired output reports (default: all)
-  -d DUMPFILE, --dump DUMPFILE
-                        dump annotated parse tree to DUMPFILE
 """
 
 import argparse
@@ -159,7 +144,8 @@ if __name__ == "__main__":
             report.annotated_dump(args.dump, state)
         else:
             logging.getLogger("codebasin").warning(
-                f"Output path for annotation dump must end with .json (got {args.dump}); skipping dump.",
+                "Output path for annotation dump does not end with .json: "
+                f"'{args.dump}'. Skipping dump.",
             )
 
     if args.batchmode and (

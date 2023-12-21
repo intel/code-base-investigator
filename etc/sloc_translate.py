@@ -17,7 +17,8 @@ from codebasin.util import safe_open_read_nofollow  # nopep8
 
 def file_sloc(path, verbose=False):
     """
-    Process file in path, reporting total_sloc/loc. Optionally print logical regions.
+    Process file in path, reporting total_sloc/loc.
+    Optionally print logical regions.
     """
     file_source = get_file_source(path)
     if not file_source:
@@ -34,10 +35,14 @@ def file_sloc(path, verbose=False):
             while True:
                 logical_line = next(walker)
                 if verbose:
+                    start = logical_line.current_physical_start
+                    end = logical_line.current_physical_end
+                    sloc = logical_line.local_sloc
+                    flushed = logical_line.flushed_line
+                    category = logical_line.category
                     print(
-                        f"{path} [{logical_line.current_physical_start},"
-                        + f" {logical_line.current_physical_end}) ({logical_line.local_sloc}):"
-                        f" {logical_line.flushed_line} {logical_line.category}",
+                        f"{path} [{start}, {end}) ({sloc}): "
+                        + f"{flushed} {category}",
                     )
         except StopIteration as it:
             # pylint: disable=unpacking-non-sequence

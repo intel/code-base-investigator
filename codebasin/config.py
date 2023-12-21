@@ -272,7 +272,7 @@ def load_codebase(config, rootdir):
         codebase["files"] = list([])
         log.warning(
             "No files specified in codebase configuration. "
-            + "Attempting to determine files automatically from platform configurations.",
+            + "Determining files automatically from platform configurations.",
         )
 
     return codebase
@@ -625,8 +625,8 @@ def load_platform(config, rootdir, platform_name):
     if "files" not in cfg_platform:
         if "defines" in cfg_platform or "include_paths" in cfg_platform:
             log.warning(
-                "Extra 'defines' or 'include_paths' in definition of platform %s!",
-                platform_name,
+                "Extra 'defines' or 'include_paths' in definition "
+                + f"of platform {platform_name}.",
             )
     else:
         if "defines" not in cfg_platform:

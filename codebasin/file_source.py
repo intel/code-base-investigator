@@ -179,7 +179,8 @@ class c_cleaner:
             self.state.pop()
             if not self.state[-1] == "IN_BLOCK_COMMENT":
                 raise RuntimeError(
-                    "Inconsistent parser state! Looking for / to terminate a block comment but not in a block comment!",
+                    "Inconsistent parser state. Looking for '/' to "
+                    + "terminate non-existent block comment.",
                 )
         elif self.state[-1] == "CPP_DIRECTIVE":
             self.state = ["TOPLEVEL"]
@@ -274,7 +275,8 @@ class c_cleaner:
                     state.pop()
                     if not state[-1] == "IN_BLOCK_COMMENT":
                         raise RuntimeError(
-                            "Inconsistent parser state! Looking for / to terminate a block comment but not in a block comment!",
+                            "Inconsistent parser state. Looking for '/' to "
+                            + "terminate non-existent block comment.",
                         )
                     state.pop()
                     obuf.append_space()
@@ -282,7 +284,8 @@ class c_cleaner:
                     state.pop()
                     if not state[-1] == "IN_BLOCK_COMMENT":
                         raise RuntimeError(
-                            "Inconsistent parser state! Looking for * that terminates a block comment but not in a block comment!",
+                            "Inconsistent parser state. Looking for '*' to "
+                            + "terminate non-existent block comment.",
                         )
             elif state[-1] == "ESCAPING":
                 obuf.append_nonspace(char)
@@ -364,7 +367,6 @@ class fortran_cleaner:
                     else:
                         self.state.pop()
                         inbuffer.putback(char)
-                        # should complain if we are quoting here, but will ignore for now
                 elif self.state[-1] == "DOUBLE_QUOTATION":
                     if char == "\\":
                         self.state.append("ESCAPING")
@@ -528,7 +530,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
     total_sloc += curr_line.physical_reset()
     if not relaxed and not cleaner.state == ["TOPLEVEL"]:
         raise RuntimeError(
-            "C file parser did not end at top level, and not in 'relaxed' mode",
+            "Parser must end at top level without 'relaxed' mode.",
         )
 
     return (total_sloc, total_physical_lines)
@@ -556,8 +558,10 @@ def fortran_file_source(fp, relaxed=False):
     try:
         while True:
             src_c_line = next(c_walker)
-            # ((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category)
-            # if it's a cpp directive, flush what we have, then emit the directive and start over
+            # If this is a preprocessor directive:
+            # - Flush what we have so far
+            # - Emit the directive
+            # - Start over
             if current_physical_start is None:
                 current_physical_start = curr_line.current_physical_start
 
@@ -607,7 +611,7 @@ def fortran_file_source(fp, relaxed=False):
     total_sloc += curr_line.physical_reset()
     if not relaxed and not cleaner.state == ["TOPLEVEL"]:
         raise RuntimeError(
-            "Fortran file parser did not end at top level, and not in 'relaxed' mode",
+            "Parser must end at top level without 'relaxed' mode.",
         )
 
     return (total_sloc, total_physical_lines)

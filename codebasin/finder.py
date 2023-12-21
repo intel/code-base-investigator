@@ -140,10 +140,10 @@ def find(rootdir, codebase, configuration, *, summarize_only=True):
     for p in configuration:
         for e in configuration[p]:
             if e["file"] not in codebase["files"]:
+                filename = e["file"]
                 log.warning(
-                    "%s found in definition of platform %s but missing from codebase",
-                    e["file"],
-                    p,
+                    f"{filename} found in definition of platform {p} "
+                    + "but missing from codebase",
                 )
             state.insert_file(e["file"])
 

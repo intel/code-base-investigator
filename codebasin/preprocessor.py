@@ -93,7 +93,8 @@ class Token:
 
     def sanitized_str(self):
         """
-        Dummy based implementation of string sanitization. Overloaded for String Constant.
+        Dummy based implementation of string sanitization.
+        Overloaded for String Constant.
         """
         return str(self)
 
@@ -678,7 +679,10 @@ class CodeNode(Node):
         )
 
     def __str__(self):
-        return f"Lines {self.start_line}-{self.end_line}; SLOC = {self.num_lines};"
+        start = self.start_line
+        end = self.end_line
+        sloc = self.num_lines
+        return f"Lines {start}-{end}; SLOC = {sloc};"
 
     def spelling(self):
         """
@@ -1446,7 +1450,7 @@ class DirectiveParser(Parser):
                     if not self.eol():
                         chars = "".join(str(x) for x in self.tokens)
                         log.warning(
-                            f"Additional tokens at end of preprocessor directive: {chars}",
+                            f"Additional tokens at end of directive: {chars}",
                         )
                     return directive
                 except ParseError:
@@ -1543,7 +1547,7 @@ class Macro:
                 tok = lex.tokenize_one()
                 if tok is None:
                     raise ParseError(
-                        f"Concatenation didn't result in valid token {lex.string}",
+                        f"Invalid concatenation: {lex.string}",
                     )
                 tok.prev_white = last.prev_white
             elif tok.token == "#":
@@ -1562,7 +1566,8 @@ class Macro:
 
     def spelling(self):
         """
-        Return (a list containing) a string with a lexable representation of this Macro.
+        Return (a list containing) a string with a lexable representation of
+        this Macro.
         """
         replacement_str = " ".join([str(t) for t in self.replacement])
         return [f"{self.name!s}={replacement_str!s}"]
@@ -1672,7 +1677,7 @@ class MacroFunction(Macro):
                         tok = lex.tokenize_one()
                         if tok is None:
                             raise ParseError(
-                                f"Concatenation didn't result in valid token {lex.string}",
+                                f"Invalid concatenation: {lex.string}",
                             )
                         tok.prev_white = last[-1].prev_white
                         toadd = last[:-1] + [tok] + nexttok[1:]
@@ -1816,7 +1821,8 @@ class MacroExpander:
 
     def push(self, tokens, ident=None):
         """
-        Push a new ExpanderHelper for tokens with new no_expand ident onto stack.
+        Push a new ExpanderHelper for tokens with new no_expand ident onto
+        stack.
         """
         self.parser_stack.append(ExpanderHelper(tokens))
         self.parser_stack[-1].pre_expand = False
@@ -1825,7 +1831,8 @@ class MacroExpander:
 
     def advance_tok(self):
         """
-        Advance top expander's position, possibly popping to get to where that can be done.
+        Advance top expander's position, possibly popping to get to where that
+        can be done.
         """
         while self.parser_stack[-1].eol():
             self.pop()
@@ -1833,7 +1840,8 @@ class MacroExpander:
 
     def peek_tok_pop(self):
         """
-        Peek at top expander's token, possibly popping to get to where that can be done.
+        Peek at top expander's token, possibly popping to get to where that
+        can be done.
         """
         while self.parser_stack[-1].eol():
             self.pop()
@@ -1856,7 +1864,8 @@ class MacroExpander:
 
     def consume_tok(self):
         """
-        Consume top parser's current token, possibly popping to get where that can be done.
+        Consume top parser's current token, possibly popping to get where that
+        can be done.
         """
         while self.parser_stack[-1].eol():
             self.pop()
@@ -1864,7 +1873,8 @@ class MacroExpander:
 
     def replace_tok(self, tok):
         """
-        Replace top parser's current token with tok, possibly popping to get where that can be done.
+        Replace top parser's current token with tok, possibly popping to get
+        where that can be done.
         """
         while self.parser_stack[-1].eol():
             self.pop()
@@ -1928,18 +1938,18 @@ class MacroExpander:
                             paren = self.peek_tok()
                             if paren.token != ")":
                                 raise ParseError(
-                                    "Expected closing paren to follow identifier following 'defined'",
+                                    "Expected ')' after 'defined' identifier",
                                 )
                         else:
                             ident = tok
                         if not isinstance(ident, Identifier):
                             raise ParseError(
-                                "Expected 'defined' to be followed by identifier",
+                                "Expected identifier after 'defined'",
                             )
                         self.replace_tok(self.defined(ident))
                     except IndexError:
                         raise ParseError(
-                            "Expected 'defined' to be followed by identifier",
+                            "Expected identifier after 'defined'",
                         )
                     continue
 
@@ -2162,7 +2172,8 @@ class ExpressionEvaluator(Parser):
             self.pos = initial_pos
 
         raise ParseError(
-            "Expected an integer constant, character constant, identifier or function call.",
+            "Expected integer constant, character constant, identifier or "
+            + "function call.",
         )
 
     def primary(self):
@@ -2204,7 +2215,8 @@ class ExpressionEvaluator(Parser):
             self.pos = initial_pos
 
         raise ParseError(
-            "Expected a unary expression, an expression in parens or an identifier/constant.",
+            "Expected unary expression, expression in parens, or "
+            + "identifier/constant.",
         )
 
     def expression(self, min_precedence=0):
@@ -2380,7 +2392,7 @@ class SourceTree:
             self._latest_node = self._latest_node.parent
             if self._latest_node == self.root:
                 log.error(
-                    "Latest node == root while trying to find an insertion point.",
+                    "Found root while trying to find an insertion point.",
                 )
                 break
 
