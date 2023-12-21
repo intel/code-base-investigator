@@ -7,7 +7,6 @@ Contains utility functions for common operations, including:
 - Checking paths
 """
 
-import collections
 import hashlib
 import json
 import logging
