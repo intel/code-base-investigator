@@ -10,9 +10,8 @@ import os
 import sys
 from pathlib import Path
 
-# pylint: disable=wrong-import-position
-from codebasin.file_source import get_file_source  # nopep8
-from codebasin.util import safe_open_read_nofollow  # nopep8
+from codebasin.file_source import get_file_source
+from codebasin.util import safe_open_read_nofollow
 
 
 def file_sloc(path, verbose=False):
@@ -45,7 +44,6 @@ def file_sloc(path, verbose=False):
                         + f"{flushed} {category}",
                     )
         except StopIteration as it:
-            # pylint: disable=unpacking-non-sequence
             total_sloc, physical_loc = it.value
 
     return (path, total_sloc, physical_loc)

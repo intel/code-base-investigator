@@ -10,12 +10,10 @@ import logging
 import os
 import sys
 
-import codebasin.finder as finder  # nopep8
-from codebasin.platform import Platform  # nopep8
-from codebasin.preprocessor import macro_from_definition_string  # nopep8
-
-# pylint: disable=wrong-import-position
-from codebasin.walkers.source_printer import (  # nopep8
+import codebasin.finder as finder
+from codebasin.platform import Platform
+from codebasin.preprocessor import macro_from_definition_string
+from codebasin.walkers.source_printer import (
     PreprocessedSourcePrinter,
     SourcePrinter,
 )

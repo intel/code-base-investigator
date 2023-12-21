@@ -12,10 +12,10 @@ import logging
 import os
 import sys
 
-import codebasin.config as config  # nopep8
-import codebasin.finder as finder  # nopep8
-import codebasin.util as util  # nopep8
-from codebasin.walkers.exporter import Exporter  # nopep8
+import codebasin.config as config
+import codebasin.finder as finder
+import codebasin.util as util
+from codebasin.walkers.exporter import Exporter
 
 if __name__ == "__main__":
     # Read command-line arguments

@@ -8,8 +8,7 @@ and building a tree of nodes from it.
 import logging
 import os
 
-from codebasin import preprocessor  # pylint : disable=no-name-in-module
-from codebasin import util  # pylint : disable=no-name-in-module
+from codebasin import preprocessor, util
 from codebasin.file_source import get_file_source
 
 log = logging.getLogger("codebasin")
@@ -220,7 +219,6 @@ class FileParser:
                                 logical_line.flushed_line,
                             )
             except StopIteration as it:
-                # pylint: disable=unpacking-non-sequence
                 _, physical_loc = it.value
 
             if not groups["code"].empty():

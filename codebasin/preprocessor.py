@@ -1,6 +1,5 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
-# pylint: disable=too-many-lines
 """
 Contains classes that define:
 - Nodes from the tree
@@ -582,7 +581,6 @@ class Node:
         """
         return False
 
-    # pylint: disable=no-self-use,unused-argument
     def evaluate_for_platform(self, **kwargs):
         """
         Determine if the children of this node are active, by evaluating
@@ -2187,7 +2185,6 @@ class ExpressionEvaluator(Parser):
         try:
             operator = self.match_type(Operator)
             if operator.token in ExpressionEvaluator.UnaryOperators:
-                # pylint: disable=unused-variable
                 (prec, assoc) = ExpressionEvaluator.UnaryOperators[
                     operator.token
                 ]
@@ -2307,7 +2304,6 @@ class ExpressionEvaluator(Parser):
         else:
             raise ValueError("Not a valid unary operator.")
 
-    # pylint: disable=too-many-branches,too-many-return-statements
     @staticmethod
     def __apply_binary_op(op, lhs, rhs):
         """
