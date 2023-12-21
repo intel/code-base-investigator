@@ -27,11 +27,10 @@ repos:
         additional_dependencies:
           [
             flake8-bandit,
-            flake8-black,
             flake8-debugger,
-            flake8-print,
             flake8-use-fstring,
           ]
+        args: ["--extend-ignore=S105,E203"]
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
