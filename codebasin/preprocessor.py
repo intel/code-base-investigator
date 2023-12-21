@@ -1738,7 +1738,7 @@ class MacroFunction(Macro):
                         tok = input_args[argidx][0]  # Unexpanded arg
                     except ValueError:
                         raise ParseError(
-                            f"# was not followed by a macro argument.",
+                            "# was not followed by a macro argument.",
                         )
                     tok = Lexer.stringify(tok)
                     tok.prev_white = tok.prev_white
