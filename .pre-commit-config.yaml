@@ -7,19 +7,42 @@ repos:
       - id: check-json
       - id: pretty-format-json
       - id: debug-statements
+
   - repo: https://github.com/asottile/setup-cfg-fmt
     rev: v2.4.0
     hooks:
       - id: setup-cfg-fmt
-  - repo: https://github.com/asottile/add-trailing-comma
-    rev: v3.0.1
+
+  - repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.1
     hooks:
-      - id: add-trailing-comma
+      - id: absolufy-imports
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort (python)
+        args: ["--profile", "black", "-l", "79"]
+
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.10.1
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
+
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+      - id: black
+        language_version: python
+        args: ["-l 79"]
+
+  - repo: https://github.com/asottile/add-trailing-comma
+    rev: v3.0.1
+    hooks:
+      - id: add-trailing-comma
+
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
@@ -31,22 +54,7 @@ repos:
             flake8-use-fstring,
           ]
         args: ["--extend-ignore=S105,E203"]
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        name: isort (python)
-        args: ["--profile", "black", "-l", "79"]
-  - repo: https://github.com/psf/black
-    rev: 23.7.0
-    hooks:
-      - id: black
-        language_version: python
-        args: ["-l 79"]
-  - repo: https://github.com/MarcoGorelli/absolufy-imports
-    rev: v0.3.1
-    hooks:
-      - id: absolufy-imports
+
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
     hooks:
