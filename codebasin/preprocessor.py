@@ -1969,18 +1969,18 @@ class MacroExpander:
                             ident = self.consume_tok()
                             paren = self.peek_tok()
                             if paren.token != ")":
-                                raise ParserError(
+                                raise ParseError(
                                     "Expected closing paren to follow identifier following 'defined'",
                                 )
                         else:
                             ident = tok
                         if not isinstance(ident, Identifier):
-                            raise ParserError(
+                            raise ParseError(
                                 "Expected 'defined' to be followed by identifier",
                             )
                         self.replace_tok(self.defined(ident))
                     except IndexError:
-                        raise ParserError(
+                        raise ParseError(
                             "Expected 'defined' to be followed by identifier",
                         )
                     continue
