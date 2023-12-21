@@ -5,21 +5,18 @@ Contains functions and classes related to finding
 and parsing source files as part of a code base.
 """
 
-import logging
 import collections
+import logging
 import os
 
-from . import file_parser
-from . import platform
-from . import preprocessor
-from . import util
-from .language import FileLanguage
-from .walkers.tree_associator import TreeAssociator
+from codebasin import file_parser, platform, preprocessor, util
+from codebasin.language import FileLanguage
+from codebasin.walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger("codebasin")
 
 
-class FileInfo():
+class FileInfo:
     """
     Data class storing (path, size, sha) for a file.
     """
@@ -30,7 +27,7 @@ class FileInfo():
         self.sha = sha
 
 
-class ParserState():
+class ParserState:
     """
     Keeps track of the overall state of the parser.
     Contains all of the SourceTree objects created from parsing the
@@ -64,7 +61,6 @@ class ParserState():
         size = os.path.getsize(fn)
         sha = None
         for fi in self.fileinfo[bn]:
-
             # Fill in missing size information
             if fi.size is None:
                 fi.size = os.path.getsize(fi.path)
@@ -96,7 +92,10 @@ class ParserState():
         fn = self._map_filename(fn)
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
-            self.trees[fn] = parser.parse_file(summarize_only=self.summarize_only, language=language)
+            self.trees[fn] = parser.parse_file(
+                summarize_only=self.summarize_only,
+                language=language,
+            )
             self.maps[fn] = collections.defaultdict(set)
             if language:
                 self.langs[fn] = language
@@ -140,40 +139,48 @@ def find(rootdir, codebase, configuration, *, summarize_only=True):
         state.insert_file(f)
     for p in configuration:
         for e in configuration[p]:
-            if e['file'] not in codebase["files"]:
+            if e["file"] not in codebase["files"]:
                 log.warning(
                     "%s found in definition of platform %s but missing from codebase",
-                    e['file'], p)
-            state.insert_file(e['file'])
+                    e["file"],
+                    p,
+                )
+            state.insert_file(e["file"])
 
     # Process each tree, by associating nodes with platforms
     for p in configuration:
         for e in configuration[p]:
             file_platform = platform.Platform(p, rootdir)
 
-            for path in e['include_paths']:
+            for path in e["include_paths"]:
                 file_platform.add_include_path(path)
 
-            for definition in e['defines']:
+            for definition in e["defines"]:
                 macro = preprocessor.macro_from_definition_string(definition)
                 file_platform.define(macro.name, macro)
 
             # Process include files.
             # These modify the file_platform instance, but we throw away
             # the active nodes after processing is complete.
-            for include in e['include_files']:
-                include_file = file_platform.find_include_file(include,
-                                                               os.path.dirname(e["file"]))
+            for include in e["include_files"]:
+                include_file = file_platform.find_include_file(
+                    include,
+                    os.path.dirname(e["file"]),
+                )
                 if include_file:
                     state.insert_file(include_file)
 
-                    associator = TreeAssociator(state.get_tree(
-                        include_file), state.get_map(include_file))
+                    associator = TreeAssociator(
+                        state.get_tree(include_file),
+                        state.get_map(include_file),
+                    )
                     associator.walk(file_platform, state)
 
             # Process the file, to build a list of associate nodes
-            associator = TreeAssociator(state.get_tree(e['file']),
-                                        state.get_map(e['file']))
+            associator = TreeAssociator(
+                state.get_tree(e["file"]),
+                state.get_map(e["file"]),
+            )
             associator.walk(file_platform, state)
 
     return state

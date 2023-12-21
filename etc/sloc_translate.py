@@ -23,18 +23,26 @@ def file_sloc(path, verbose=False):
     """
     file_source = get_file_source(path)
     if not file_source:
-        raise RuntimeError(f"{path} doesn't appear to be a language this tool can process")
-    with safe_open_read_nofollow(path, mode='r', errors='replace') as source_file:
+        raise RuntimeError(
+            f"{path} doesn't appear to be a language this tool can process",
+        )
+    with safe_open_read_nofollow(
+        path,
+        mode="r",
+        errors="replace",
+    ) as source_file:
         walker = file_source(source_file, relaxed=False)
         try:
             while True:
                 logical_line = next(walker)
                 if verbose:
-                    print(f"{path} [{logical_line.current_physical_start}," +
-                          f" {logical_line.current_physical_end}) ({logical_line.local_sloc}):"
-                          f" {logical_line.flushed_line} {logical_line.category}")
+                    print(
+                        f"{path} [{logical_line.current_physical_start},"
+                        + f" {logical_line.current_physical_end}) ({logical_line.local_sloc}):"
+                        f" {logical_line.flushed_line} {logical_line.category}",
+                    )
         except StopIteration as it:
-             # pylint: disable=unpacking-non-sequence
+            # pylint: disable=unpacking-non-sequence
             total_sloc, physical_loc = it.value
 
     return (path, total_sloc, physical_loc)
@@ -66,12 +74,14 @@ def sloc_translate(args):
         (filename, total_sloc, physical_loc) = file_sloc(path, verbose=True)
         print(f"{filename}, {total_sloc}, {physical_loc}")
     elif len(args) == 3:
-        cleaned = [f".{x}" for x in args[2].split(',')]
+        cleaned = [f".{x}" for x in args[2].split(",")]
         walk_sloc(args[1], cleaned, verbose=True)
     else:
-        print("Expected either 1 argument (a single file to parse" +
-              " and print) or 2 (a directory root & file pattern)")
+        print(
+            "Expected either 1 argument (a single file to parse"
+            + " and print) or 2 (a directory root & file pattern)",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sloc_translate(sys.argv)

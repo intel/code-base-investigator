@@ -21,9 +21,9 @@ optional arguments:
 """
 
 import argparse
+import logging
 import os
 import sys
-import logging
 
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
@@ -47,46 +47,91 @@ def guess_project_name(config_path):
     """
     fullpath = os.path.realpath(config_path)
     (thedir, thename) = os.path.split(fullpath)
-    if config_path == 'config.yaml':
+    if config_path == "config.yaml":
         (base, end) = os.path.split(thedir)
         res = end.strip()
     else:
         (base, end) = os.path.splitext(thename)
         res = base.strip()
     if not res:
-        logging.getLogger("codebasin").warning("Can't guess meaningful output name from input")
+        logging.getLogger("codebasin").warning(
+            "Can't guess meaningful output name from input",
+        )
         res = "unknown"
     return res
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # Read command-line arguments
-    parser = argparse.ArgumentParser(description="Code Base Investigator v" + str(version))
-    parser.add_argument('-r', '--rootdir', dest="rootdir", metavar='DIR',
-                        default=os.getcwd(), type=str,
-                        help="Set working root directory (default .)")
-    parser.add_argument('-c', '--config', dest='config_file', metavar='FILE', action='store',
-                        help='configuration file (default: <DIR>/config.yaml)')
-    parser.add_argument('-v', '--verbose', dest='verbose',
-                        action='count', default=0, help='increase verbosity level')
-    parser.add_argument('-q', '--quiet', dest='quiet',
-                        action='count', default=0, help='decrease verbosity level')
-    parser.add_argument('-R', '--report', dest='reports', metavar='REPORT', default=['all'],
-                        choices=['all', 'summary', 'clustering'], nargs='+',
-                        help='desired output reports (default: all)')
-    parser.add_argument('-d', '--dump', dest='dump', metavar='<file.json>',
-                        action='store',
-                        help='dump out annotated platform/parsing tree to <file.json>')
-    parser.add_argument('--batchmode', dest='batchmode', action='store_true', default=False,
-                        help="Set batch mode (additional output for bulk operation.)")
+    parser = argparse.ArgumentParser(
+        description="Code Base Investigator v" + str(version),
+    )
+    parser.add_argument(
+        "-r",
+        "--rootdir",
+        dest="rootdir",
+        metavar="DIR",
+        default=os.getcwd(),
+        type=str,
+        help="Set working root directory (default .)",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        dest="config_file",
+        metavar="FILE",
+        action="store",
+        help="configuration file (default: <DIR>/config.yaml)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="count",
+        default=0,
+        help="increase verbosity level",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        dest="quiet",
+        action="count",
+        default=0,
+        help="decrease verbosity level",
+    )
+    parser.add_argument(
+        "-R",
+        "--report",
+        dest="reports",
+        metavar="REPORT",
+        default=["all"],
+        choices=["all", "summary", "clustering"],
+        nargs="+",
+        help="desired output reports (default: all)",
+    )
+    parser.add_argument(
+        "-d",
+        "--dump",
+        dest="dump",
+        metavar="<file.json>",
+        action="store",
+        help="dump out annotated platform/parsing tree to <file.json>",
+    )
+    parser.add_argument(
+        "--batchmode",
+        dest="batchmode",
+        action="store_true",
+        default=False,
+        help="Set batch mode (additional output for bulk operation.)",
+    )
     args = parser.parse_args()
 
     stdout_log = logging.StreamHandler(sys.stdout)
-    stdout_log.setFormatter(logging.Formatter('[%(levelname)-8s] %(message)s'))
+    stdout_log.setFormatter(logging.Formatter("[%(levelname)-8s] %(message)s"))
     logging.getLogger("codebasin").addHandler(stdout_log)
     logging.getLogger("codebasin").setLevel(
-        max(1, logging.WARNING - 10 * (args.verbose - args.quiet)))
+        max(1, logging.WARNING - 10 * (args.verbose - args.quiet)),
+    )
     rootdir = os.path.realpath(args.rootdir)
 
     if args.config_file is None:
@@ -96,7 +141,8 @@ if __name__ == '__main__':
     # Load the configuration file into a dict
     if not util.ensure_yaml(config_file):
         logging.getLogger("codebasin").error(
-            "Configuration file does not have YAML file extension.")
+            "Configuration file does not have YAML file extension.",
+        )
         sys.exit(1)
     codebase, configuration = config.load(config_file, rootdir)
 
@@ -113,9 +159,12 @@ if __name__ == '__main__':
             report.annotated_dump(args.dump, state)
         else:
             logging.getLogger("codebasin").warning(
-                f"Output path for annotation dump must end with .json (got {args.dump}); skipping dump.")
+                f"Output path for annotation dump must end with .json (got {args.dump}); skipping dump.",
+            )
 
-    if args.batchmode and (report_enabled("summary") or report_enabled("clustering")):
+    if args.batchmode and (
+        report_enabled("summary") or report_enabled("clustering")
+    ):
         print(f"Config file: {config_file}")
         print(f"Root: {rootdir}")
 

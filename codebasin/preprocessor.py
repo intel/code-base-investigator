@@ -8,18 +8,18 @@ Contains classes that define:
 - Operators to handle tokens
 """
 
-import logging
 import collections
 import hashlib
-import numpy as np
+import logging
 import os
 from copy import copy
-import os
 
-from . import util
-from .walkers.tree_associator import TreeAssociator
+import numpy as np
 
-log = logging.getLogger('codebasin')
+from codebasin import util
+from codebasin.walkers.tree_associator import TreeAssociator
+
+log = logging.getLogger("codebasin")
 
 
 def toklist_print(toklist):
@@ -33,7 +33,7 @@ def toklist_print(toklist):
         if tok.prev_white:
             out.append(" ")
         out.append(str(tok))
-    return ''.join(out)
+    return "".join(out)
 
 
 class TokenError(ValueError):
@@ -54,7 +54,7 @@ class MacroExpandOverflow(ValueError):
     """
 
 
-class Token():
+class Token:
     """
     Represents a token constructed by the parser.
     """
@@ -67,7 +67,11 @@ class Token():
 
     def __repr__(self):
         return "Token(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+            self.line,
+            self.col,
+            self.prev_white,
+            self.token,
+        )
 
     def __str__(self):
         return "\n".join(self.spelling())
@@ -93,7 +97,11 @@ class CharacterConstant(Token):
 
     def __repr__(self):
         return "CharacterConstant(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+            self.line,
+            self.col,
+            self.prev_white,
+            self.token,
+        )
 
 
 class NumericalConstant(Token):
@@ -105,7 +113,11 @@ class NumericalConstant(Token):
 
     def __repr__(self):
         return "NumericalConstant(line={!r},col={!r},prev_white={!r},value={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+            self.line,
+            self.col,
+            self.prev_white,
+            self.token,
+        )
 
 
 class StringConstant(Token):
@@ -115,32 +127,36 @@ class StringConstant(Token):
 
     def __repr__(self):
         return "StringConstant(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+            self.line,
+            self.col,
+            self.prev_white,
+            self.token,
+        )
 
     def spelling(self):
         """
         Return the string representation of this token in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["\"{!s}\"".format(self.token)]
+        return [f'"{self.token!s}"']
 
     def sanitized_str(self):
         """
         Return this string quoted for stringification.
         """
-        out = [r'\"']
+        out = [r"\""]
         c = 0
         while c < len(self.token):
-            if self.token[c] == '\\':
+            if self.token[c] == "\\":
                 if c + 1 < len(self.token) and self.token[c + 1] == '"':
-                    out.append(r'\\\"')
+                    out.append(r"\\\"")
                     c += 1
                 else:
-                    out.append('\\\\')
+                    out.append("\\\\")
             else:
                 out.append(self.token[c])
             c += 1
-        out.append(r'\"')
+        out.append(r"\"")
         return "".join(out)
 
 
@@ -155,7 +171,12 @@ class Identifier(Token):
 
     def __repr__(self):
         return "Identifier(line={!r},col={!r},prev_white={!r},expandable={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.expandable, self.token)
+            self.line,
+            self.col,
+            self.prev_white,
+            self.expandable,
+            self.token,
+        )
 
 
 class Operator(Token):
@@ -164,8 +185,14 @@ class Operator(Token):
     """
 
     def __repr__(self):
-        return "Operator(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+        return (
+            "Operator(line={!r},col={!r},prev_white={!r},token={!r})".format(
+                self.line,
+                self.col,
+                self.prev_white,
+                self.token,
+            )
+        )
 
 
 class Punctuator(Token):
@@ -174,8 +201,14 @@ class Punctuator(Token):
     """
 
     def __repr__(self):
-        return "Punctuator(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+        return (
+            "Punctuator(line={!r},col={!r},prev_white={!r},token={!r})".format(
+                self.line,
+                self.col,
+                self.prev_white,
+                self.token,
+            )
+        )
 
 
 class Unknown(Token):
@@ -185,7 +218,11 @@ class Unknown(Token):
 
     def __repr__(self):
         return "Unknown(line={!r},col={!r},prev_white={!r},token={!r})".format(
-            self.line, self.col, self.prev_white, self.token)
+            self.line,
+            self.col,
+            self.prev_white,
+            self.token,
+        )
 
 
 class Lexer:
@@ -203,7 +240,7 @@ class Lexer:
         """
         Return the next n characters in the string.
         """
-        return self.string[self.pos:self.pos + n]
+        return self.string[self.pos : self.pos + n]
 
     def eos(self):
         """
@@ -233,7 +270,7 @@ class Lexer:
         Match one from a list of character/string literals exactly.
         Return the matched index and advance position.
         """
-        for (index, literal) in enumerate(literals):
+        for index, literal in enumerate(literals):
             if self.read(len(literal)) == literal:
                 self.pos += len(literal)
                 return index
@@ -271,7 +308,11 @@ class Lexer:
                 if self.read(2) in exponents:
                     chars.append(self.read(2))
                     self.pos += 2
-                elif self.read().isalpha() or self.read().isdigit() or self.read() in ["_", "."]:
+                elif (
+                    self.read().isalpha()
+                    or self.read().isdigit()
+                    or self.read() in ["_", "."]
+                ):
                     chars.append(self.read())
                     self.pos += 1
                 else:
@@ -294,11 +335,11 @@ class Lexer:
         """
         col = self.pos
         try:
-            self.match('\'')
+            self.match("'")
 
             # A character constant may be an escaped sequence
             # We assume a single alpha-numerical character or space
-            if self.read() == '\\' and self.read(2).isprintable():
+            if self.read() == "\\" and self.read(2).isprintable():
                 value = self.read(2)
                 self.pos += 2
             elif self.read().isprintable():
@@ -307,7 +348,7 @@ class Lexer:
             else:
                 raise TokenError("Expected character.")
 
-            self.match('\'')
+            self.match("'")
         except TokenError:
             self.pos = col
             raise TokenError("Invalid character constant.")
@@ -324,25 +365,29 @@ class Lexer:
         """
         col = self.pos
         try:
-            self.match('\"')
+            self.match('"')
 
             chars = []
-            while not self.eos() and self.read() != '\"':
-
+            while not self.eos() and self.read() != '"':
                 # An escaped " should not close the string
-                if self.read(2) == "\\\"":
+                if self.read(2) == '\\"':
                     chars.append(self.read(2))
                     self.pos += 2
                 else:
                     chars.append(self.read())
                     self.pos += 1
 
-            self.match('\"')
+            self.match('"')
         except TokenError:
             self.pos = col
             raise TokenError("Invalid string constant.")
 
-        constant = StringConstant(self.line, col, self.prev_white, "".join(chars))
+        constant = StringConstant(
+            self.line,
+            col,
+            self.prev_white,
+            "".join(chars),
+        )
         return constant
 
     @staticmethod
@@ -370,7 +415,6 @@ class Lexer:
         # Match a string of characters
         characters = []
         while not self.eos() and (self.read().isalnum() or self.read() == "_"):
-
             # First character of an identifier cannot be a digit
             if self.pos == col and self.read().isdigit():
                 self.pos = col
@@ -383,7 +427,12 @@ class Lexer:
             self.pos = col
             raise TokenError("Invalid identifier.")
 
-        identifier = Identifier(self.line, col, self.prev_white, "".join(characters))
+        identifier = Identifier(
+            self.line,
+            col,
+            self.prev_white,
+            "".join(characters),
+        )
         return identifier
 
     def operator(self):
@@ -396,8 +445,24 @@ class Lexer:
                  '==' | '##' | '?' | ':' | '<' | '>' | '%']
         """
         col = self.pos
-        operators = ["||", "&&", ">>", "<<", "!=", ">=", "<=", "==", "##"] + \
-            ["-", "+", "!", "*", "/", "|", "&", "^", "<", ">", "?", ":", "~", "#", "=", "%"]
+        operators = ["||", "&&", ">>", "<<", "!=", ">=", "<=", "==", "##"] + [
+            "-",
+            "+",
+            "!",
+            "*",
+            "/",
+            "|",
+            "&",
+            "^",
+            "<",
+            ">",
+            "?",
+            ":",
+            "~",
+            "#",
+            "=",
+            "%",
+        ]
         try:
             index = self.match_any(operators)
 
@@ -415,11 +480,29 @@ class Lexer:
         <punc> := ['('|')'|'{'|'}'|'['|']'|','|'.'|';'|'''|'"'|'\']
         """
         col = self.pos
-        punctuators = ["(", ")", "{", "}", "[", "]", ",", ".", ";", "'", "\"", "\\"]
+        punctuators = [
+            "(",
+            ")",
+            "{",
+            "}",
+            "[",
+            "]",
+            ",",
+            ".",
+            ";",
+            "'",
+            '"',
+            "\\",
+        ]
         try:
             index = self.match_any(punctuators)
 
-            punc = Punctuator(self.line, col, self.prev_white, punctuators[index])
+            punc = Punctuator(
+                self.line,
+                col,
+                self.prev_white,
+                punctuators[index],
+            )
             return punc
         except TokenError:
             self.pos = col
@@ -429,8 +512,14 @@ class Lexer:
         """
         Consume and return next token. Returns None if not possible.
         """
-        candidates = [self.number, self.character_constant, self.string_constant,
-                      self.identifier, self.operator, self.punctuator]
+        candidates = [
+            self.number,
+            self.character_constant,
+            self.string_constant,
+            self.identifier,
+            self.operator,
+            self.punctuator,
+        ]
         token = None
         for f in candidates:
             col = self.pos
@@ -451,13 +540,17 @@ class Lexer:
         tokens = []
         self.whitespace()
         while not self.eos():
-
             # Try to match a new token
             token = self.tokenize_one()
 
             # Treat unmatched single characters as unknown tokens
             if token is None:
-                token = Unknown(self.line, self.pos, self.prev_white, self.read())
+                token = Unknown(
+                    self.line,
+                    self.pos,
+                    self.prev_white,
+                    self.read(),
+                )
                 self.prev_white = False
                 self.pos += 1
             tokens.append(token)
@@ -476,7 +569,7 @@ class ParseError(ValueError):
     """
 
 
-class Node():
+class Node:
     """
     Base class for all other Node types.
     Contains a single parent, and an ordered list of children.
@@ -492,8 +585,8 @@ class Node():
 
     def to_json(self, assoc):
         return {
-            'platforms': list(assoc[self]),
-            'children': [x.to_json(assoc) for x in self.children]
+            "platforms": list(assoc[self]),
+            "children": [x.to_json(assoc) for x in self.children],
         }
 
     @staticmethod
@@ -548,7 +641,7 @@ class FileNode(Node):
     def __compute_file_hash(self):
         chunk_size = 4096
         hasher = hashlib.sha512()
-        with util.safe_open_read_nofollow(self.filename, 'rb') as in_file:
+        with util.safe_open_read_nofollow(self.filename, "rb") as in_file:
             for chunk in iter(lambda: in_file.read(chunk_size), b""):
                 hasher.update(chunk)
 
@@ -556,18 +649,20 @@ class FileNode(Node):
 
     def to_json(self, assoc):
         parent_json = super().to_json(assoc)
-        mydict = {'type': 'file',
-                  'file': self.filename,
-                  'name': os.path.basename(self.filename),
-                  'sloc': self.total_sloc}
+        mydict = {
+            "type": "file",
+            "file": self.filename,
+            "name": os.path.basename(self.filename),
+            "sloc": self.total_sloc,
+        }
         parent_json.update(mydict)
         return parent_json
 
     def __repr__(self):
-        return "FileNode(filename={0!r})".format(self.filename)
+        return f"FileNode(filename={self.filename!r})"
 
     def __str__(self):
-        return "{}; Hash: {}".format(str(self.filename), str(self.file_hash))
+        return f"{str(self.filename)}; Hash: {str(self.file_hash)}"
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -598,20 +693,25 @@ class CodeNode(Node):
         else:
             source = None
 
-        mydict = {'type': 'code',
-                  'start_line': self.start_line,
-                  'end_line': self.end_line,
-                  'sloc': self.num_lines,
-                  'source': source}
+        mydict = {
+            "type": "code",
+            "start_line": self.start_line,
+            "end_line": self.end_line,
+            "sloc": self.num_lines,
+            "source": source,
+        }
         parent_json.update(mydict)
         return parent_json
 
     def __repr__(self):
-        return "CodeNode(start={0!r},end={1!r},lines={2!r}".format(
-            self.start_line, self.end_line, self.num_lines)
+        return "CodeNode(start={!r},end={!r},lines={!r}".format(
+            self.start_line,
+            self.end_line,
+            self.num_lines,
+        )
 
     def __str__(self):
-        return "Lines {}-{}; SLOC = {};".format(self.start_line, self.end_line, self.num_lines)
+        return f"Lines {self.start_line}-{self.end_line}; SLOC = {self.num_lines};"
 
     def spelling(self):
         """
@@ -625,7 +725,7 @@ class CodeNode(Node):
         if self.source:
             return self.source
         else:
-            return ["/* {} SLOC omitted */".format(self.num_lines)]
+            return [f"/* {self.num_lines} SLOC omitted */"]
 
 
 class DirectiveNode(CodeNode):
@@ -640,8 +740,7 @@ class DirectiveNode(CodeNode):
 
     def to_json(self, assoc):
         parent_json = super().to_json(assoc)
-        mydict = {'type': 'directive',
-                  'source': "\n".join(self.spelling())}
+        mydict = {"type": "directive", "source": "\n".join(self.spelling())}
         parent_json.update(mydict)
         return parent_json
 
@@ -657,7 +756,7 @@ class UnrecognizedDirectiveNode(DirectiveNode):
         self.tokens = tokens
 
     def __repr__(self):
-        return "DirectiveNode(kind={!r},tokens={!r})".format(self.kind, self.tokens)
+        return f"DirectiveNode(kind={self.kind!r},tokens={self.tokens!r})"
 
     def spelling(self):
         """
@@ -678,18 +777,18 @@ class PragmaNode(DirectiveNode):
         self.tokens = tokens
 
     def __repr__(self):
-        return "DirectiveNode(kind={0!r},tokens={1!r})".format(self.kind, self.tokens)
+        return f"DirectiveNode(kind={self.kind!r},tokens={self.tokens!r})"
 
     def spelling(self):
         """
         Return the string representation of this pragma in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["#pragma {0!s}".format(" ".join([str(t) for t in self.tokens]))]
+        return ["#pragma {!s}".format(" ".join([str(t) for t in self.tokens]))]
 
     def evaluate_for_platform(self, **kwargs):
-        if self.tokens and str(self.tokens[0]) == 'once':
-            kwargs['platform'].add_include_to_skip(kwargs['filename'])
+        if self.tokens and str(self.tokens[0]) == "once":
+            kwargs["platform"].add_include_to_skip(kwargs["filename"])
 
 
 class DefineNode(DirectiveNode):
@@ -705,8 +804,12 @@ class DefineNode(DirectiveNode):
         self.value = value
 
     def __repr__(self):
-        return "DirectiveNode(kind={0!r},identifier={1!r},args={2!r},value={3!r})".format(
-            self.kind, self.identifier, self.args, self.value)
+        return "DirectiveNode(kind={!r},identifier={!r},args={!r},value={!r})".format(
+            self.kind,
+            self.identifier,
+            self.args,
+            self.value,
+        )
 
     def spelling(self):
         """
@@ -716,19 +819,19 @@ class DefineNode(DirectiveNode):
         value_str = "".join([str(v) for v in self.value])
 
         if self.args is None:
-            return ["#define {0!s} {1!s}".format(self.identifier, value_str)]
+            return [f"#define {self.identifier!s} {value_str!s}"]
         elif self.args == []:
-            return ["#define {0!s}() {1!s}".format(self.identifier, value_str)]
+            return [f"#define {self.identifier!s}() {value_str!s}"]
         else:
             arg_str = ", ".join([str(arg) for arg in self.args])
-            return ["#define {0!s}({1!s}) {2!s}".format(self.identifier, arg_str, value_str)]
+            return [f"#define {self.identifier!s}({arg_str!s}) {value_str!s}"]
 
     def evaluate_for_platform(self, **kwargs):
         """
         Add a definition into the platform, and return false
         """
         macro = make_macro(self.identifier, self.args, self.value)
-        kwargs['platform'].define(self.identifier.token, macro)
+        kwargs["platform"].define(self.identifier.token, macro)
         return False
 
 
@@ -743,24 +846,26 @@ class UndefNode(DirectiveNode):
         self.identifier = identifier
 
     def __repr__(self):
-        return "DirectiveNode(kind={0!r},identifier={1!r})".format(self.kind, self.identifier)
+        return (
+            f"DirectiveNode(kind={self.kind!r},identifier={self.identifier!r})"
+        )
 
     def spelling(self):
         """
         Return the string representation of this undef in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["#undef {0!s}".format(self.identifier)]
+        return [f"#undef {self.identifier!s}"]
 
     def evaluate_for_platform(self, **kwargs):
         """
         Add a definition into the platform, and return false
         """
-        kwargs['platform'].undefine(self.identifier.token)
+        kwargs["platform"].undefine(self.identifier.token)
         return False
 
 
-class IncludePath():
+class IncludePath:
     """
     Represents an include path enclosed by "" or <>
     """
@@ -770,7 +875,7 @@ class IncludePath():
         self.system = system
 
     def __repr__(self):
-        return "IncludePath(path={!r},system={!r})".format(self.path, self.system)
+        return f"IncludePath(path={self.path!r},system={self.system!r})"
 
     def spelling(self):
         """
@@ -781,8 +886,8 @@ class IncludePath():
         includes are declared in quotes.
         """
         if self.system:
-            return ["<{0!s}>".format(self.path)]
-        return ["\"{0!s}\"".format(self.path)]
+            return [f"<{self.path!s}>"]
+        return [f'"{self.path!s}"']
 
     def is_system_path(self):
         return self.system
@@ -800,7 +905,7 @@ class IncludeNode(DirectiveNode):
         self.value = value
 
     def __repr__(self):
-        return "DirectiveNode(kind={0!r},value={1!r})".format(self.kind, self.value)
+        return f"DirectiveNode(kind={self.kind!r},value={self.value!r})"
 
     def spelling(self):
         """
@@ -812,7 +917,7 @@ class IncludeNode(DirectiveNode):
         else:
             str_rep = " ".join(self.value.spelling())
 
-        return ["#include {0!s}".format(str_rep)]
+        return [f"#include {str_rep!s}"]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -828,27 +933,32 @@ class IncludeNode(DirectiveNode):
             include_path = self.value.path
             is_system_include = self.value.system
         else:
-            expansion = MacroExpander(kwargs['platform']).expand(self.value)
+            expansion = MacroExpander(kwargs["platform"]).expand(self.value)
             path_obj = DirectiveParser(expansion).include_path()
             include_path = path_obj.path
             is_system_include = path_obj.system
 
-        this_path = os.path.dirname(kwargs['filename'])
-        include_file = kwargs['platform'].find_include_file(
-            include_path, this_path, is_system_include)
+        this_path = os.path.dirname(kwargs["filename"])
+        include_file = kwargs["platform"].find_include_file(
+            include_path,
+            this_path,
+            is_system_include,
+        )
 
-        if include_file and kwargs['platform'].process_include(include_file):
+        if include_file and kwargs["platform"].process_include(include_file):
             # include files use the same language as the file itself,
             # irrespective of file extension.
-            lang = kwargs['state'].langs[kwargs['filename']]
-            kwargs['state'].insert_file(include_file, lang)
+            lang = kwargs["state"].langs[kwargs["filename"]]
+            kwargs["state"].insert_file(include_file, lang)
 
-            associator = TreeAssociator(kwargs['state'].get_tree(
-                include_file), kwargs['state'].get_map(include_file))
-            associator.walk(kwargs['platform'], kwargs['state'])
+            associator = TreeAssociator(
+                kwargs["state"].get_tree(include_file),
+                kwargs["state"].get_map(include_file),
+            )
+            associator.walk(kwargs["platform"], kwargs["state"])
 
         if not include_file:
-            filename = kwargs['filename']
+            filename = kwargs["filename"]
             line = self.start_line
             log.warning(f"{filename}:{line}: '{include_path}' not found")
 
@@ -868,18 +978,18 @@ class IfNode(DirectiveNode):
         return True
 
     def __repr__(self):
-        return "DirectiveNode(kind={0!r},tokens={1!r})".format(self.kind, self.tokens)
+        return f"DirectiveNode(kind={self.kind!r},tokens={self.tokens!r})"
 
     def spelling(self):
         """
         Return the string representation of this if in the input code.
         Useful primarily for debugging and generating error messages.
         """
-        return ["#if {0!s}".format(" ".join([str(t) for t in self.tokens]))]
+        return ["#if {!s}".format(" ".join([str(t) for t in self.tokens]))]
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
-        expanded_tokens = MacroExpander(kwargs['platform']).expand(self.tokens)
+        expanded_tokens = MacroExpander(kwargs["platform"]).expand(self.tokens)
 
         # Evaluate the expanded tokens
         return ExpressionEvaluator(expanded_tokens).evaluate()
@@ -917,7 +1027,7 @@ class ElseNode(DirectiveNode):
         return True
 
     def __repr__(self):
-        return "DirectiveNode(kind={0!r})".format(self.kind)
+        return f"DirectiveNode(kind={self.kind!r})"
 
     def spelling(self):
         """
@@ -944,7 +1054,7 @@ class EndIfNode(DirectiveNode):
         return True
 
     def __repr__(self):
-        return "DirectiveNode(kind={0!r})".format(self.kind)
+        return f"DirectiveNode(kind={self.kind!r})"
 
     def spelling(self):
         """
@@ -986,7 +1096,7 @@ class Parser:
             token = self.cursor()
             self.pos += 1
         else:
-            raise ParseError("Expected {!s}.".format(token_type))
+            raise ParseError(f"Expected {token_type!s}.")
         return token
 
     def match_value(self, token_type, token_value):
@@ -994,11 +1104,14 @@ class Parser:
         Match a token of the specified type and value, and advance
         position.
         """
-        if isinstance(self.cursor(), token_type) and self.cursor().token == token_value:
+        if (
+            isinstance(self.cursor(), token_type)
+            and self.cursor().token == token_value
+        ):
             token = self.cursor()
             self.pos += 1
         else:
-            raise ParseError("Expected {!s}.".format(token_value))
+            raise ParseError(f"Expected {token_value!s}.")
         return token
 
 
@@ -1058,7 +1171,7 @@ class DirectiveParser(Parser):
 
                 arg = self.__arg()
                 args.append(arg)
-                if arg.token.endswith('...'):
+                if arg.token.endswith("..."):
                     return args
 
         except ParseError:
@@ -1106,7 +1219,7 @@ class DirectiveParser(Parser):
 
             # Any remaining tokens are the macro expansion
             if not self.eol():
-                expansion = self.tokens[self.pos:]
+                expansion = self.tokens[self.pos :]
                 self.pos = len(self.tokens)
             else:
                 expansion = []
@@ -1158,15 +1271,22 @@ class DirectiveParser(Parser):
             self.pos = initial_pos
             raise ParseError("Invalid include directive.")
 
-    def __path(self, marker_type=Punctuator, initiator_value='\"', terminator_value='\"'):
+    def __path(
+        self,
+        marker_type=Punctuator,
+        initiator_value='"',
+        terminator_value='"',
+    ):
         """
         Match a path enclosed between the specified initiator and
         terminator values.
         """
         path = []
         self.match_value(marker_type, initiator_value)
-        while not self.eol() and not (isinstance(self.cursor(), marker_type)
-                                      and self.cursor().token == terminator_value):
+        while not self.eol() and not (
+            isinstance(self.cursor(), marker_type)
+            and self.cursor().token == terminator_value
+        ):
             path.append(self.cursor())
             self.pos += 1
         self.match_value(marker_type, terminator_value)
@@ -1209,7 +1329,7 @@ class DirectiveParser(Parser):
         initial_pos = self.pos
         try:
             self.match_value(Identifier, "pragma")
-            expr = self.tokens[self.pos:]
+            expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
             return PragmaNode(expr)
@@ -1227,7 +1347,7 @@ class DirectiveParser(Parser):
         initial_pos = self.pos
         try:
             self.match_value(Identifier, "if")
-            expr = self.tokens[self.pos:]
+            expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
             return IfNode(expr)
@@ -1248,8 +1368,10 @@ class DirectiveParser(Parser):
             identifier = self.match_type(Identifier)
 
             # Wrap expression in "defined()" call
-            prefix = [Identifier("Unknown", -1, True, "defined"),
-                      Punctuator("Unknown", -1, False, "(")]
+            prefix = [
+                Identifier("Unknown", -1, True, "defined"),
+                Punctuator("Unknown", -1, False, "("),
+            ]
             suffix = [Punctuator("Unknown", -1, False, ")")]
             expr = prefix + [identifier] + suffix
 
@@ -1271,10 +1393,11 @@ class DirectiveParser(Parser):
             identifier = self.match_type(Identifier)
 
             # Wrap expression in "!defined()" call
-            prefix = [Operator("Unknown", -1, True, "!"), Identifier("Unknown", -1,
-                                                                     False, "defined"),
-                      Punctuator("Unknown",
-                                 -1, False, "(")]
+            prefix = [
+                Operator("Unknown", -1, True, "!"),
+                Identifier("Unknown", -1, False, "defined"),
+                Punctuator("Unknown", -1, False, "("),
+            ]
             suffix = [Punctuator("Unknown", -1, False, ")")]
             expr = prefix + [identifier] + suffix
 
@@ -1293,7 +1416,7 @@ class DirectiveParser(Parser):
         initial_pos = self.pos
         try:
             self.match_value(Identifier, "elif")
-            expr = self.tokens[self.pos:]
+            expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
             return ElIfNode(expr)
@@ -1343,14 +1466,26 @@ class DirectiveParser(Parser):
             self.match_value(Operator, "#")
 
             # Check for a match against known directives
-            candidates = [self.define, self.undef, self.include, self.ifdef,
-                          self.ifndef, self.if_, self.elif_, self.else_, self.endif, self.pragma]
+            candidates = [
+                self.define,
+                self.undef,
+                self.include,
+                self.ifdef,
+                self.ifndef,
+                self.if_,
+                self.elif_,
+                self.else_,
+                self.endif,
+                self.pragma,
+            ]
             for f in candidates:
                 try:
                     directive = f()
                     if not self.eol():
-                        chars = "".join((str(x) for x in self.tokens))
-                        log.warning(f"Additional tokens at end of preprocessor directive: {chars}")
+                        chars = "".join(str(x) for x in self.tokens)
+                        log.warning(
+                            f"Additional tokens at end of preprocessor directive: {chars}",
+                        )
                     return directive
                 except ParseError:
                     pass
@@ -1373,7 +1508,7 @@ def macro_from_definition_string(string):
     # Any remaining tokens after an "=" are the macro expansion
     if not parser.eol():
         parser.match_value(Operator, "=")
-        expansion = parser.tokens[parser.pos:]
+        expansion = parser.tokens[parser.pos :]
         parser.pos = len(parser.tokens)
     else:
         expansion = [NumericalConstant("Unknown", None, False, "1")]
@@ -1423,7 +1558,7 @@ class Macro:
 
         while idx < len(self.replacement):
             tok = self.replacement[idx]
-            if tok.token == '##':
+            if tok.token == "##":
                 last = res_tokens.pop()
                 arg_idx = self.which_arg(last.token)
                 if arg_idx != -1:
@@ -1446,9 +1581,10 @@ class Macro:
                 tok = lex.tokenize_one()
                 if tok is None:
                     raise ParseError(
-                        f"Concatenation didn't result in valid token {lex.string}")
+                        f"Concatenation didn't result in valid token {lex.string}",
+                    )
                 tok.prev_white = last.prev_white
-            elif tok.token == '#':
+            elif tok.token == "#":
                 if isinstance(self, MacroFunction):
                     self.has_strcat = True
             elif isinstance(tok, Identifier):
@@ -1460,15 +1596,17 @@ class Macro:
         self.replacement = res_tokens
 
     def __repr__(self):
-        return "Macro(name={0!r},replacement={1!r})".format(
-            self.name, self.replacement)
+        return "Macro(name={!r},replacement={!r})".format(
+            self.name,
+            self.replacement,
+        )
 
     def spelling(self):
         """
         Return (a list containing) a string with a lexable representation of this Macro.
         """
         replacement_str = " ".join([str(t) for t in self.replacement])
-        return ["{0!s}={1!s}".format(self.name, replacement_str)]
+        return [f"{self.name!s}={replacement_str!s}"]
 
     def replace(self):
         """
@@ -1490,7 +1628,7 @@ class MacroFunction(Macro):
         else:
             self.variadic = False
         if self.variadic:
-            if self.args[-1] == '...':
+            if self.args[-1] == "...":
                 # An unnamed variable argument replaces __VA_ARGS__
                 self.args[-1] = "__VA_ARGS__"
             else:
@@ -1509,8 +1647,11 @@ class MacroFunction(Macro):
             return -1
 
     def __repr__(self):
-        return "MacroFunction(name={0!r},args={1!r},replacement={2!r})".format(
-            self.name, self.args, self.replacement)
+        return "MacroFunction(name={!r},args={!r},replacement={!r})".format(
+            self.name,
+            self.args,
+            self.replacement,
+        )
 
     def spelling(self):
         """
@@ -1519,7 +1660,7 @@ class MacroFunction(Macro):
         """
         replacement_str = " ".join([str(t) for t in self.replacement])
         arg_str = ",".join([str(t) for t in self.args])
-        return ["{0!s}({1!s})={2!s}".format(self.name, arg_str, replacement_str)]
+        return [f"{self.name!s}({arg_str!s})={replacement_str!s}"]
 
     def replace(self, input_args):
         """
@@ -1541,7 +1682,7 @@ class MacroFunction(Macro):
                 va_args_raw.extend(input_args[-1][0])
                 va_args_exp.extend(input_args[-1][1])
 
-            input_args[len(self.args) - 1:] = [(va_args_raw, va_args_exp)]
+            input_args[len(self.args) - 1 :] = [(va_args_raw, va_args_exp)]
 
         if self.has_strcat:
             res_tokens = []
@@ -1550,7 +1691,7 @@ class MacroFunction(Macro):
 
             while idx < len(self.replacement):
                 tok = self.replacement[idx]
-                if tok.token == '##':
+                if tok.token == "##":
                     last = res_tokens.pop()
                     prev_white = last.prev_white
                     if not last_cat:
@@ -1573,7 +1714,8 @@ class MacroFunction(Macro):
                         tok = lex.tokenize_one()
                         if tok is None:
                             raise ParseError(
-                                f"Concatenation didn't result in valid token {lex.string}")
+                                f"Concatenation didn't result in valid token {lex.string}",
+                            )
                         tok.prev_white = last[-1].prev_white
                         toadd = last[:-1] + [tok] + nexttok[1:]
                         if toadd[0].prev_white != prev_white:
@@ -1584,16 +1726,20 @@ class MacroFunction(Macro):
                     else:
                         res_tokens.extend(nexttok)
                     last_cat = True
-                elif tok.token == '#':
+                elif tok.token == "#":
                     idx += 1
                     if idx == len(self.replacement):
-                        raise ParseError("Found # at end of macro replacement!")
+                        raise ParseError(
+                            "Found # at end of macro replacement!",
+                        )
                     nexttok = self.replacement[idx]
                     try:
                         argidx = self.args.index(nexttok.token)
                         tok = input_args[argidx][0]  # Unexpanded arg
                     except ValueError:
-                        raise ParseError(f"# was not followed by a macro argument.")
+                        raise ParseError(
+                            f"# was not followed by a macro argument.",
+                        )
                     tok = Lexer.stringify(tok)
                     tok.prev_white = tok.prev_white
                     last_cat = True
@@ -1648,10 +1794,13 @@ class ExpanderHelper:
         stream's pos, advancing pos to end of insertion.
         """
 
-        start = list(filter(None, self.tokens[:self.pos]))
+        start = list(filter(None, self.tokens[: self.pos]))
 
-        self.tokens = start + list(filter(None, upper_helper.tokens)) + \
-            list(filter(None, self.tokens[self.pos:]))
+        self.tokens = (
+            start
+            + list(filter(None, upper_helper.tokens))
+            + list(filter(None, self.tokens[self.pos :]))
+        )
         self.pos = len(start)
 
     def peek_tok(self):
@@ -1781,8 +1930,12 @@ class MacroExpander:
         Expand a call to defined(X) or defined X.
         """
         value = self.platform.is_defined(str(identifier))
-        return NumericalConstant("EXPANSION", identifier.line,
-                                 identifier.prev_white, value)
+        return NumericalConstant(
+            "EXPANSION",
+            identifier.line,
+            identifier.prev_white,
+            value,
+        )
 
     def expand(self, tokens, ident=None, pre_expand=False):
         """
@@ -1800,7 +1953,6 @@ class MacroExpander:
         self.no_expand.append(str(ident))
 
         try:
-
             while True:
                 ctok = self.peek_tok_pop()
 
@@ -1809,23 +1961,28 @@ class MacroExpander:
                     continue
 
                 _ = self.consume_tok()
-                if ctok.token == 'defined':
+                if ctok.token == "defined":
                     try:
                         tok = self.peek_tok()
-                        if tok.token == '(':
+                        if tok.token == "(":
                             _ = self.consume_tok()
                             ident = self.consume_tok()
                             paren = self.peek_tok()
-                            if paren.token != ')':
+                            if paren.token != ")":
                                 raise ParserError(
-                                    "Expected closing paren to follow identifier following 'defined'")
+                                    "Expected closing paren to follow identifier following 'defined'",
+                                )
                         else:
                             ident = tok
                         if not isinstance(ident, Identifier):
-                            raise ParserError("Expected 'defined' to be followed by identifier")
+                            raise ParserError(
+                                "Expected 'defined' to be followed by identifier",
+                            )
                         self.replace_tok(self.defined(ident))
                     except IndexError:
-                        raise ParserError("Expected 'defined' to be followed by identifier")
+                        raise ParserError(
+                            "Expected 'defined' to be followed by identifier",
+                        )
                     continue
 
                 if self.not_expandable(ctok):
@@ -1843,7 +2000,7 @@ class MacroExpander:
 
                 if isinstance(macro_lookup, MacroFunction):
                     paren = self.peek_tok()
-                    if not paren or paren.token != '(':
+                    if not paren or paren.token != "(":
                         self.parser_stack[-1].pos -= 1
                         self.replace_tok(ctok)
                         continue
@@ -1855,14 +2012,14 @@ class MacroExpander:
 
                     while True:
                         tok = self.consume_tok()
-                        if tok.token == ',' and open_paren_count == 1:
+                        if tok.token == "," and open_paren_count == 1:
                             args.append(current_arg)
                             current_arg = []
                             continue
 
-                        if tok.token == '(':
+                        if tok.token == "(":
                             open_paren_count += 1
-                        elif tok.token == ')':
+                        elif tok.token == ")":
                             open_paren_count -= 1
                             if open_paren_count == 0:
                                 args.append(current_arg)
@@ -1872,9 +2029,15 @@ class MacroExpander:
 
                     pre_expanded = []
                     for i, arg in enumerate(args):
-                        if i >= len(
-                                macro_lookup.arg_needs_expansion) or macro_lookup.arg_needs_expansion[i]:
-                            arg_expansion = self.expand(arg, ident=None, pre_expand=True)
+                        if (
+                            i >= len(macro_lookup.arg_needs_expansion)
+                            or macro_lookup.arg_needs_expansion[i]
+                        ):
+                            arg_expansion = self.expand(
+                                arg,
+                                ident=None,
+                                pre_expand=True,
+                            )
                             pre_expanded.append((arg, arg_expansion))
                         else:
                             pre_expanded.append((arg,))
@@ -1913,31 +2076,31 @@ class ExpressionEvaluator(Parser):
     # https://en.cppreference.com/w/cpp/language/operator_precedence
     OpInfo = collections.namedtuple("OpInfo", ["prec", "assoc"])
     UnaryOperators = {
-        '-': OpInfo(12, "RIGHT"),
-        '+': OpInfo(12, "RIGHT"),
-        '!': OpInfo(12, "RIGHT"),
-        '~': OpInfo(12, "RIGHT")
+        "-": OpInfo(12, "RIGHT"),
+        "+": OpInfo(12, "RIGHT"),
+        "!": OpInfo(12, "RIGHT"),
+        "~": OpInfo(12, "RIGHT"),
     }
     BinaryOperators = {
-        '?': OpInfo(1, "RIGHT"),
-        '||': OpInfo(2, "LEFT"),
-        '&&': OpInfo(3, "LEFT"),
-        '|': OpInfo(4, "LEFT"),
-        '^': OpInfo(5, "LEFT"),
-        '&': OpInfo(6, "LEFT"),
-        '==': OpInfo(7, "LEFT"),
-        '!=': OpInfo(7, "LEFT"),
-        '<': OpInfo(8, "LEFT"),
-        '<=': OpInfo(8, "LEFT"),
-        '>': OpInfo(8, "LEFT"),
-        '>=': OpInfo(8, "LEFT"),
-        '<<': OpInfo(9, "LEFT"),
-        '>>': OpInfo(9, "LEFT"),
-        '+': OpInfo(10, "LEFT"),
-        '-': OpInfo(10, "LEFT"),
-        '*': OpInfo(11, "LEFT"),
-        '/': OpInfo(11, "LEFT"),
-        '%': OpInfo(11, "LEFT"),
+        "?": OpInfo(1, "RIGHT"),
+        "||": OpInfo(2, "LEFT"),
+        "&&": OpInfo(3, "LEFT"),
+        "|": OpInfo(4, "LEFT"),
+        "^": OpInfo(5, "LEFT"),
+        "&": OpInfo(6, "LEFT"),
+        "==": OpInfo(7, "LEFT"),
+        "!=": OpInfo(7, "LEFT"),
+        "<": OpInfo(8, "LEFT"),
+        "<=": OpInfo(8, "LEFT"),
+        ">": OpInfo(8, "LEFT"),
+        ">=": OpInfo(8, "LEFT"),
+        "<<": OpInfo(9, "LEFT"),
+        ">>": OpInfo(9, "LEFT"),
+        "+": OpInfo(10, "LEFT"),
+        "-": OpInfo(10, "LEFT"),
+        "*": OpInfo(11, "LEFT"),
+        "/": OpInfo(11, "LEFT"),
+        "%": OpInfo(11, "LEFT"),
     }
 
     def call(self):
@@ -1989,17 +2152,28 @@ class ExpressionEvaluator(Parser):
 
             # Strip suffix (if present)
             suffix = None
-            suffixes = ['ull', 'ULL', 'ul', 'UL', 'll', 'LL', 'u', 'U', 'l', 'L']
+            suffixes = [
+                "ull",
+                "ULL",
+                "ul",
+                "UL",
+                "ll",
+                "LL",
+                "u",
+                "U",
+                "l",
+                "L",
+            ]
             for s in suffixes:
                 if value.endswith(s):
                     suffix = s
-                    value = value[:-len(s)]
+                    value = value[: -len(s)]
                     break
 
             # Convert to decimal and then to integer with correct sign
             # Preprocessor always uses 64-bit arithmetic!
             int_value = int(value, base)
-            if suffix and 'u' in suffix:
+            if suffix and "u" in suffix:
                 return np.uint64(int_value)
             else:
                 return np.int64(int_value)
@@ -2030,7 +2204,8 @@ class ExpressionEvaluator(Parser):
             self.pos = initial_pos
 
         raise ParseError(
-            "Expected an integer constant, character constant, identifier or function call.")
+            "Expected an integer constant, character constant, identifier or function call.",
+        )
 
     def primary(self):
         """
@@ -2044,7 +2219,9 @@ class ExpressionEvaluator(Parser):
             operator = self.match_type(Operator)
             if operator.token in ExpressionEvaluator.UnaryOperators:
                 # pylint: disable=unused-variable
-                (prec, assoc) = ExpressionEvaluator.UnaryOperators[operator.token]
+                (prec, assoc) = ExpressionEvaluator.UnaryOperators[
+                    operator.token
+                ]
             else:
                 raise ParseError("Not a UnaryOperator")
             expr = self.expression(prec)
@@ -2069,7 +2246,8 @@ class ExpressionEvaluator(Parser):
             self.pos = initial_pos
 
         raise ParseError(
-            "Expected a unary expression, an expression in parens or an identifier/constant.")
+            "Expected a unary expression, an expression in parens or an identifier/constant.",
+        )
 
     def expression(self, min_precedence=0):
         """
@@ -2082,9 +2260,14 @@ class ExpressionEvaluator(Parser):
         expr = self.primary()
 
         # Recursion is terminated based on operator precedence
-        while not self.eol() and (self.cursor().token in ExpressionEvaluator.BinaryOperators) and (
-                ExpressionEvaluator.BinaryOperators[self.cursor().token].prec >= min_precedence):
-
+        while (
+            not self.eol()
+            and (self.cursor().token in ExpressionEvaluator.BinaryOperators)
+            and (
+                ExpressionEvaluator.BinaryOperators[self.cursor().token].prec
+                >= min_precedence
+            )
+        ):
             operator = self.match_type(Operator)
             (prec, assoc) = ExpressionEvaluator.BinaryOperators[operator.token]
 
@@ -2102,7 +2285,9 @@ class ExpressionEvaluator(Parser):
             elif assoc == "RIGHT":
                 rhs = self.expression(prec)
             else:
-                raise ValueError("Encountered a BinaryOperator with no associativity.")
+                raise ValueError(
+                    "Encountered a BinaryOperator with no associativity.",
+                )
 
             # Converting C ternary to Python requires us to swap
             # expression order:
@@ -2141,13 +2326,13 @@ class ExpressionEvaluator(Parser):
         """
         Apply the specified unary operator: op operand
         """
-        if op == '-':
+        if op == "-":
             return -operand
-        elif op == '+':
+        elif op == "+":
             return +operand
-        elif op == '!':
+        elif op == "!":
             return not operand
-        elif op == '~':
+        elif op == "~":
             return ~operand
         else:
             raise ValueError("Not a valid unary operator.")
@@ -2158,41 +2343,41 @@ class ExpressionEvaluator(Parser):
         """
         Apply the specified binary operator: lhs op rhs
         """
-        if op == '||':
+        if op == "||":
             return lhs or rhs
-        elif op == '&&':
+        elif op == "&&":
             return lhs and rhs
-        elif op == '|':
+        elif op == "|":
             return lhs | rhs
-        elif op == '^':
+        elif op == "^":
             return lhs ^ rhs
-        elif op == '&':
+        elif op == "&":
             return lhs & rhs
-        elif op == '==':
+        elif op == "==":
             return lhs == rhs
-        elif op == '!=':
+        elif op == "!=":
             return lhs != rhs
-        elif op == '<':
+        elif op == "<":
             return lhs < rhs
-        elif op == '<=':
+        elif op == "<=":
             return lhs <= rhs
-        elif op == '>':
+        elif op == ">":
             return lhs > rhs
-        elif op == '>=':
+        elif op == ">=":
             return lhs >= rhs
-        elif op == '<<':
+        elif op == "<<":
             return lhs << rhs
-        elif op == '>>':
+        elif op == ">>":
             return lhs >> rhs
-        elif op == '+':
+        elif op == "+":
             return lhs + rhs
-        elif op == '-':
+        elif op == "-":
             return lhs - rhs
-        elif op == '*':
+        elif op == "*":
             return lhs * rhs
-        elif op == '/':
+        elif op == "/":
             return lhs // rhs  # force integer division
-        elif op == '%':
+        elif op == "%":
             return lhs % rhs
         else:
             raise ValueError("Not a binary operator.")
@@ -2210,7 +2395,7 @@ class ExpressionEvaluator(Parser):
             raise ParseError("Could not evaluate expression.")
 
 
-class SourceTree():
+class SourceTree:
     """
     Represents a source file as a tree of directive and code nodes.
     """
@@ -2230,10 +2415,15 @@ class SourceTree():
         or a tree continue node.
         """
 
-        while not (self._latest_node.is_start_node() or self._latest_node.is_cont_node()):
+        while not (
+            self._latest_node.is_start_node()
+            or self._latest_node.is_cont_node()
+        ):
             self._latest_node = self._latest_node.parent
             if self._latest_node == self.root:
-                log.error('Latest node == root while trying to find an insertion point.')
+                log.error(
+                    "Latest node == root while trying to find an insertion point.",
+                )
                 break
 
     def __insert_in_place(self, new_node, parent):
@@ -2253,7 +2443,10 @@ class SourceTree():
         # previous node, unless it was a tree start, or tree continue
         # node. In which case it's a child.
         elif new_node.is_start_node():
-            if self._latest_node.is_start_node() or self._latest_node.is_cont_node():
+            if (
+                self._latest_node.is_start_node()
+                or self._latest_node.is_cont_node()
+            ):
                 self.__insert_in_place(new_node, self._latest_node)
             else:
                 self.__insert_in_place(new_node, self._latest_node.parent)
@@ -2270,7 +2463,10 @@ class SourceTree():
         # Otherwise, if the previous node was a tree start or a tree
         # continue, the new node is a child. If not, it's a sibling.
         else:
-            if self._latest_node.is_start_node() or self._latest_node.is_cont_node():
+            if (
+                self._latest_node.is_start_node()
+                or self._latest_node.is_cont_node()
+            ):
                 self.__insert_in_place(new_node, self._latest_node)
             else:
                 self.__insert_in_place(new_node, self._latest_node.parent)

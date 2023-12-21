@@ -8,7 +8,7 @@ options for a specific platform.
 import os
 
 
-class Platform():
+class Platform:
     """
     Represents a platform, and everything associated with a platform.
     Contains a list of definitions, and include paths.

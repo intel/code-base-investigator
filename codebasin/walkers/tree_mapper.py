@@ -1,12 +1,12 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import logging
 import collections
+import logging
 
-from .tree_walker import TreeWalker
+from codebasin.walkers.tree_walker import TreeWalker
 
-log = logging.getLogger('codebasin')
+log = logging.getLogger("codebasin")
 
 
 class TreeMapper(TreeWalker):

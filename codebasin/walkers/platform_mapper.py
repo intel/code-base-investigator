@@ -1,26 +1,27 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import logging
 import collections
+import logging
 import os
-from .tree_mapper import TreeMapper
-from codebasin.preprocessor import FileNode, CodeNode
 
-log = logging.getLogger('codebasin')
+from codebasin.preprocessor import CodeNode, FileNode
+from codebasin.walkers.tree_mapper import TreeMapper
+
+log = logging.getLogger("codebasin")
+
 
 def exclude(filename, cb):
-
-    if filename in cb['exclude_files']:
-      log.info(f"Excluding {filename}; matches 'exclude_files'.")
-      return True
-    elif filename in cb['files']:
-      return False
-    else:
-      path = os.path.realpath(filename)
-      if not path.startswith(cb['rootdir']):
-        log.info(f"Excluding {filename}; outside of root directory.")
+    if filename in cb["exclude_files"]:
+        log.info(f"Excluding {filename}; matches 'exclude_files'.")
         return True
+    elif filename in cb["files"]:
+        return False
+    else:
+        path = os.path.realpath(filename)
+        if not path.startswith(cb["rootdir"]):
+            log.info(f"Excluding {filename}; outside of root directory.")
+            return True
 
     return False
 
@@ -42,7 +43,10 @@ class PlatformMapper(TreeMapper):
         """
         # Do not map files that the user does not consider to be part of
         # the codebase
-        if isinstance(_node, FileNode) and exclude(_node.filename, self.codebase):
+        if isinstance(_node, FileNode) and exclude(
+            _node.filename,
+            self.codebase,
+        ):
             return
 
         if isinstance(_node, CodeNode):
