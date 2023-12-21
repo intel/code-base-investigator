@@ -37,9 +37,9 @@ if __name__ == "__main__":
     covpath = os.path.realpath(args.ofile)
     for path in [dbpath, covpath]:
         if not util.valid_path(path):
-            raise ValueError("%s is not a valid path." % path)
+            raise ValueError(f"{path} is not a valid path.")
         if not util.ensure_ext(path, [".json"]):
-            raise ValueError("%s is not a JSON file." % path)
+            raise ValueError(f"{path} is not a JSON file.")
 
     # Ensure regular CBI output goes to stderr
     stderr_log = logging.StreamHandler(sys.stderr)

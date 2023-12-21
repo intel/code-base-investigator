@@ -102,19 +102,18 @@ def summary(setmap):
     data = []
     total_count = 0
     for pset in sorted(setmap.keys(), key=len):
-        name = "{%s}" % (", ".join(pset))
-        count = "%d" % (setmap[pset])
-        percent = "%.2f" % ((float(setmap[pset]) / float(total)) * 100)
-        data += [[name, count, percent]]
+        name = ", ".join(pset)
+        count = setmap[pset]
+        percent = (float(setmap[pset]) / float(total)) * 100
+        data += [[name, str(count), f"{percent:.2f}"]]
         total_count += setmap[pset]
     lines += [table(["Platform Set", "LOC", "% LOC"], data)]
 
-    lines += ["Code Divergence: %.2f" % (divergence(setmap))]
-    lines += [
-        "Unused Code (%%): %.2f"
-        % ((setmap[frozenset()] / total_count) * 100.0),
-    ]
-    lines += ["Total SLOC: %d" % (total_count)]
+    cd = divergence(setmap)
+    unused = (setmap[frozenset()] / total_count) * 100.0
+    lines += [f"Code Divergence: {cd:.2f}"]
+    lines += [f"Unused Code (%%): {unused:.2f}"]
+    lines += [f"Total SLOC: {total_count}"]
 
     return "\n".join(lines)
 
@@ -160,7 +159,7 @@ def clustering(output_name, setmap):
     lines = []
     lines += ["", "Distance Matrix"]
     labelled_matrix = [
-        [name] + [("%.2f" % column) for column in matrix[row]]
+        [name] + [f"{column:.2f}" for column in matrix[row]]
         for (row, name) in enumerate(platforms)
     ]
     lines += [table([""] + platforms, labelled_matrix)]
