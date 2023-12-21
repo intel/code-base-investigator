@@ -12,7 +12,6 @@ import logging
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import codebasin.config as config  # nopep8
 import codebasin.finder as finder  # nopep8
 import codebasin.util as util  # nopep8
