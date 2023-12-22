@@ -594,9 +594,9 @@ def load_database(dbpath, rootdir):
         if os.path.exists(path):
             for pass_ in compiler.get_passes():
                 entry = {"file": path,
-                         "defines": defines,
-                         "include_paths": include_paths,
-                         "include_files": include_files}
+                         "defines": defines.copy(),
+                         "include_paths": include_paths.copy(),
+                         "include_files": include_files.copy()}
                 if compiler.has_implicit_behavior(pass_):
                     extra_flags = []
                     compiler_config = compiler.get_configuration(pass_)
