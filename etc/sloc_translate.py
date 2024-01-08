@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.6
-# Copyright (C) 2019-2020 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Parse source file, reporting sloc and physical lines.
