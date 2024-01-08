@@ -53,7 +53,11 @@ repos:
             flake8-debugger,
             flake8-use-fstring,
           ]
-        args: ["--extend-ignore=S105,E203"]
+        args:
+          [
+            "--extend-ignore=S105,E203",
+            "--per-file-ignores=__init__.py:F401",
+          ]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
