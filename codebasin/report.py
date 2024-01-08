@@ -170,14 +170,14 @@ def clustering(output_name, setmap):
     hierarchy.dendrogram(clusters, labels=platforms, orientation="right")
     ax.set_xlim(xmin=0, xmax=1)
     ax.axvline(x=divergence(setmap), linestyle="--", label="Average")
-    plt.text(
+    ax.text(
         divergence(setmap),
         ax.get_ylim()[1],
         "Average",
         ha="center",
         va="bottom",
     )
-    plt.xlabel("Code Divergence")
+    ax.set_xlabel("Code Divergence")
     with util.safe_open_write_binary(output_name) as fp:
         fig.savefig(fp)
 
