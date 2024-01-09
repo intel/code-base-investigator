@@ -190,7 +190,7 @@ _importcfg_schema = {
     "additionalProperties": False
 }
 
-def extract_defines(args):
+def extract_defines(*args):
     """
     Extract definitions from command-line arguments.
     Recognizes two argument "-D MACRO" and one argument "-DMACRO".
@@ -209,7 +209,7 @@ def extract_defines(args):
     return defines
 
 
-def extract_include_paths(args):
+def extract_include_paths(*args):
     """
     Extract include paths from command-line arguments.
     Recognizes two argument "-I path" and one argument "-Ipath".
@@ -229,7 +229,7 @@ def extract_include_paths(args):
     return include_paths
 
 
-def extract_include_files(args):
+def extract_include_files(*args):
     """
     Extract include files from command-line arguments.
     Recognizes two argument "-include file".
@@ -506,7 +506,7 @@ class NvccCompiler(Compiler):
 
 
 _seen_compiler = collections.defaultdict(lambda: False)
-def recognize_compiler(args):
+def recognize_compiler(*args):
     """
     Attempt to recognize the compiler, given an argument list.
     Return a Compiler object.

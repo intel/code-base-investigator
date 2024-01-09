@@ -57,7 +57,7 @@ def walk_sloc(in_root, extensions, verbose=False):
                     pass
 
 
-def sloc_translate(args):
+def sloc_translate(*args):
     """
     Toplevel routine for script.
     """
