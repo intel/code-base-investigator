@@ -1,12 +1,12 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import collections
 
-from .tree_walker import TreeWalker
+from codebasin.walkers.tree_walker import TreeWalker
 
-log = logging.getLogger('codebasin')
+log = logging.getLogger("codebasin")
+
 
 class TreePrinter(TreeWalker):
     """
@@ -26,12 +26,12 @@ class TreePrinter(TreeWalker):
         """
         association = self._node_associations[node]
         if association:
-            platform = ', '.join(association)
+            platform = ", ".join(association)
         else:
-            platform = ''
+            platform = ""
 
-        spacing = '  ' * (level)
-        print('{}{} -- Platforms: {}'.format(spacing, node, platform))
+        spacing = "  " * (level)
+        print(f"{spacing}{node} -- Platforms: {platform}")
 
         for child in node.children:
             self.__print_nodes(child, level + 1)

@@ -1,23 +1,23 @@
-# Copyright (C) 2019-2023 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Contains functions to build up a configuration dictionary,
 defining a specific code base configuration.
 """
 
-import os
 import collections
 import glob
 import itertools as it
+import json
 import logging
+import os
 import re
 import shlex
-import sys
 
-import yaml
-import json
 import jsonschema
-from . import util
+import yaml
+
+from codebasin import util
 
 log = logging.getLogger("codebasin")
 
@@ -34,24 +34,11 @@ _compiledb_schema = {
     "items": {
         "type": "object",
         "properties": {
-            "directory": {
-                "type": "string"
-            },
-            "arguments": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                }
-            },
-            "file": {
-                "type": "string"
-            },
-            "command": {
-                "type": "string"
-            },
-            "output": {
-                "type": "string"
-            },
+            "directory": {"type": "string"},
+            "arguments": {"type": "array", "items": {"type": "string"}},
+            "file": {"type": "string"},
+            "command": {"type": "string"},
+            "output": {"type": "string"},
         },
         "anyOf": [
             {
@@ -62,10 +49,10 @@ _compiledb_schema = {
             {
                 "required": [
                     "command",
-                ]
-            }
-        ]
-    }
+                ],
+            },
+        ],
+    },
 }
 
 _config_schema_id = (
@@ -83,80 +70,38 @@ _config_schema = {
         "codebase": {
             "type": "object",
             "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "platforms": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
+                "files": {"type": "array", "items": {"type": "string"}},
+                "platforms": {"type": "array", "items": {"type": "string"}},
                 "exclude_files": {
                     "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
+                    "items": {"type": "string"},
+                },
             },
-            "required": [
-                "files",
-                "platforms"
-            ]
-        }
+            "required": ["files", "platforms"],
+        },
     },
     "patternProperties": {
         ".*": {
             "type": "object",
             "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "defines": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
+                "files": {"type": "array", "items": {"type": "string"}},
+                "defines": {"type": "array", "items": {"type": "string"}},
                 "include_paths": {
                     "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "items": {"type": "string"},
                 },
-                "commands": {
-                    "type": "string"
-                }
+                "commands": {"type": "string"},
             },
-            "anyOf": [
-                {
-                    "required": [
-                        "files"
-                    ]
-                },
-                {
-                    "required": [
-                        "commands"
-                    ]
-                }
-            ]
-        }
+            "anyOf": [{"required": ["files"]}, {"required": ["commands"]}],
+        },
     },
     "additionalProperties": False,
-    "required": [
-        "codebase"
-    ]
+    "required": ["codebase"],
 }
 
 _importcfg_schema_id = (
     "https://raw.githubusercontent.com/intel/",
-    "code-base-investigator/schema/importcfg.schema"
+    "code-base-investigator/schema/importcfg.schema",
 )
 
 _importcfg_schema = {
@@ -174,21 +119,17 @@ _importcfg_schema = {
                     "name": {
                         "type": "string",
                     },
-                    "options": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
+                    "options": {"type": "array", "items": {"type": "string"}},
                 },
                 "required": ["name", "options"],
                 "additionalProperties": False,
-            }
-        }
+            },
+        },
     },
     "required": ["compilers"],
-    "additionalProperties": False
+    "additionalProperties": False,
 }
+
 
 def extract_defines(args):
     """
@@ -249,14 +190,12 @@ def expand_path(pattern):
     """
     Return all valid and existing paths matching a specified pattern.
     """
-    if sys.version_info >= (3, 5):
-        paths = glob.glob(pattern, recursive=True)
-    else:
-        if "**" in pattern:
-            log.warning("Recursive path expansion with '**' requires Python >= 3.5")
-        paths = glob.glob(pattern)
+    paths = glob.glob(pattern, recursive=True)
     if paths == []:
-        log.warning("Couldn't find files matching '%s' -- ignoring it.", pattern)
+        log.warning(
+            "Couldn't find files matching '%s' -- ignoring it.",
+            pattern,
+        )
     return [os.path.realpath(path) for path in filter(util.valid_path, paths)]
 
 
@@ -266,11 +205,11 @@ def flatten(nested_list):
     Nesting may occur when anchors are used inside a YAML list.
     """
     flattened = []
-    for l in nested_list:
-        if isinstance(l, list):
-            flattened.extend(flatten(l))
+    for item in nested_list:
+        if isinstance(item, list):
+            flattened.extend(flatten(item))
         else:
-            flattened.append(l)
+            flattened.append(item)
     return flattened
 
 
@@ -286,38 +225,62 @@ def load_codebase(config, rootdir):
     if "files" not in cfg_codebase:
         raise RuntimeError("No 'files' section found in codebase definition!")
     if "platforms" not in cfg_codebase or cfg_codebase["platforms"] == []:
-        raise RuntimeError("Empty 'platforms' section found in codebase definition!")
+        raise RuntimeError(
+            "Empty 'platforms' section found in codebase definition!",
+        )
 
     codebase = {}
 
     codebase["platforms"] = cfg_codebase["platforms"]
 
     if "exclude_files" in cfg_codebase:
-        codebase["exclude_files"] = frozenset(it.chain(*(expand_path(os.path.join(rootdir, f))
-                                                         for f in cfg_codebase["exclude_files"])))
+        codebase["exclude_files"] = frozenset(
+            it.chain(
+                *(
+                    expand_path(os.path.join(rootdir, f))
+                    for f in cfg_codebase["exclude_files"]
+                ),
+            ),
+        )
     else:
         codebase["exclude_files"] = frozenset([])
 
     if cfg_codebase["files"]:
-        codebase["files"] = list(it.chain(*(expand_path(os.path.join(rootdir, f))
-                                            for f in cfg_codebase["files"])))
+        codebase["files"] = list(
+            it.chain(
+                *(
+                    expand_path(os.path.join(rootdir, f))
+                    for f in cfg_codebase["files"]
+                ),
+            ),
+        )
         if not codebase["files"]:
-            raise RuntimeError("Codebase configuration contains no valid files. " +
-                               "Check regular expressions and working directory.")
+            raise RuntimeError(
+                "Codebase configuration contains no valid files. "
+                + "Check regular expressions and working directory.",
+            )
 
-        codebase["files"] = list(set(codebase["files"]).difference(codebase["exclude_files"]))
+        codebase["files"] = list(
+            set(codebase["files"]).difference(codebase["exclude_files"]),
+        )
         if not codebase["files"]:
-            raise RuntimeError("Codebase configuration contains no valid files " +
-                               "after processing 'exclude_files'.")
+            raise RuntimeError(
+                "Codebase configuration contains no valid files "
+                + "after processing 'exclude_files'.",
+            )
     else:
         codebase["files"] = list([])
-        log.warning("No files specified in codebase configuration. " +
-                    "Attempting to determine files automatically from platform configurations.")
+        log.warning(
+            "No files specified in codebase configuration. "
+            + "Determining files automatically from platform configurations.",
+        )
 
     return codebase
 
 
 _importcfg = None
+
+
 def load_importcfg():
     """
     Load the import configuration file, if it exists.
@@ -327,7 +290,7 @@ def load_importcfg():
     path = ".cbi/importcfg.json"
     if os.path.exists(path):
         log.info(f"Found import configuration file at {path}")
-        with open(path, "r") as f:
+        with open(path) as f:
             try:
                 _importcfg_json = json.load(f)
                 for compiler in _importcfg_json["compilers"]:
@@ -336,7 +299,7 @@ def load_importcfg():
                 log.error("importcfg file failed validation")
 
 
-class Compiler(object):
+class Compiler:
     """
     Represents the behavior of a specific compiler, including:
     - The number of passes it performs.
@@ -346,7 +309,7 @@ class Compiler(object):
     def __init__(self, args):
         self.name = os.path.basename(args[0])
         self.args = args
-        self.passes = set(["default"])
+        self.passes = {"default"}
 
         # Check for any user-defined compiler behavior.
         # Currently, users can only override default defines.
@@ -367,17 +330,21 @@ class Compiler(object):
         return []
 
     def has_implicit_behavior(self, pass_):
-        return (self.get_defines(pass_) or
-                self.get_include_paths(pass_) or
-                self.get_include_files(pass_))
+        return (
+            self.get_defines(pass_)
+            or self.get_include_paths(pass_)
+            or self.get_include_files(pass_)
+        )
 
     def get_configuration(self, pass_):
         defines = self.get_defines(pass_)
         include_paths = self.get_include_paths(pass_)
         include_files = self.get_include_files(pass_)
-        return {"defines": defines,
-                "include_paths": include_paths,
-                "include_files": include_files}
+        return {
+            "defines": defines,
+            "include_paths": include_paths,
+            "include_files": include_files,
+        }
 
 
 class ClangCompiler(Compiler):
@@ -390,7 +357,7 @@ class ClangCompiler(Compiler):
         "x86_64",
         "spir64_x86_64",
         "spir64_gen",
-        "spir64_fpga"
+        "spir64_fpga",
     ]
 
     def __init__(self, args):
@@ -401,7 +368,6 @@ class ClangCompiler(Compiler):
         sycl_targets = []
 
         for arg in args:
-
             if arg == "-fsycl":
                 self.sycl = True
                 continue
@@ -421,7 +387,7 @@ class ClangCompiler(Compiler):
                 continue
 
         if self.sycl and sycl_targets == []:
-            self.passes |= set(["spir64"])
+            self.passes |= {"spir64"}
 
     def get_defines(self, pass_):
         defines = super().get_defines(pass_)
@@ -506,6 +472,8 @@ class NvccCompiler(Compiler):
 
 
 _seen_compiler = collections.defaultdict(lambda: False)
+
+
 def recognize_compiler(args):
     """
     Attempt to recognize the compiler, given an argument list.
@@ -530,8 +498,10 @@ def recognize_compiler(args):
         if compiler:
             log.info(f"Recognized compiler: {compiler.name}.")
         else:
-            log.warning(f"Unrecognized compiler: {compiler_name}. " +
-                        "Some implicit behavior may be missed.")
+            log.warning(
+                f"Unrecognized compiler: {compiler_name}. "
+                + "Some implicit behavior may be missed.",
+            )
         _seen_compiler[compiler_name] = True
     return compiler
 
@@ -542,7 +512,7 @@ def load_database(dbpath, rootdir):
     Return a list of compilation commands, where each command is
     represented as a compilation database entry.
     """
-    with util.safe_open_read_nofollow(dbpath, 'r') as fi:
+    with util.safe_open_read_nofollow(dbpath, "r") as fi:
         db = json.load(fi)
 
     # Validate compilation database against schema
@@ -571,7 +541,9 @@ def load_database(dbpath, rootdir):
         compiler = recognize_compiler(args)
 
         # Include paths may be specified relative to root
-        include_paths = [os.path.realpath(os.path.join(rootdir, f)) for f in include_paths]
+        include_paths = [
+            os.path.realpath(os.path.join(rootdir, f)) for f in include_paths
+        ]
 
         # Files may be specified:
         # - relative to root
@@ -582,7 +554,10 @@ def load_database(dbpath, rootdir):
             if os.path.isabs(e["directory"]):
                 filedir = e["directory"]
             else:
-                filedir = os.path.realpath(rootdir, os.path.join(e["directory"]))
+                filedir = os.path.realpath(
+                    rootdir,
+                    os.path.join(e["directory"]),
+                )
 
         if os.path.isabs(e["file"]):
             path = os.path.realpath(e["file"])
@@ -593,10 +568,12 @@ def load_database(dbpath, rootdir):
         # exist without running make
         if os.path.exists(path):
             for pass_ in compiler.get_passes():
-                entry = {"file": path,
-                         "defines": defines.copy(),
-                         "include_paths": include_paths.copy(),
-                         "include_files": include_files.copy()}
+                entry = {
+                    "file": path,
+                    "defines": defines.copy(),
+                    "include_paths": include_paths.copy(),
+                    "include_files": include_files.copy(),
+                }
                 if compiler.has_implicit_behavior(pass_):
                     extra_flags = []
                     compiler_config = compiler.get_configuration(pass_)
@@ -611,11 +588,15 @@ def load_database(dbpath, rootdir):
 
                     extra_include_files = compiler_config["include_files"]
                     entry["include_files"] += extra_include_files
-                    extra_flags += [f"-include {x}" for x in extra_include_files]
+                    extra_flags += [
+                        f"-include {x}" for x in extra_include_files
+                    ]
 
                     extra_flag_string = " ".join(extra_flags)
-                    log.info(f"Extra flags for {path} in pass '{pass_}': " +
-                             f"{extra_flag_string}")
+                    log.info(
+                        f"Extra flags for {path} in pass '{pass_}': "
+                        + f"{extra_flag_string}",
+                    )
                 configuration += [entry]
         else:
             log.warning("Couldn't find file %s -- ignoring it.", path)
@@ -632,15 +613,21 @@ def load_platform(config, rootdir, platform_name):
     # Ensure expected values are present, or provide defaults
     cfg_platform = config[platform_name]
     if not cfg_platform:
-        raise RuntimeError("Could not find definition for platform " +
-                           "'{}' in config file!".format(platform_name))
+        raise RuntimeError(
+            "Could not find definition for platform "
+            + f"'{platform_name}' in config file!",
+        )
     if "files" not in cfg_platform and "commands" not in cfg_platform:
-        raise RuntimeError("Need 'files' or 'commands' section in " +
-                           "definition of platform {}!".format(platform_name))
+        raise RuntimeError(
+            "Need 'files' or 'commands' section in "
+            + f"definition of platform {platform_name}!",
+        )
     if "files" not in cfg_platform:
         if "defines" in cfg_platform or "include_paths" in cfg_platform:
-            log.warning("Extra 'defines' or 'include_paths' in definition of platform %s!",
-                        platform_name)
+            log.warning(
+                "Extra 'defines' or 'include_paths' in definition "
+                + f"of platform {platform_name}.",
+            )
     else:
         if "defines" not in cfg_platform:
             cfg_platform["defines"] = []
@@ -651,29 +638,41 @@ def load_platform(config, rootdir, platform_name):
     # into configuration entries
     configuration = []
     if "files" in cfg_platform:
-        include_paths = [os.path.realpath(os.path.join(rootdir, f))
-                         for f in flatten(cfg_platform["include_paths"])]
+        include_paths = [
+            os.path.realpath(os.path.join(rootdir, f))
+            for f in flatten(cfg_platform["include_paths"])
+        ]
 
         # Strip optional -D prefix from defines
-        defines = [d[2:] if d.startswith("-D") else d
-                   for d in flatten(cfg_platform["defines"])]
+        defines = [
+            d[2:] if d.startswith("-D") else d
+            for d in flatten(cfg_platform["defines"])
+        ]
 
         for f in flatten(cfg_platform["files"]):
             for path in expand_path(os.path.join(rootdir, f)):
-                configuration += [{"file": path,
-                                   "defines": defines,
-                                   "include_paths": include_paths,
-                                   "include_files": []}]
+                configuration += [
+                    {
+                        "file": path,
+                        "defines": defines,
+                        "include_paths": include_paths,
+                        "include_files": [],
+                    },
+                ]
 
     # Add configuration entries from a compilation database
     if "commands" in cfg_platform:
-        dbpath = os.path.realpath(os.path.join(rootdir, cfg_platform["commands"]))
+        dbpath = os.path.realpath(
+            os.path.join(rootdir, cfg_platform["commands"]),
+        )
         configuration += load_database(dbpath, rootdir)
 
     # Ensure that the platform actually specifies valid files
     if not configuration:
-        raise RuntimeError("Platform '{!s}' contains no valid files -- ".format(platform_name) +
-                           "regular expressions and/or working directory may be incorrect.")
+        raise RuntimeError(
+            f"Platform '{platform_name!s}' contains no valid files -- "
+            + "regular expressions and/or working directory may be incorrect.",
+        )
 
     return configuration
 
@@ -684,10 +683,10 @@ def load(config_file, rootdir):
     Return a (codebase, platform configuration) tuple of dicts.
     """
     if os.path.isfile(config_file):
-        with util.safe_open_read_nofollow(config_file, 'r') as f:
+        with util.safe_open_read_nofollow(config_file, "r") as f:
             config = yaml.safe_load(f)
     else:
-        raise RuntimeError("Could not open {!s}.".format(config_file))
+        raise RuntimeError(f"Could not open {config_file!s}.")
 
     # Validate config against a schema
     # We don't use any advanced features of YAML, so can use JSON here
@@ -713,19 +712,21 @@ def load(config_file, rootdir):
     for platform_name in codebase["platforms"]:
         plat = load_platform(config, rootdir, platform_name)
         if populate_files:
-            files = frozenset([p['file'] for p in plat] )
+            files = frozenset([p["file"] for p in plat])
             found_files.update(files)
         configuration[platform_name] = plat
 
     if len(found_files) == 0:
-        raise RuntimeError("No files found. Check regular expressions and working directory.")
+        raise RuntimeError(
+            "No files found. Check regular expressions and working directory.",
+        )
 
     codebase["files"] = list(found_files.difference(codebase["exclude_files"]))
     if not codebase["files"]:
         raise RuntimeError("No files remain after processing 'exclude_files'.")
 
     # Store the rootdir in the codebase for use later in exclude()
-    if 'rootdir' not in codebase:
-        codebase['rootdir'] = os.path.realpath(rootdir)
+    if "rootdir" not in codebase:
+        codebase["rootdir"] = os.path.realpath(rootdir)
 
     return codebase, configuration

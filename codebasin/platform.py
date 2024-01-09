@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Contains the Platform class used to specify definitions and include
@@ -8,7 +8,7 @@ options for a specific platform.
 import os
 
 
-class Platform():
+class Platform:
     """
     Represents a platform, and everything associated with a platform.
     Contains a list of definitions, and include paths.

@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Contains classes and functions for stripping comments and whitespace from
@@ -7,23 +7,29 @@ C/C++ files as well as fixed-form Fortran
 
 import itertools as it
 import logging
-from .language import FileLanguage
 
-log = logging.getLogger('codebasin')
+from codebasin.language import FileLanguage
+
+log = logging.getLogger("codebasin")
 
 # This string was created by looking at all unicode code points
 # and checking to see if they are considered whitespace
 # ('\s') by the re module
-whitespace_dict = dict.fromkeys(''.join([' \t\n\r\x0b\x0c\x1c\x1d\x1e',
-                                         '\x1f\x85\xa0\u1680\u2000\u2001',
-                                         '\u2002\u2003\u2004\u2005\u2006',
-                                         '\u2007\u2008\u2009\u200a\u2028',
-                                         '\u2029\u202f\u205f\u3000']))
+whitespace_dict = dict.fromkeys(
+    "".join(
+        [
+            " \t\n\r\x0b\x0c\x1c\x1d\x1e",
+            "\x1f\x85\xa0\u1680\u2000\u2001",
+            "\u2002\u2003\u2004\u2005\u2006",
+            "\u2007\u2008\u2009\u200a\u2028",
+            "\u2029\u202f\u205f\u3000",
+        ],
+    ),
+)
 
 
 def is_whitespace(c):
     """Returns true if the character c is whitespace"""
-    # pylint: disable=global-statement
     global whitespace_dict
     return c in whitespace_dict
 
@@ -48,7 +54,7 @@ class one_space_line:
             self.trailing_space = False
         else:
             if not self.trailing_space:
-                self.parts.append(' ')
+                self.parts.append(" ")
                 self.trailing_space = True
 
     def append_space(self):
@@ -56,7 +62,7 @@ class one_space_line:
         Append whitespace to line, unless line already ends in a space.
         """
         if not self.trailing_space:
-            self.parts.append(' ')
+            self.parts.append(" ")
             self.trailing_space = True
 
     def append_nonspace(self, c):
@@ -68,7 +74,7 @@ class one_space_line:
         Append another one_space_line to this one, respecting whitespace rules.
         """
         if other.parts:
-            if other.parts[0] == ' ' and self.trailing_space:
+            if other.parts[0] == " " and self.trailing_space:
                 self.parts += other.parts[1:]
             else:
                 self.parts += other.parts[:]
@@ -85,11 +91,11 @@ class one_space_line:
         if not self.parts:
             res = "BLANK"
         elif len(self.parts) == 1:
-            if self.parts[0] == ' ':
+            if self.parts[0] == " ":
                 res = "BLANK"
-            elif self.parts[0] == '#':
+            elif self.parts[0] == "#":
                 res = "CPP_DIRECTIVE"
-        elif self.parts[:2] == [' ', '#'] or self.parts[0] == '#':
+        elif self.parts[:2] == [" ", "#"] or self.parts[0] == "#":
             res = "CPP_DIRECTIVE"
         return res
 
@@ -97,7 +103,7 @@ class one_space_line:
         """
         Convert the characters to a string and reset the buffer.
         """
-        res = ''.join(self.parts)
+        res = "".join(self.parts)
         self.__init__()
         return res
 
@@ -128,7 +134,9 @@ class iter_keep1:
         yielded item.
         """
         if self.single is not None:
-            raise RuntimeError("iter_keep1 can only have one item put back at a time!")
+            raise RuntimeError(
+                "iter_keep1 can only have one item put back at a time!",
+            )
         self.single = item
 
 
@@ -159,7 +167,7 @@ class c_cleaner:
             self.outbuf.append_space()
         elif self.state[-1] == "FOUND_SLASH":
             self.state = ["TOPLEVEL"]
-            self.outbuf.append_nonspace('/')
+            self.outbuf.append_nonspace("/")
         elif self.state[-1] == "SINGLE_QUOTATION":
             # This probably should give a warning
             self.state = ["TOPLEVEL"]
@@ -170,7 +178,9 @@ class c_cleaner:
             self.state.pop()
             if not self.state[-1] == "IN_BLOCK_COMMENT":
                 raise RuntimeError(
-                    "Inconsistent parser state! Looking for / to terminate a block comment but not in a block comment!")
+                    "Inconsistent parser state. Looking for '/' to "
+                    + "terminate non-existent block comment.",
+                )
         elif self.state[-1] == "CPP_DIRECTIVE":
             self.state = ["TOPLEVEL"]
 
@@ -178,7 +188,6 @@ class c_cleaner:
         """
         Add contents of lineiter to outbuf, stripping as directed.
         """
-        # pylint: disable=too-many-branches,too-many-statements
         state = self.state
         obuf = self.outbuf
         inbuffer = self.iterkeep
@@ -186,47 +195,47 @@ class c_cleaner:
         for char in inbuffer:
             if state[-1] == "TOPLEVEL":
                 if self.directives_only:
-                    if char == '\\':
+                    if char == "\\":
                         state.append("ESCAPING")
                         obuf.append_nonspace(char)
-                    elif char == '#' and obuf.category() == "BLANK":
+                    elif char == "#" and obuf.category() == "BLANK":
                         state.append("CPP_DIRECTIVE")
                         obuf.append_nonspace(char)
                     else:
                         obuf.append_char(char)
                 else:
-                    if char == '\\':
+                    if char == "\\":
                         state.append("ESCAPING")
                         obuf.append_nonspace(char)
-                    elif char == '/':
+                    elif char == "/":
                         state.append("FOUND_SLASH")
                     elif char == '"':
                         state.append("DOUBLE_QUOTATION")
                         obuf.append_nonspace(char)
-                    elif char == '\'':
+                    elif char == "'":
                         state.append("SINGLE_QUOTATION")
                         obuf.append_nonspace(char)
-                    elif char == '#' and obuf.category() == "BLANK":
+                    elif char == "#" and obuf.category() == "BLANK":
                         state.append("CPP_DIRECTIVE")
                         obuf.append_nonspace(char)
                     else:
                         obuf.append_char(char)
             elif state[-1] == "CPP_DIRECTIVE":
-                if char == '\\':
+                if char == "\\":
                     state.append("ESCAPING")
                     obuf.append_nonspace(char)
-                elif char == '/':
+                elif char == "/":
                     state.append("FOUND_SLASH")
                 elif char == '"':
                     state.append("DOUBLE_QUOTATION")
                     obuf.append_nonspace(char)
-                elif char == '\'':
+                elif char == "'":
                     state.append("SINGLE_QUOTATION")
                     obuf.append_nonspace(char)
                 else:
                     obuf.append_char(char)
             elif state[-1] == "DOUBLE_QUOTATION":
-                if char == '\\':
+                if char == "\\":
                     state.append("ESCAPING")
                     obuf.append_nonspace(char)
                 elif char == '"':
@@ -235,43 +244,47 @@ class c_cleaner:
                 else:
                     obuf.append_nonspace(char)
             elif state[-1] == "SINGLE_QUOTATION":
-                if char == '\\':
+                if char == "\\":
                     state.append("ESCAPING")
                     obuf.append_nonspace(char)
-                elif char == '/':
+                elif char == "/":
                     state.append("FOUND_SLASH")
-                elif char == '\'':
+                elif char == "'":
                     state.pop()
                     obuf.append_nonspace(char)
                 else:
                     obuf.append_nonspace(char)
             elif state[-1] == "FOUND_SLASH":
-                if char == '/':
+                if char == "/":
                     state.pop()
                     state.append("IN_INLINE_COMMENT")
-                elif char == '*':
+                elif char == "*":
                     state.pop()
                     state.append("IN_BLOCK_COMMENT")
                 else:
                     state.pop()
-                    obuf.append_char('/')
+                    obuf.append_char("/")
                     inbuffer.putback(char)
             elif state[-1] == "IN_BLOCK_COMMENT":
-                if char == '*':
+                if char == "*":
                     state.append("IN_BLOCK_COMMENT_FOUND_STAR")
             elif state[-1] == "IN_BLOCK_COMMENT_FOUND_STAR":
-                if char == '/':
+                if char == "/":
                     state.pop()
                     if not state[-1] == "IN_BLOCK_COMMENT":
                         raise RuntimeError(
-                            "Inconsistent parser state! Looking for / to terminate a block comment but not in a block comment!")
+                            "Inconsistent parser state. Looking for '/' to "
+                            + "terminate non-existent block comment.",
+                        )
                     state.pop()
                     obuf.append_space()
-                elif char != '*':
+                elif char != "*":
                     state.pop()
                     if not state[-1] == "IN_BLOCK_COMMENT":
                         raise RuntimeError(
-                            "Inconsistent parser state! Looking for * that terminates a block comment but not in a block comment!")
+                            "Inconsistent parser state. Looking for '*' to "
+                            + "terminate non-existent block comment.",
+                        )
             elif state[-1] == "ESCAPING":
                 obuf.append_nonspace(char)
                 state.pop()
@@ -298,10 +311,10 @@ class fortran_cleaner:
         Inspect comment to see if it is in fact, a valid directive,
         which should be preserved.
         """
-        found = ['!']
+        found = ["!"]
         for char in inbuffer:
-            if char == '$':
-                found.append('$')
+            if char == "$":
+                found.append("$")
                 for c in found:
                     self.outbuf.append_nonspace(c)
                 for c in inbuffer:
@@ -317,62 +330,60 @@ class fortran_cleaner:
         Add contents of lineiter to current line, removing contents and
         handling continuations.
         """
-        # pylint: disable=too-many-branches,too-many-statements
         inbuffer = iter_keep1(lineiter)
         try:
             while True:
                 char = next(inbuffer)
                 if self.state[-1] == "TOPLEVEL":
-                    if char == '\\':
+                    if char == "\\":
                         self.state.append("ESCAPING")
                         self.outbuf.append_nonspace(char)
-                    elif char == '!':
+                    elif char == "!":
                         self.dir_check(inbuffer)
                         self.state = ["TOPLEVEL"]
                         break
-                    elif char == '&':
+                    elif char == "&":
                         self.verify_continue.append(char)
                         self.state.append("VERIFY_CONTINUE")
                     elif char == '"':
                         self.state.append("DOUBLE_QUOTATION")
                         self.outbuf.append_nonspace(char)
-                    elif char == '\'':
+                    elif char == "'":
                         self.state.append("SINGLE_QUOTATION")
                         self.outbuf.append_nonspace(char)
                     else:
                         self.outbuf.append_char(char)
-                elif self.state[-1] == 'CONTINUING_FROM_SOL':
+                elif self.state[-1] == "CONTINUING_FROM_SOL":
                     if is_whitespace(char):
                         self.outbuf.append_space()
-                    elif char == '&':
+                    elif char == "&":
                         self.state.pop()
-                    elif char == '!':
+                    elif char == "!":
                         self.dir_check(inbuffer)
                         break
                     else:
                         self.state.pop()
                         inbuffer.putback(char)
-                        # should complain if we are quoting here, but will ignore for now
                 elif self.state[-1] == "DOUBLE_QUOTATION":
-                    if char == '\\':
+                    if char == "\\":
                         self.state.append("ESCAPING")
                         self.outbuf.append_nonspace(char)
                     elif char == '"':
                         self.state.pop()
                         self.outbuf.append_nonspace(char)
-                    elif char == '&':
+                    elif char == "&":
                         self.verify_continue.append(char)
                         self.state.append("VERIFY_CONTINUE")
                     else:
                         self.outbuf.append_nonspace(char)
                 elif self.state[-1] == "SINGLE_QUOTATION":
-                    if char == '\\':
+                    if char == "\\":
                         self.state.append("ESCAPING")
                         self.outbuf.append_nonspace(char)
-                    elif char == '\'':
+                    elif char == "'":
                         self.state.pop()
                         self.outbuf.append_nonspace(char)
-                    elif char == '&':
+                    elif char == "&":
                         self.verify_continue.append(char)
                         self.state.append("VERIFY_CONTINUE")
                     else:
@@ -381,7 +392,7 @@ class fortran_cleaner:
                     self.outbuf.append_nonspace(char)
                     self.state.pop()
                 elif self.state[-1] == "VERIFY_CONTINUE":
-                    if char == '!' and self.state[-2] == "TOPLEVEL":
+                    if char == "!" and self.state[-2] == "TOPLEVEL":
                         self.dir_check(inbuffer)
                         break
                     elif not is_whitespace(char):
@@ -453,8 +464,12 @@ class line_info:
         """
         Return tuple of contents. Eventually should just return this class.
         """
-        return ((self.current_physical_start, self.current_physical_end),
-                self.local_sloc, self.flushed_line, self.category)
+        return (
+            (self.current_physical_start, self.current_physical_end),
+            self.local_sloc,
+            self.flushed_line,
+            self.category,
+        )
 
 
 def c_file_source(fp, relaxed=False, directives_only=False):
@@ -476,19 +491,19 @@ def c_file_source(fp, relaxed=False, directives_only=False):
     total_sloc = 0
 
     physical_line_num = 0
-    for (physical_line_num, line) in enumerate(fp, start=1):
+    for physical_line_num, line in enumerate(fp, start=1):
         current_physical_line.__init__()
         end = len(line)
-        if line[-1] == '\n':
+        if line[-1] == "\n":
             end -= 1
-        elif end > 0 and line[end - 1] == '\\':
+        elif end > 0 and line[end - 1] == "\\":
             raise RuntimeError("file seems to end in \\ with no newline!")
 
-        continued = end > 0 and line[end - 1] == '\\'
+        continued = end > 0 and line[end - 1] == "\\"
         if continued:
             end -= 1
         cleaner.process(it.islice(line, 0, end))
-        if not continued and cleaner.state[-1] != 'IN_BLOCK_COMMENT':
+        if not continued and cleaner.state[-1] != "IN_BLOCK_COMMENT":
             cleaner.logical_newline()
 
         if not current_physical_line.category() == "BLANK":
@@ -496,7 +511,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
 
         curr_line.join(current_physical_line)
 
-        if not continued and cleaner.state[-1] != 'IN_BLOCK_COMMENT':
+        if not continued and cleaner.state[-1] != "IN_BLOCK_COMMENT":
             curr_line.physical_update(physical_line_num + 1)
             if curr_line.category != "BLANK":
                 yield curr_line
@@ -511,7 +526,9 @@ def c_file_source(fp, relaxed=False, directives_only=False):
 
     total_sloc += curr_line.physical_reset()
     if not relaxed and not cleaner.state == ["TOPLEVEL"]:
-        raise RuntimeError("C file parser did not end at top level, and not in 'relaxed' mode")
+        raise RuntimeError(
+            "Parser must end at top level without 'relaxed' mode.",
+        )
 
     return (total_sloc, total_physical_lines)
 
@@ -538,8 +555,10 @@ def fortran_file_source(fp, relaxed=False):
     try:
         while True:
             src_c_line = next(c_walker)
-            #((src_physical_start, src_physical_end), src_line_sloc, src_line, c_category)
-            # if it's a cpp directive, flush what we have, then emit the directive and start over
+            # If this is a preprocessor directive:
+            # - Flush what we have so far
+            # - Emit the directive
+            # - Start over
             if current_physical_start is None:
                 current_physical_start = curr_line.current_physical_start
 
@@ -555,7 +574,13 @@ def fortran_file_source(fp, relaxed=False):
                 continue
 
             current_physical_line.__init__()
-            cleaner.process(it.islice(src_c_line.flushed_line, 0, len(src_c_line.flushed_line)))
+            cleaner.process(
+                it.islice(
+                    src_c_line.flushed_line,
+                    0,
+                    len(src_c_line.flushed_line),
+                ),
+            )
 
             if not current_physical_line.category() == "BLANK":
                 curr_line.physical_nonblank(src_c_line.local_sloc)
@@ -572,7 +597,6 @@ def fortran_file_source(fp, relaxed=False):
                 total_sloc += curr_line.physical_reset()
 
     except StopIteration as stopit:
-        # pylint: disable=unpacking-non-sequence
         _, total_physical_lines = stopit.value
 
     curr_line.physical_update(total_physical_lines)
@@ -583,7 +607,8 @@ def fortran_file_source(fp, relaxed=False):
     total_sloc += curr_line.physical_reset()
     if not relaxed and not cleaner.state == ["TOPLEVEL"]:
         raise RuntimeError(
-            "Fortran file parser did not end at top level, and not in 'relaxed' mode")
+            "Parser must end at top level without 'relaxed' mode.",
+        )
 
     return (total_sloc, total_physical_lines)
 
@@ -609,21 +634,21 @@ class asm_cleaner:
                 char = next(inbuffer)
 
                 if self.state[-1] == "TOPLEVEL":
-                    if char in ';#':
+                    if char in ";#":
                         self.outbuf.append_space()
                         return
-                    elif char == '/':
+                    elif char == "/":
                         self.state.append("FOUND_SLASH")
                     else:
                         self.outbuf.append_char(char)
                 elif self.state[-1] == "FOUND_SLASH":
-                    if char == '/':
+                    if char == "/":
                         self.state.pop()
                         self.outbuf.append_space()
                         return
                     else:
                         self.state.pop()
-                        self.outbuf.append_char('/')
+                        self.outbuf.append_char("/")
                         inbuffer.putback(char)
         except StopIteration:
             pass
@@ -644,10 +669,10 @@ def asm_file_source(fp, relaxed=False):
     total_sloc = 0
 
     physical_line_num = 0
-    for (physical_line_num, line) in enumerate(fp, start=1):
+    for physical_line_num, line in enumerate(fp, start=1):
         current_physical_line.__init__()
         end = len(line)
-        if line[-1] == '\n':
+        if line[-1] == "\n":
             end -= 1
         cleaner.process(it.islice(line, 0, end))
 

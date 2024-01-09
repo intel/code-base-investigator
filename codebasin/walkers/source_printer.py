@@ -1,13 +1,21 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-from .tree_walker import TreeWalker
-from codebasin.preprocessor import CodeNode, DirectiveNode, FileNode, Lexer, MacroExpander
+from codebasin.preprocessor import (
+    CodeNode,
+    DirectiveNode,
+    FileNode,
+    Lexer,
+    MacroExpander,
+)
+from codebasin.walkers.tree_walker import TreeWalker
+
 
 class SourcePrinter(TreeWalker):
     """
     TreeWalker that prints preprocessed source.
     """
+
     def __init__(self, _tree):
         super().__init__(_tree, None)
 
@@ -27,10 +35,12 @@ class SourcePrinter(TreeWalker):
         for child in node.children:
             self.__print_nodes(child)
 
+
 class PreprocessedSourcePrinter(TreeWalker):
     """
     TreeWalker that prints preprocessed source code.
     """
+
     def __init__(self, _tree, _node_associations, _platform, _state, _expand):
         super().__init__(_tree, _node_associations)
         self.platform = _platform
@@ -53,9 +63,11 @@ class PreprocessedSourcePrinter(TreeWalker):
 
             # Re-evaluating the node during this walk is required to
             # define/undefine macros appropriately
-            eval_args = {'platform': self.platform,
-                         'filename': self.tree.root.filename,
-                         'state': self.state}
+            eval_args = {
+                "platform": self.platform,
+                "filename": self.tree.root.filename,
+                "state": self.state,
+            }
             descend = _node.evaluate_for_platform(**eval_args)
             expander = MacroExpander(self.platform)
             if association and not isinstance(_node, DirectiveNode):

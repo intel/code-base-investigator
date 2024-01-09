@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.6
-# Copyright (C) 2019-2020 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Parse source file, reporting sloc and physical lines.
@@ -10,31 +10,40 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
-# pylint: disable=wrong-import-position
-from codebasin.file_source import get_file_source  # nopep8
-from codebasin.util import safe_open_read_nofollow  # nopep8
+from codebasin.file_source import get_file_source
+from codebasin.util import safe_open_read_nofollow
 
 
 def file_sloc(path, verbose=False):
     """
-    Process file in path, reporting total_sloc/loc. Optionally print logical regions.
+    Process file in path, reporting total_sloc/loc.
+    Optionally print logical regions.
     """
     file_source = get_file_source(path)
     if not file_source:
-        raise RuntimeError(f"{path} doesn't appear to be a language this tool can process")
-    with safe_open_read_nofollow(path, mode='r', errors='replace') as source_file:
+        raise RuntimeError(
+            f"{path} doesn't appear to be a language this tool can process",
+        )
+    with safe_open_read_nofollow(
+        path,
+        mode="r",
+        errors="replace",
+    ) as source_file:
         walker = file_source(source_file, relaxed=False)
         try:
             while True:
                 logical_line = next(walker)
                 if verbose:
-                    print(f"{path} [{logical_line.current_physical_start}," +
-                          f" {logical_line.current_physical_end}) ({logical_line.local_sloc}):"
-                          f" {logical_line.flushed_line} {logical_line.category}")
+                    start = logical_line.current_physical_start
+                    end = logical_line.current_physical_end
+                    sloc = logical_line.local_sloc
+                    flushed = logical_line.flushed_line
+                    category = logical_line.category
+                    print(
+                        f"{path} [{start}, {end}) ({sloc}): "
+                        + f"{flushed} {category}",
+                    )
         except StopIteration as it:
-             # pylint: disable=unpacking-non-sequence
             total_sloc, physical_loc = it.value
 
     return (path, total_sloc, physical_loc)
@@ -66,12 +75,14 @@ def sloc_translate(args):
         (filename, total_sloc, physical_loc) = file_sloc(path, verbose=True)
         print(f"{filename}, {total_sloc}, {physical_loc}")
     elif len(args) == 3:
-        cleaned = [f".{x}" for x in args[2].split(',')]
+        cleaned = [f".{x}" for x in args[2].split(",")]
         walk_sloc(args[1], cleaned, verbose=True)
     else:
-        print("Expected either 1 argument (a single file to parse" +
-              " and print) or 2 (a directory root & file pattern)")
+        print(
+            "Expected either 1 argument (a single file to parse"
+            + " and print) or 2 (a directory root & file pattern)",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sloc_translate(sys.argv)

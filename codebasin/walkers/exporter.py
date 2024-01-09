@@ -1,15 +1,15 @@
-# Copyright (C) 2019-2023 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import logging
 import collections
+import logging
 
-from .tree_walker import TreeWalker
-from .platform_mapper import exclude
-from codebasin.preprocessor import FileNode, CodeNode
 from codebasin import util
+from codebasin.preprocessor import CodeNode, FileNode
+from codebasin.walkers.platform_mapper import exclude
+from codebasin.walkers.tree_walker import TreeWalker
 
-log = logging.getLogger('codebasin')
+log = logging.getLogger("codebasin")
 
 
 class Exporter(TreeWalker):
@@ -23,16 +23,25 @@ class Exporter(TreeWalker):
         self.exports = None
 
     def walk(self, state):
-        self.exports = collections.defaultdict(lambda: collections.defaultdict(list))
+        self.exports = collections.defaultdict(
+            lambda: collections.defaultdict(list),
+        )
         for fn in state.get_filenames():
             hashed_fn = util.compute_file_hash(fn)
-            self._export_node(hashed_fn, state.get_tree(fn).root, state.get_map(fn))
+            self._export_node(
+                hashed_fn,
+                state.get_tree(fn).root,
+                state.get_map(fn),
+            )
         return self.exports
 
     def _export_node(self, _filename, _node, _map):
         # Do not export files that the user does not consider to be part of
         # the codebase
-        if isinstance(_node, FileNode) and exclude(_node.filename, self.codebase):
+        if isinstance(_node, FileNode) and exclude(
+            _node.filename,
+            self.codebase,
+        ):
             return
 
         if isinstance(_node, CodeNode):
@@ -41,7 +50,9 @@ class Exporter(TreeWalker):
                 start_line = _node.start_line
                 end_line = _node.end_line
                 num_lines = _node.num_lines
-                self.exports[p][_filename].append((start_line, end_line, num_lines))
+                self.exports[p][_filename].append(
+                    (start_line, end_line, num_lines),
+                )
 
         next_filename = _filename
         if isinstance(_node, FileNode):

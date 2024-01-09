@@ -1,46 +1,80 @@
 #!/usr/bin/env python3
-# Copyright (C) 2019-2021 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 """
 Preprocess a source file using the CBI preprocessor.
 """
 
 import argparse
+import logging
 import os
 import sys
-import logging
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+import codebasin.finder as finder
+from codebasin.platform import Platform
+from codebasin.preprocessor import macro_from_definition_string
+from codebasin.walkers.source_printer import (
+    PreprocessedSourcePrinter,
+    SourcePrinter,
+)
 
-# pylint: disable=wrong-import-position
-from codebasin.walkers.source_printer import SourcePrinter, PreprocessedSourcePrinter  # nopep8
-from codebasin.preprocessor import macro_from_definition_string  # nopep8
-from codebasin.platform import Platform  # nopep8
-import codebasin.finder as finder  # nopep8
-
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # Read command-line arguments
-    parser = argparse.ArgumentParser(description="Code Base Investigator Preprocessor")
-    parser.add_argument('-I', dest='include_paths', metavar='PATH', action='append', default=[],
-                        help="add to the include path")
-    parser.add_argument('-include', dest='include_files', metavar='PATH', action='append',
-                        default=[], help="add to the include files")
-    parser.add_argument('-D', dest='defines', metavar='DEFINE', action='append', default=[],
-                        help="define a macro")
-    parser.add_argument('--passthrough', dest='passthrough', action='store_true', default=False,
-                        help="print source code without preprocessing")
-    parser.add_argument('--no-expand', dest='expand', action='store_false', default=True,
-                        help="do not expand macros in source code")
-    parser.add_argument('--summarize', dest='summarize', action='store_true', default=False,
-                        help="summarize code blocks with SLOC count")
-    parser.add_argument('filename', metavar='FILE', action='store')
+    parser = argparse.ArgumentParser(
+        description="Code Base Investigator Preprocessor",
+    )
+    parser.add_argument(
+        "-I",
+        dest="include_paths",
+        metavar="PATH",
+        action="append",
+        default=[],
+        help="add to the include path",
+    )
+    parser.add_argument(
+        "-include",
+        dest="include_files",
+        metavar="PATH",
+        action="append",
+        default=[],
+        help="add to the include files",
+    )
+    parser.add_argument(
+        "-D",
+        dest="defines",
+        metavar="DEFINE",
+        action="append",
+        default=[],
+        help="define a macro",
+    )
+    parser.add_argument(
+        "--passthrough",
+        dest="passthrough",
+        action="store_true",
+        default=False,
+        help="print source code without preprocessing",
+    )
+    parser.add_argument(
+        "--no-expand",
+        dest="expand",
+        action="store_false",
+        default=True,
+        help="do not expand macros in source code",
+    )
+    parser.add_argument(
+        "--summarize",
+        dest="summarize",
+        action="store_true",
+        default=False,
+        help="summarize code blocks with SLOC count",
+    )
+    parser.add_argument("filename", metavar="FILE", action="store")
     args = parser.parse_args()
 
     # Ensure regular CBI output goes to stderr
     # Allows preprocessed output to print to stdout by default
     stderr_log = logging.StreamHandler(sys.stderr)
-    stderr_log.setFormatter(logging.Formatter('[%(levelname)-8s] %(message)s'))
+    stderr_log.setFormatter(logging.Formatter("[%(levelname)-8s] %(message)s"))
     logging.getLogger("codebasin").addHandler(stderr_log)
     logging.getLogger("codebasin").setLevel(logging.WARNING)
 
@@ -49,12 +83,23 @@ if __name__ == '__main__':
     # - configuration contains a single platform (corresponding to flags)
     file_path = os.path.realpath(args.filename)
     codebase = {"files": [file_path], "platforms": ["cli"]}
-    configuration = {"cli": [{"file": file_path,
-                              "defines": args.defines,
-                              "include_paths": args.include_paths,
-                              "include_files": args.include_files}]}
+    configuration = {
+        "cli": [
+            {
+                "file": file_path,
+                "defines": args.defines,
+                "include_paths": args.include_paths,
+                "include_files": args.include_files,
+            },
+        ],
+    }
 
-    state = finder.find(os.getcwd(), codebase, configuration, summarize_only=args.summarize)
+    state = finder.find(
+        os.getcwd(),
+        codebase,
+        configuration,
+        summarize_only=args.summarize,
+    )
     platform = Platform("cli", os.getcwd())
     for path in args.include_paths:
         platform.add_include_path(path)
@@ -70,5 +115,10 @@ if __name__ == '__main__':
         source_printer.walk()
     else:
         source_printer = PreprocessedSourcePrinter(
-            source_tree, node_associations, platform, state, args.expand)
+            source_tree,
+            node_associations,
+            platform,
+            state,
+            args.expand,
+        )
         source_printer.walk()

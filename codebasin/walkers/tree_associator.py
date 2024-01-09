@@ -1,12 +1,11 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import collections
 
-from .tree_walker import TreeWalker
+from codebasin.walkers.tree_walker import TreeWalker
 
-log = logging.getLogger('codebasin')
+log = logging.getLogger("codebasin")
 
 
 class TreeAssociator(TreeWalker):
@@ -28,9 +27,11 @@ class TreeAssociator(TreeWalker):
         self._node_associations[node].add(platform.name)
 
         node_processed = False
-        eval_args = {'platform': platform,
-                     'filename': self.tree.root.filename,
-                     'state': state}
+        eval_args = {
+            "platform": platform,
+            "filename": self.tree.root.filename,
+            "state": state,
+        }
 
         if process_children and node.evaluate_for_platform(**eval_args):
             # node_processed tells us if a child node was processed.
@@ -43,9 +44,16 @@ class TreeAssociator(TreeWalker):
             # taken
             process_child = True
             for child in node.children:
-                child_processed = self._associate_nodes(child, platform, state, process_child)
+                child_processed = self._associate_nodes(
+                    child,
+                    platform,
+                    state,
+                    process_child,
+                )
 
-                if child_processed and (child.is_start_node() or child.is_cont_node()):
+                if child_processed and (
+                    child.is_start_node() or child.is_cont_node()
+                ):
                     process_child = False
                 elif not process_child and child.is_end_node():
                     process_child = True
