@@ -1,0 +1,21 @@
+name: DCO commit signoff check
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  check-commit-message:
+    name: Check commit message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Searching for "Signed-off"
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: 'Signed-off-by: \S+( \S+)* <\S+@\S+>'
+          error: "Commit message does not include DCO signature; please see CONTRIBUTING.md."
+          excludeDescription: 'true'
+          excludeTitle: 'true'
+          checkAllCommitMessages: 'true'
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
+permissions: read-all
