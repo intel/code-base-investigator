@@ -131,14 +131,14 @@ _importcfg_schema = {
 }
 
 
-def extract_defines(args):
+def extract_defines(argv):
     """
     Extract definitions from command-line arguments.
     Recognizes two argument "-D MACRO" and one argument "-DMACRO".
     """
     defines = []
     prefix = ""
-    for a in args:
+    for a in argv:
         if a == "-D":
             prefix = "-D"
         elif prefix:
@@ -150,7 +150,7 @@ def extract_defines(args):
     return defines
 
 
-def extract_include_paths(args):
+def extract_include_paths(argv):
     """
     Extract include paths from command-line arguments.
     Recognizes two argument "-I path" and one argument "-Ipath".
@@ -159,7 +159,7 @@ def extract_include_paths(args):
 
     include_paths = []
     prefix = ""
-    for a in args:
+    for a in argv:
         if a in prefixes:
             prefix = a
         elif prefix in prefixes:
@@ -170,14 +170,14 @@ def extract_include_paths(args):
     return include_paths
 
 
-def extract_include_files(args):
+def extract_include_files(argv):
     """
     Extract include files from command-line arguments.
     Recognizes two argument "-include file".
     """
     includes = []
     prefix = ""
-    for a in args:
+    for a in argv:
         if a == "-include":
             prefix = "-include"
         elif prefix:
@@ -474,25 +474,25 @@ class NvccCompiler(Compiler):
 _seen_compiler = collections.defaultdict(lambda: False)
 
 
-def recognize_compiler(args):
+def recognize_compiler(argv):
     """
     Attempt to recognize the compiler, given an argument list.
     Return a Compiler object.
     """
     compiler = None
-    compiler_name = os.path.basename(args[0])
+    compiler_name = os.path.basename(argv[0])
     if compiler_name in ["clang", "clang++"]:
-        compiler = ClangCompiler(args)
+        compiler = ClangCompiler(argv)
     elif compiler_name in ["gcc", "g++"]:
-        compiler = GnuCompiler(args)
+        compiler = GnuCompiler(argv)
     elif compiler_name in ["hipcc"]:
-        compiler = HipCompiler(args)
+        compiler = HipCompiler(argv)
     elif compiler_name in ["icx", "icpx", "ifx"]:
-        compiler = IntelCompiler(args)
+        compiler = IntelCompiler(argv)
     elif compiler_name == "nvcc":
-        compiler = NvccCompiler(args)
+        compiler = NvccCompiler(argv)
     else:
-        compiler = Compiler(args)
+        compiler = Compiler(argv)
 
     if not _seen_compiler[compiler_name]:
         if compiler:
@@ -526,19 +526,19 @@ def load_database(dbpath, rootdir):
     for e in db:
         # Database may not have tokenized arguments
         if "command" in e:
-            args = shlex.split(e["command"])
+            argv = shlex.split(e["command"])
         elif "arguments" in e:
-            args = e["arguments"]
+            argv = e["arguments"]
 
         # Extract defines, include paths and include files
         # from command-line arguments
-        defines = extract_defines(args)
-        include_paths = extract_include_paths(args)
-        include_files = extract_include_files(args)
+        defines = extract_defines(argv)
+        include_paths = extract_include_paths(argv)
+        include_files = extract_include_files(argv)
 
         # Certain tools may have additional, implicit, behaviors
         # (e.g., additional defines, multiple passes for multiple targets)
-        compiler = recognize_compiler(args)
+        compiler = recognize_compiler(argv)
 
         # Include paths may be specified relative to root
         include_paths = [
