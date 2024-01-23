@@ -11,7 +11,7 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
+            "type": "string"
           },
           "options": {
             "type": "array",
@@ -21,7 +21,7 @@
           }
         },
         "required": ["name", "options"],
-        "additionalProperties": false,
+        "additionalProperties": false
       }
     }
   },

@@ -154,7 +154,6 @@ def _validate_json(json_object: str, schema_name: str) -> bool:
         raise RuntimeError(msg)
 
     schema = json.loads(schema_string)
-    print(schema)
 
     try:
         jsonschema.validate(instance=json_object, schema=schema)

@@ -24,17 +24,17 @@
       },
       "output": {
         "type": "string"
-      },
+      }
     },
     "anyOf": [
       {
         "required": [
-          "arguments",
-        ],
+          "arguments"
+        ]
       },
       {
         "required": [
-          "command",
+          "command"
         ]
       }
     ]
