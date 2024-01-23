@@ -1,0 +1,4 @@
+include codebasin/schema/compilation-database.schema
+include codebasin/schema/config.schema
+include codebasin/schema/coverage-0.1.0.schema
+include codebasin/schema/importcfg.schema
