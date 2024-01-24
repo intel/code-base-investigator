@@ -64,7 +64,7 @@ if __name__ == "__main__":
         for filename in exports[p]:
             covobject = {"file": filename, "regions": []}
             for region in exports[p][filename]:
-                covobject["regions"].append(region)
+                covobject["regions"].append(list(region))
             covarray.append(covobject)
         util._validate_json(covarray, "coverage")
         json_string = json.dumps(covarray)
