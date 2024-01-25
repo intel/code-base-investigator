@@ -626,7 +626,7 @@ class FileNode(Node):
         return parent_json
 
     def __repr__(self):
-        return _representation_string(self, attrs="filename")
+        return _representation_string(self, attrs=["filename"])
 
     def __str__(self):
         return f"{str(self.filename)}; Hash: {str(self.file_hash)}"
