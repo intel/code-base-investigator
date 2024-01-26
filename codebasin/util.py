@@ -11,41 +11,13 @@ import hashlib
 import json
 import logging
 import os
+import pkgutil
+import typing
+import warnings
 from collections.abc import Iterable
 from os.path import splitext
 
 import jsonschema
-
-_coverage_schema_id = (
-    "https://raw.githubusercontent.com/intel/"
-    "p3-analysis-library/p3/schema/coverage-0.1.0.schema"
-)
-_coverage_schema = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": _coverage_schema_id,
-    "title": "Coverage",
-    "description": "Lines of code used in each file of a code base.",
-    "type": "array",
-    "items": {
-        "type": "object",
-        "properties": {
-            "file": {"type": "string"},
-            "regions": {
-                "type": "array",
-                "items": {
-                    "type": "array",
-                    "prefixItems": [
-                        {"type": "integer"},
-                        {"type": "integer"},
-                        {"type": "integer"},
-                    ],
-                    "items": False,
-                },
-            },
-        },
-        "required": ["file", "regions"],
-    },
-}
 
 log = logging.getLogger("codebasin")
 
@@ -141,6 +113,122 @@ def valid_path(path):
     return valid
 
 
+def _validate_json(json_object: object, schema_name: str) -> bool:
+    """
+    Validate JSON against a schema.
+
+    Parameters
+    ----------
+    json_object : Object
+        The JSON to validate.
+
+    schema_name : {'compiledb', 'config', 'coverage', 'importcfg'}
+        The schema to validate against.
+
+    Returns
+    -------
+    bool
+        True if the JSON is valid.
+
+    Raises
+    ------
+    ValueError
+        If the JSON fails to validate, or the schema name is unrecognized.
+
+    RuntimeError
+        If the schema file cannot be located.
+    """
+    schema_paths = {
+        "compiledb": "schema/compilation-database.schema",
+        "config": "schema/config.schema",
+        "coverage": "schema/coverage-0.1.0.schema",
+        "importcfg": "schema/importcfg.schema",
+    }
+    if schema_name not in schema_paths.keys():
+        raise ValueError("Unrecognized schema name.")
+
+    schema_path = schema_paths[schema_name]
+    schema_string = pkgutil.get_data("codebasin", schema_path)
+    if not schema_string:
+        msg = f"Could not locate schema file {schema_path}"
+        raise RuntimeError(msg)
+
+    schema = json.loads(schema_string)
+
+    try:
+        jsonschema.validate(instance=json_object, schema=schema)
+    except jsonschema.exceptions.ValidationError:
+        msg = f"JSON failed schema validation against {schema_path}"
+        raise ValueError(msg)
+    except jsonschema.exceptions.SchemaError:
+        msg = f"{schema_path} is not a valid schema"
+        raise RuntimeError(msg)
+
+    return True
+
+
+def _validate_yaml(yaml_object: object, schema_name: str) -> bool:
+    """
+    Validate YAML against a schema.
+
+    Parameters
+    ----------
+    yaml_object : Object
+        The YAML to validate.
+
+    schema_name : {'config'}
+        The schema to validate against.
+
+    Returns
+    -------
+    bool
+        True if the YAML is valid.
+
+    Raises
+    ------
+    ValueError
+        If the YAML fails to validate, or the schema name is unrecognized.
+
+    RuntimeError
+        If the schema file cannot be located.
+    """
+    if schema_name != "config":
+        raise ValueError("Unrecognized schema name.")
+
+    # We don't use any advanced features of YAML, so can use JSON here
+    return _validate_json(yaml_object, schema_name)
+
+
+def _load_json(file_object: typing.TextIO, schema_name: str) -> object:
+    """
+    Load JSON from file and validate it against a schema.
+
+    Parameters
+    ----------
+    file_object : typing.TextIO
+        The file object to load from.
+
+    schema_name : {'compiledb', 'config', 'coverage', 'importcfg'}
+        The schema to validate against.
+
+    Returns
+    -------
+    Object
+        The loaded JSON.
+
+    Raises
+    ------
+    ValueError
+        If the JSON fails to validate, or the schema name is unrecognized.
+
+    RuntimeError
+        If the schema file cannot be located.
+    """
+    json_object = json.load(file_object)
+    _validate_json(json_object, schema_name)
+    return json_object
+
+
 def validate_coverage_json(json_string: str) -> bool:
     """
     Validate coverage JSON string against schema.
@@ -163,15 +251,13 @@ def validate_coverage_json(json_string: str) -> bool:
     TypeError
         If the JSON string is not a string.
     """
+    warnings.warn(
+        "Direct access to JSON validation is deprecated.",
+        DeprecationWarning,
+    )
+
     if not isinstance(json_string, str):
         raise TypeError("Coverage must be a JSON string.")
 
     instance = json.loads(json_string)
-
-    try:
-        jsonschema.validate(instance=instance, schema=_coverage_schema)
-    except Exception:
-        msg = "Coverage string failed schema validation"
-        raise ValueError(msg)
-
-    return True
+    return _validate_json(instance, "coverage")

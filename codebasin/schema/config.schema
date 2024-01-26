@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/intel/code-base-investigator/schema/config.schema",
+  "$id": "https://raw.githubusercontent.com/intel/code-base-investigator/main/codebasin/schema/config.schema",
   "title": "Code Base Investigator Configuration File",
   "description": "Lists codebase files and compilation options",
   "type": "object",

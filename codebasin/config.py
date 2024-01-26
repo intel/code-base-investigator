@@ -8,127 +8,16 @@ defining a specific code base configuration.
 import collections
 import glob
 import itertools as it
-import json
 import logging
 import os
 import re
 import shlex
 
-import jsonschema
 import yaml
 
 from codebasin import util
 
 log = logging.getLogger("codebasin")
-
-_compiledb_schema_id = (
-    "https://raw.githubusercontent.com/intel/"
-    "code-base-investigator/schema/compilation-database.schema"
-)
-_compiledb_schema = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": _compiledb_schema_id,
-    "title": "Compilation Database",
-    "description": "Compilation database format used by many projects.",
-    "type": "array",
-    "items": {
-        "type": "object",
-        "properties": {
-            "directory": {"type": "string"},
-            "arguments": {"type": "array", "items": {"type": "string"}},
-            "file": {"type": "string"},
-            "command": {"type": "string"},
-            "output": {"type": "string"},
-        },
-        "anyOf": [
-            {
-                "required": [
-                    "arguments",
-                ],
-            },
-            {
-                "required": [
-                    "command",
-                ],
-            },
-        ],
-    },
-}
-
-_config_schema_id = (
-    "https://raw.githubusercontent.com/intel/"
-    "code-base-investigator/schema/config.schema"
-)
-
-_config_schema = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": _config_schema_id,
-    "title": "Code Base Investigator Configuration File",
-    "description": "Lists codebase files and compilation options",
-    "type": "object",
-    "properties": {
-        "codebase": {
-            "type": "object",
-            "properties": {
-                "files": {"type": "array", "items": {"type": "string"}},
-                "platforms": {"type": "array", "items": {"type": "string"}},
-                "exclude_files": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
-            },
-            "required": ["files", "platforms"],
-        },
-    },
-    "patternProperties": {
-        ".*": {
-            "type": "object",
-            "properties": {
-                "files": {"type": "array", "items": {"type": "string"}},
-                "defines": {"type": "array", "items": {"type": "string"}},
-                "include_paths": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
-                "commands": {"type": "string"},
-            },
-            "anyOf": [{"required": ["files"]}, {"required": ["commands"]}],
-        },
-    },
-    "additionalProperties": False,
-    "required": ["codebase"],
-}
-
-_importcfg_schema_id = (
-    "https://raw.githubusercontent.com/intel/",
-    "code-base-investigator/schema/importcfg.schema",
-)
-
-_importcfg_schema = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": _importcfg_schema_id,
-    "title": "Code Base Investigator Import Configuration File",
-    "description": "Configuration options for importing commands.",
-    "type": "object",
-    "properties": {
-        "compilers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                    },
-                    "options": {"type": "array", "items": {"type": "string"}},
-                },
-                "required": ["name", "options"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    "required": ["compilers"],
-    "additionalProperties": False,
-}
 
 
 def extract_defines(argv):
@@ -292,7 +181,7 @@ def load_importcfg():
         log.info(f"Found import configuration file at {path}")
         with open(path) as f:
             try:
-                _importcfg_json = json.load(f)
+                _importcfg_json = util._load_json(f, "importcfg")
                 for compiler in _importcfg_json["compilers"]:
                     _importcfg[compiler["name"]] = compiler["options"]
             except BaseException:
@@ -513,14 +402,7 @@ def load_database(dbpath, rootdir):
     represented as a compilation database entry.
     """
     with util.safe_open_read_nofollow(dbpath, "r") as fi:
-        db = json.load(fi)
-
-    # Validate compilation database against schema
-    try:
-        jsonschema.validate(instance=db, schema=_compiledb_schema)
-    except Exception:
-        msg = "Compilation database failed schema validation"
-        raise ValueError(msg)
+        db = util._load_json(fi, schema_name="compiledb")
 
     configuration = []
     for e in db:
@@ -689,12 +571,7 @@ def load(config_file, rootdir):
         raise RuntimeError(f"Could not open {config_file!s}.")
 
     # Validate config against a schema
-    # We don't use any advanced features of YAML, so can use JSON here
-    try:
-        jsonschema.validate(instance=config, schema=_config_schema)
-    except Exception:
-        msg = "Configuration file failed schema validation"
-        raise ValueError(msg)
+    util._validate_yaml(config, schema_name="config")
 
     # Read codebase definition
     if "codebase" in config:
