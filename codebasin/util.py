@@ -113,7 +113,7 @@ def valid_path(path):
     return valid
 
 
-def _validate_json(json_object: str, schema_name: str) -> bool:
+def _validate_json(json_object: object, schema_name: str) -> bool:
     """
     Validate JSON against a schema.
 
