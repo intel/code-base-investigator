@@ -571,8 +571,7 @@ def load(config_file, rootdir):
         raise RuntimeError(f"Could not open {config_file!s}.")
 
     # Validate config against a schema
-    # We don't use any advanced features of YAML, so can use JSON here
-    util._validate_json(config, schema_name="config")
+    util._validate_yaml(config, schema_name="config")
 
     # Read codebase definition
     if "codebase" in config:
