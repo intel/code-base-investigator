@@ -8,6 +8,7 @@ code base investigator
 
 import logging
 import os
+import warnings
 
 log = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class FileLanguage:
             if self._extension in self._language_extensions[lang]:
                 self._language = lang
                 break
+        warnings.warn("FileLanguage is deprecated. Use Language instead.")
 
     def get_language(self):
         return self._language

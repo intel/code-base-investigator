@@ -10,6 +10,7 @@ import os
 
 from codebasin import preprocessor, util
 from codebasin.file_source import get_file_source
+from codebasin.source import Language
 
 log = logging.getLogger("codebasin")
 
@@ -156,7 +157,7 @@ class FileParser:
 
         tree.insert(new_node)
 
-    def parse_file(self, *, summarize_only=True, language=None):
+    def parse_file(self, *, summarize_only=True, language=Language.UNKNOWN):
         """
         Parse the file that this parser points at, build a SourceTree
         representing this file, and return it.

@@ -11,7 +11,12 @@ setup(
     author="John Pennycook",
     author_email="john.pennycook@intel.com",
     url="https://www.github.com/intel/code-base-investigator",
-    packages=["codebasin", "codebasin.schema", "codebasin.walkers"],
+    packages=[
+        "codebasin",
+        "codebasin.source",
+        "codebasin.schema",
+        "codebasin.walkers",
+    ],
     include_package_data=True,
     scripts=["codebasin.py"],
     classifiers=[
