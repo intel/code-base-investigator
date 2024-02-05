@@ -127,7 +127,14 @@ class ParserState:
         return self.maps[fn]
 
 
-def find(rootdir, codebase, configuration, *, summarize_only=True):
+def find(
+    rootdir,
+    codebase,
+    configuration,
+    *,
+    summarize_only=True,
+    legacy_warnings=True,
+):
     """
     Find codepaths in the files provided and return a mapping of source
     lines to platforms.
@@ -141,10 +148,11 @@ def find(rootdir, codebase, configuration, *, summarize_only=True):
         for e in configuration[p]:
             if e["file"] not in codebase["files"]:
                 filename = e["file"]
-                log.warning(
-                    f"{filename} found in definition of platform {p} "
-                    + "but missing from codebase",
-                )
+                if legacy_warnings:
+                    log.warning(
+                        f"{filename} found in definition of platform {p} "
+                        + "but missing from codebase",
+                    )
             state.insert_file(e["file"])
 
     # Process each tree, by associating nodes with platforms
