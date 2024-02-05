@@ -113,10 +113,11 @@ if __name__ == "__main__":
         "-x",
         "--exclude",
         dest="excludes",
-        metavar="<pathspec>",
+        metavar="<pattern>",
         action="append",
         default=[],
-        help="paths to exclude from the codebase",
+        help="Exclude files matching this pattern from the code base. "
+        + "May be specified multiple times.",
     )
     args = parser.parse_args()
 
