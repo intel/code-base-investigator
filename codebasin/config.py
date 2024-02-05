@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import shlex
+import warnings
 
 import yaml
 
@@ -102,7 +103,7 @@ def flatten(nested_list):
     return flattened
 
 
-def load_codebase(config, rootdir):
+def load_codebase(config, rootdir, *, exclude_patterns=None):
     """
     Load the code base definition into a Python object.
     Return a dict of files and platform names.
@@ -131,8 +132,19 @@ def load_codebase(config, rootdir):
                 ),
             ),
         )
+        warnings.warn(
+            "'exclude_files' is deprecated. Use 'exclude_pattern' instead.",
+        )
     else:
         codebase["exclude_files"] = frozenset([])
+
+    if "exclude_patterns" in cfg_codebase:
+        codebase["exclude_patterns"] = cfg_codebase["exclude_patterns"]
+    else:
+        codebase["exclude_patterns"] = []
+
+    if exclude_patterns:
+        codebase["exclude_patterns"] += exclude_patterns
 
     if cfg_codebase["files"]:
         codebase["files"] = list(
@@ -559,7 +571,7 @@ def load_platform(config, rootdir, platform_name):
     return configuration
 
 
-def load(config_file, rootdir):
+def load(config_file, rootdir, *, exclude_patterns=None):
     """
     Load the configuration file into Python objects.
     Return a (codebase, platform configuration) tuple of dicts.
@@ -575,7 +587,11 @@ def load(config_file, rootdir):
 
     # Read codebase definition
     if "codebase" in config:
-        codebase = load_codebase(config, rootdir)
+        codebase = load_codebase(
+            config,
+            rootdir,
+            exclude_patterns=exclude_patterns,
+        )
     else:
         raise RuntimeError("Missing 'codebase' section in config file!")
 

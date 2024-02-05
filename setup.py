@@ -26,6 +26,7 @@ setup(
     install_requires=[
         "numpy",
         "matplotlib",
+        "pathspec",
         "pyyaml",
         "scipy>=1.11.1",
         "jsonschema",

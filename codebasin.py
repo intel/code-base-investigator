@@ -109,6 +109,16 @@ if __name__ == "__main__":
         default=False,
         help="Set batch mode (additional output for bulk operation.)",
     )
+    parser.add_argument(
+        "-x",
+        "--exclude",
+        dest="excludes",
+        metavar="<pattern>",
+        action="append",
+        default=[],
+        help="Exclude files matching this pattern from the code base. "
+        + "May be specified multiple times.",
+    )
     args = parser.parse_args()
 
     stdout_log = logging.StreamHandler(sys.stdout)
@@ -129,7 +139,11 @@ if __name__ == "__main__":
             "Configuration file does not have YAML file extension.",
         )
         sys.exit(1)
-    codebase, configuration = config.load(config_file, rootdir)
+    codebase, configuration = config.load(
+        config_file,
+        rootdir,
+        exclude_patterns=args.excludes,
+    )
 
     # Parse the source tree, and determine source line associations.
     # The trees and associations are housed in state.

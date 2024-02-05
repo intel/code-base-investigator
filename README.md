@@ -80,6 +80,7 @@ The distances can also be used to produce a dendrogram, showing the result of hi
 - jsonschema
 - Matplotlib
 - NumPy
+- pathspec
 - Python 3
 - PyYAML
 - SciPy

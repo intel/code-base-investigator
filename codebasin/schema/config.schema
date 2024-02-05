@@ -25,6 +25,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "exclude_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [

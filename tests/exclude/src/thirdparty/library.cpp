@@ -1,0 +1,1 @@
+#define THIRDPARTY_LIBRARY
