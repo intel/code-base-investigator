@@ -1,0 +1,18 @@
+[
+  {
+    "command": "/usr/bin/g++ included.cpp",
+    "file": "src/included.cpp"
+  },
+  {
+    "command": "/usr/bin/g++ excluded_name.cpp",
+    "file": "src/excluded_name.cpp"
+  },
+  {
+    "command": "/usr/bin/gfortran excluded_extension.f90",
+    "file": "src/excluded_extension.f90"
+  },
+  {
+    "command": "/usr/bin/g++ library.cpp",
+    "file": "src/thirdparty/library.cpp"
+  }
+]
