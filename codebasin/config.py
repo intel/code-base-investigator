@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import shlex
+import warnings
 
 import yaml
 
@@ -131,8 +132,16 @@ def load_codebase(config, rootdir):
                 ),
             ),
         )
+        warnings.warn(
+            "'exclude_files' is deprecated. Use 'exclude_pattern' instead.",
+        )
     else:
         codebase["exclude_files"] = frozenset([])
+
+    if "exclude_patterns" in cfg_codebase:
+        codebase["exclude_patterns"] = cfg_codebase["exclude_patterns"]
+    else:
+        codebase["exclude_patterns"] = []
 
     if cfg_codebase["files"]:
         codebase["files"] = list(
