@@ -66,7 +66,7 @@ if __name__ == "__main__":
         dest="config_file",
         metavar="FILE",
         action="store",
-        help="configuration file (default: <DIR>/config.yaml)",
+        help="Configuration file (default: <DIR>/config.yaml)",
     )
     parser.add_argument(
         "-v",
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         dest="verbose",
         action="count",
         default=0,
-        help="increase verbosity level",
+        help="Increase verbosity level",
     )
     parser.add_argument(
         "-q",
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         dest="quiet",
         action="count",
         default=0,
-        help="decrease verbosity level",
+        help="Decrease verbosity level",
     )
     parser.add_argument(
         "-R",
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         default=["all"],
         choices=["all", "summary", "clustering"],
         nargs="+",
-        help="desired output reports (default: all)",
+        help="Desired output reports (default: all)",
     )
     parser.add_argument(
         "-d",
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         dest="dump",
         metavar="<file.json>",
         action="store",
-        help="dump out annotated platform/parsing tree to <file.json>",
+        help="Dump out annotated platform/parsing tree to <file.json>",
     )
     parser.add_argument(
         "--batchmode",
