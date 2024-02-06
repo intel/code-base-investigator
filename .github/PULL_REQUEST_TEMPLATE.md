@@ -1,15 +1,22 @@
 # Related issues
 
-If applicable:
+<!--
+If applicable, provide a list of related issues here.
 
-Closes/Fixes/Addresses #<issue_number>
+Consider using a keyword like "closes" to automatically link this pull request
+to any issues that should be automatically closed when this pull request is
+merged. See the GitHub documentation for more information:
+https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/using-keywords-in-issues-and-pull-requests
 
-If not applicable: write "N/A".
+If not applicable, write "N/A".
+-->
 
 # Proposed changes
 
-List out&mdash;with high level descriptions&mdash;what the commits
-within this PR do:
+<!--
+List out, with high level descriptions, what the commits within this pull
+request do.
+-->
 
 -
 -
