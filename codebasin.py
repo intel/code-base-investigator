@@ -50,6 +50,16 @@ if __name__ == "__main__":
     # Read command-line arguments
     parser = argparse.ArgumentParser(
         description="Code Base Investigator v" + str(version),
+        formatter_class=argparse.RawTextHelpFormatter,
+        add_help=False,
+    )
+
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        default=argparse.SUPPRESS,
+        help="\nShow this message and exit",
     )
     parser.add_argument(
         "-r",
@@ -74,7 +84,7 @@ if __name__ == "__main__":
         dest="verbose",
         action="count",
         default=0,
-        help="Increase verbosity level",
+        help="\nIncrease verbosity level",
     )
     parser.add_argument(
         "-q",
@@ -82,7 +92,7 @@ if __name__ == "__main__":
         dest="quiet",
         action="count",
         default=0,
-        help="Decrease verbosity level",
+        help="\nDecrease verbosity level",
     )
     parser.add_argument(
         "-R",
@@ -107,7 +117,7 @@ if __name__ == "__main__":
         dest="batchmode",
         action="store_true",
         default=False,
-        help="Set batch mode (additional output for bulk operation.)",
+        help="\nSet batch mode (additional output for bulk operation.)",
     )
     parser.add_argument(
         "-x",
@@ -116,7 +126,7 @@ if __name__ == "__main__":
         metavar="<pattern>",
         action="append",
         default=[],
-        help="Exclude files matching this pattern from the code base. "
+        help="Exclude files matching this pattern from the code base."
         + "May be specified multiple times.",
     )
     args = parser.parse_args()
