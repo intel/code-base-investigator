@@ -16,15 +16,6 @@ from codebasin.walkers.platform_mapper import PlatformMapper
 version = "1.1.1"
 
 
-def report_enabled(name):
-    """
-    Return true if the report with the specified name is enabled.
-    """
-    if "all" in args.reports:
-        return True
-    return name in args.reports
-
-
 def guess_project_name(config_path):
     """
     Guess a useful name from the given path so that we can pick
@@ -46,7 +37,7 @@ def guess_project_name(config_path):
     return res
 
 
-if __name__ == "__main__":
+def main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
         description="Code Base Investigator v" + str(version),
@@ -162,6 +153,11 @@ if __name__ == "__main__":
                 f"'{args.dump}'. Skipping dump.",
             )
 
+    def report_enabled(name):
+        if "all" in args.reports:
+            return True
+        return name in args.reports
+
     if args.batchmode and (
         report_enabled("summary") or report_enabled("clustering")
     ):
@@ -183,3 +179,11 @@ if __name__ == "__main__":
             print(clustering)
 
     sys.exit(0)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        logging.getLogger("codebasin").error(str(e))
+        sys.exit(1)
