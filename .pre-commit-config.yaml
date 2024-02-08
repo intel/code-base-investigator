@@ -64,3 +64,4 @@ repos:
     hooks:
       - id: bandit
         name: bandit
+        args: ["-c", ".bandit"]
