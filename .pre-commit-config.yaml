@@ -64,7 +64,3 @@ repos:
     hooks:
       - id: bandit
         name: bandit
-        language: python
-        language_version: python3
-        types: [python3]
-        require_serial: true
