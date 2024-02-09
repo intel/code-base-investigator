@@ -49,7 +49,6 @@ repos:
       - id: flake8
         additional_dependencies:
           [
-            flake8-bandit,
             flake8-debugger,
             flake8-use-fstring,
           ]
