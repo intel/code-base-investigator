@@ -24,11 +24,11 @@ setup(
     ],
     python_requires=">=3.12",
     install_requires=[
-        "numpy",
-        "matplotlib",
-        "pathspec",
-        "pyyaml",
-        "scipy>=1.11.1",
-        "jsonschema",
+        "numpy==1.26.0",
+        "matplotlib==3.8.2",
+        "pathspec==0.12.1",
+        "pyyaml==6.0.1",
+        "scipy==1.12.0",
+        "jsonschema==4.21.1",
     ],
 )
