@@ -188,16 +188,16 @@ def load_importcfg():
     """
     global _importcfg
     _importcfg = collections.defaultdict(list)
-    path = ".cbi/importcfg.json"
+    path = ".cbi/config"
     if os.path.exists(path):
-        log.info(f"Found import configuration file at {path}")
-        with open(path) as f:
+        log.info(f"Found configuration file at {path}")
+        with open(path, "rb") as f:
             try:
-                _importcfg_json = util._load_json(f, "importcfg")
-                for compiler in _importcfg_json["compilers"]:
-                    _importcfg[compiler["name"]] = compiler["options"]
+                _importcfg_toml = util._load_toml(f, "cbiconfig")
+                for name, compiler in _importcfg_toml["compiler"].items():
+                    _importcfg[name] = compiler["options"]
             except BaseException:
-                log.error("importcfg file failed validation")
+                log.error("Configuration file failed validation")
 
 
 class Compiler:
