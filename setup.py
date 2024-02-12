@@ -22,7 +22,7 @@ setup(
         "Programming Language :: Python",
         "Topic :: Software Development",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.12",
     install_requires=[
         "numpy",
         "matplotlib",
