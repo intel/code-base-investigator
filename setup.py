@@ -20,6 +20,8 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development",
     ],
     python_requires=">=3.12",
