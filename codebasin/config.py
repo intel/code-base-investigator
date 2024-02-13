@@ -191,7 +191,7 @@ def load_importcfg():
     path = ".cbi/config"
     if os.path.exists(path):
         log.info(f"Found configuration file at {path}")
-        with open(path, "rb") as f:
+        with util.safe_open_read_nofollow(path, "rb") as f:
             try:
                 _importcfg_toml = util._load_toml(f, "cbiconfig")
                 for name, compiler in _importcfg_toml["compiler"].items():
