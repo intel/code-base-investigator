@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import pkgutil
+import tomllib
 import typing
 import warnings
 from collections.abc import Iterable
@@ -122,7 +123,7 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
     json_object : Object
         The JSON to validate.
 
-    schema_name : {'compiledb', 'config', 'coverage', 'importcfg'}
+    schema_name : {'compiledb', 'config', 'coverage', 'cbiconfig'}
         The schema to validate against.
 
     Returns
@@ -142,7 +143,7 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
         "compiledb": "schema/compilation-database.schema",
         "config": "schema/config.schema",
         "coverage": "schema/coverage-0.1.0.schema",
-        "importcfg": "schema/importcfg.schema",
+        "cbiconfig": "schema/cbiconfig.schema",
     }
     if schema_name not in schema_paths.keys():
         raise ValueError("Unrecognized schema name.")
@@ -199,6 +200,37 @@ def _validate_yaml(yaml_object: object, schema_name: str) -> bool:
     return _validate_json(yaml_object, schema_name)
 
 
+def _validate_toml(toml_object: object, schema_name: str) -> bool:
+    """
+    Validate TOML against a schema.
+
+    Parameters
+    ----------
+    yaml_object : Object
+        The YAML to validate.
+
+    schema_name : {'cbiconfig'}
+        The schema to validate against.
+
+    Returns
+    -------
+    bool
+        True if the TOML is valid.
+
+    Raises
+    ------
+    ValueError
+        If the TOML fails to validate, or the schema name is unrecognized.
+
+    RuntimeError
+        If the schema file cannot be located.
+    """
+    if schema_name != "cbiconfig":
+        raise ValueError("Unrecognized schema name.")
+
+    return _validate_json(toml_object, schema_name)
+
+
 def _load_json(file_object: typing.TextIO, schema_name: str) -> object:
     """
     Load JSON from file and validate it against a schema.
@@ -208,7 +240,7 @@ def _load_json(file_object: typing.TextIO, schema_name: str) -> object:
     file_object : typing.TextIO
         The file object to load from.
 
-    schema_name : {'compiledb', 'config', 'coverage', 'importcfg'}
+    schema_name : {'compiledb', 'config', 'coverage'}
         The schema to validate against.
 
     Returns
@@ -227,6 +259,36 @@ def _load_json(file_object: typing.TextIO, schema_name: str) -> object:
     json_object = json.load(file_object)
     _validate_json(json_object, schema_name)
     return json_object
+
+
+def _load_toml(file_object: typing.TextIO, schema_name: str) -> object:
+    """
+    Load TOML from file and validate it against a schema.
+
+    Parameters
+    ----------
+    file_object : typing.TextIO
+        The file object to load from.
+
+    schema_name : {'cbiconfig'}
+        The schema to validate against.
+
+    Returns
+    -------
+    Object
+        The loaded JSON.
+
+    Raises
+    ------
+    ValueError
+        If the JSON fails to validate, or the schema name is unrecognized.
+
+    RuntimeError
+        If the schema file cannot be located.
+    """
+    toml_object = tomllib.load(file_object)
+    _validate_json(toml_object, schema_name)
+    return toml_object
 
 
 def validate_coverage_json(json_string: str) -> bool:
