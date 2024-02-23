@@ -9,6 +9,7 @@ import argparse
 import logging
 import os
 import sys
+import warnings
 
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
@@ -47,9 +48,17 @@ def main():
         "--rootdir",
         dest="rootdir",
         metavar="DIR",
-        default=os.getcwd(),
-        type=str,
+        default=None,
         help="Set working root directory (default .)",
+    )
+    parser.add_argument(
+        "-S",
+        "--source-dir",
+        metavar="<path>",
+        dest="source_dir",
+        default=None,
+        help="Set path to source directory. "
+        + "The default is the current directory.",
     )
     parser.add_argument(
         "-c",
@@ -131,7 +140,23 @@ def main():
     logging.getLogger("codebasin").setLevel(
         max(1, logging.WARNING - 10 * (args.verbose - args.quiet)),
     )
-    rootdir = os.path.realpath(args.rootdir)
+
+    # Determine the root directory based on the -S and -r flags.
+    rootpath = None
+    if args.source_dir and args.rootdir:
+        raise RuntimeError(
+            "Cannot specify both --source-dir (-S) and --rootdir (-r).",
+        )
+    if not args.source_dir and not args.rootdir:
+        rootpath = os.getcwd()
+    elif args.source_dir:
+        rootpath = args.source_dir
+    elif args.rootdir:
+        warnings.warn(
+            "--rootdir (-r) is deprecated. Use --source-dir (-S) instead.",
+        )
+        rootpath = args.rootdir
+    rootdir = os.path.realpath(rootpath)
 
     # Process the -p flag first to infer wider context.
     filtered_platforms = []
