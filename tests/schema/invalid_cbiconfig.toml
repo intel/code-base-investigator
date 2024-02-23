@@ -1,0 +1,5 @@
+[compiler.test_one]
+options = 1
+
+[compiler.test_two]
+options = 2
