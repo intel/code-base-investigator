@@ -1,0 +1,11 @@
+[codebase]
+exclude = [
+    "*.F90",
+    "*.cu",
+]
+
+[platform.one]
+commands = "one.json"
+
+[platform.two]
+commands = "two.json"

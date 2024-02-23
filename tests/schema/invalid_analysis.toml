@@ -1,0 +1,11 @@
+[codebase]
+exclude = [
+    1,
+    2,
+]
+
+[platform.one]
+commands = "one.json"
+
+[platform.two]
+commands = "two.json"
