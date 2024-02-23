@@ -260,6 +260,8 @@ def main():
             codebase["exclude_patterns"] += excludes
 
         for name in analysis_toml["platform"].keys():
+            if filtered_platforms and name not in filtered_platforms:
+                continue
             if "commands" not in analysis_toml["platform"][name]:
                 raise ValueError(f"Missing 'commands' for platform {name}")
             p = analysis_toml["platform"][name]["commands"]
