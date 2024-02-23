@@ -110,6 +110,19 @@ def main():
         help="Exclude files matching this pattern from the code base. "
         + "May be specified multiple times.",
     )
+    parser.add_argument(
+        "-p",
+        "--platform",
+        dest="platforms",
+        metavar="<platform>",
+        action="append",
+        default=[],
+        help="Add the specified platform to the analysis. "
+        + "May be a name or a path to a compilation database. "
+        + "May be specified multiple times. "
+        + "If not specified, all known platforms will be included.",
+    )
+
     args = parser.parse_args()
 
     stdout_log = logging.StreamHandler(sys.stdout)
@@ -120,25 +133,73 @@ def main():
     )
     rootdir = os.path.realpath(args.rootdir)
 
-    if args.config_file is None:
+    # Process the -p flag first to infer wider context.
+    filtered_platforms = []
+    additional_platforms = []
+    for p in args.platforms:
+        # If it's a path, it has to be a compilation database.
+        if os.path.exists(p):
+            if not os.path.splitext(p)[1] == ".json":
+                raise RuntimeError(f"Platform file {p} must end in .json.")
+            additional_platforms.append(p)
+            continue
+
+        # Otherwise, treat it as a name in the configuration file.
+        # Explain the logic above in cases that look suspiciously like paths.
+        if "/" in p or os.path.splitext(p)[1] == ".json":
+            logging.getLogger("codebasin").warning(
+                f"{p} doesn't exist, so will be treated as a name.",
+            )
+        filtered_platforms.append(p)
+
+    # If no additional platforms are specified, a config file is required.
+    config_file = args.config_file
+    if len(additional_platforms) == 0 and config_file is None:
         config_file = os.path.join(rootdir, "config.yaml")
-    else:
-        config_file = args.config_file
-    # Load the configuration file into a dict
-    if not util.ensure_yaml(config_file):
-        logging.getLogger("codebasin").error(
-            "Configuration file does not have YAML file extension.",
+        if not os.path.exists(config_file):
+            raise RuntimeError(f"Could not find config file {config_file}")
+
+    # Set up a default codebase and configuration object.
+    codebase = {
+        "files": [],
+        "platforms": [],
+        "exclude_files": set(),
+        "exclude_patterns": args.excludes,
+        "rootdir": rootdir,
+    }
+    configuration = {}
+
+    # Load the configuration file if it exists, obeying any platform filter.
+    if config_file is not None:
+        if not util.ensure_yaml(config_file):
+            logging.getLogger("codebasin").error(
+                "Configuration file does not have YAML file extension.",
+            )
+            sys.exit(1)
+        codebase, configuration = config.load(
+            config_file,
+            rootdir,
+            exclude_patterns=args.excludes,
+            filtered_platforms=filtered_platforms,
         )
-        sys.exit(1)
-    codebase, configuration = config.load(
-        config_file,
-        rootdir,
-        exclude_patterns=args.excludes,
-    )
+
+    # Extend configuration with any additional platforms.
+    for p in additional_platforms:
+        name = os.path.splitext(os.path.basename(p))[0]
+        if name in codebase["platforms"]:
+            raise RuntimeError(f"Platform name {p} conflicts with {name}.")
+        db = config.load_database(p, rootdir)
+        configuration.update({name: db})
 
     # Parse the source tree, and determine source line associations.
     # The trees and associations are housed in state.
-    state = finder.find(rootdir, codebase, configuration)
+    legacy_warnings = True if config_file else False
+    state = finder.find(
+        rootdir,
+        codebase,
+        configuration,
+        legacy_warnings=legacy_warnings,
+    )
 
     # Count lines for platforms
     platform_mapper = PlatformMapper(codebase)
@@ -172,7 +233,11 @@ def main():
 
     # Print clustering report
     if report_enabled("clustering"):
-        output_prefix = os.path.realpath(guess_project_name(config_file))
+        if config_file is None:
+            platform_names = [p[0] for p in args.platforms]
+            output_prefix = "-".join(platform_names)
+        else:
+            output_prefix = os.path.realpath(guess_project_name(config_file))
         clustering_output_name = output_prefix + "-dendrogram.png"
         clustering = report.clustering(clustering_output_name, setmap)
         if clustering is not None:

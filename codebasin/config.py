@@ -571,7 +571,13 @@ def load_platform(config, rootdir, platform_name):
     return configuration
 
 
-def load(config_file, rootdir, *, exclude_patterns=None):
+def load(
+    config_file,
+    rootdir,
+    *,
+    exclude_patterns=None,
+    filtered_platforms=None,
+):
     """
     Load the configuration file into Python objects.
     Return a (codebase, platform configuration) tuple of dicts.
@@ -596,6 +602,16 @@ def load(config_file, rootdir, *, exclude_patterns=None):
         raise RuntimeError("Missing 'codebase' section in config file!")
 
     log.info("Platforms: %s", ", ".join(codebase["platforms"]))
+
+    # Limit the set of platforms in the codebase if requested.
+    if filtered_platforms:
+        for p in filtered_platforms:
+            if p not in codebase["platforms"]:
+                raise RuntimeError(
+                    f"Platform {p} requested on the command line "
+                    + "does not exist in the configuration file.",
+                )
+        codebase["platforms"] = filtered_platforms
 
     # Read each platform definition and populate platform configuration
     # If files was empty, populate it with the files we find here
