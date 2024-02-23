@@ -55,6 +55,32 @@ class TestSchema(unittest.TestCase):
             with self.assertRaises(ValueError):
                 toml = util._load_toml(f, "cbiconfig")
 
+    def test_analysis_file(self):
+        """schema/analysis_file"""
+
+        path = "./tests/schema/analysis.toml"
+        with open(path, "rb") as f:
+            toml = util._load_toml(f, "analysis")
+            expected = {
+                "codebase": {
+                    "exclude": ["*.F90", "*.cu"],
+                },
+                "platform": {
+                    "one": {
+                        "commands": "one.json",
+                    },
+                    "two": {
+                        "commands": "two.json",
+                    },
+                },
+            }
+            self.assertEqual(toml, expected)
+
+        path = "./tests/schema/invalid_analysis.toml"
+        with open(path, "rb") as f:
+            with self.assertRaises(ValueError):
+                toml = util._load_toml(f, "analysis")
+
 
 if __name__ == '__main__':
     unittest.main()
