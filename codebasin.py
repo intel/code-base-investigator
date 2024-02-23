@@ -145,9 +145,6 @@ def main():
             continue
 
         # Otherwise, treat it as a name in the configuration file.
-        if not isinstance(p, str):
-            raise RuntimeError(f"Platform name {p} must be a string.")
-
         # Explain the logic above in cases that look suspiciously like paths.
         if "/" in p or os.path.splitext(p)[1] == ".json":
             logging.getLogger("codebasin").warning(
