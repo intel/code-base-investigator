@@ -17,23 +17,13 @@ CBI tracks specialization in two forms: source files that are not compiled for a
 3) Record which specializations are used by each platform.
 
 ## Usage
-```
-usage: codebasin.py [-h] [-c FILE] [-v] [-q] [-r DIR] [-R REPORT [REPORT ...]] [-d DUMPFILE]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -c FILE, --config FILE
-                        configuration file (default: <DIR>/config.yaml)
-  -v, --verbose         verbosity level
-  -q, --quiet           quiet level
-  -r DIR, --rootdir DIR
-                        Set working root directory (default .)
-  -R REPORT [REPORT ...], --report REPORT [REPORT ...]
-                        desired output reports (default: all)
-  -d DUMPFILE, --dump DUMPFILE
-                        dump annotated parse tree to DUMPFILE
-```
-The `codebasin.py` script analyzes a code base described in a YAML configuration file and produces one or more output reports.  Example configuration files can be found in the [examples](./examples) directory, and see the [configuration file documentation](docs/configuration.md) for a detailed description of the configuration file format.
+The `codebasin` script analyzes a code base described in a YAML configuration file and produces one or more output reports.  Example configuration files can be found in the [examples](./examples) directory, and see the [configuration file documentation](docs/configuration.md) for a detailed description of the configuration file format.
+
+To see a complete list of `codebasin` options, run `codebasin -h`.
+
+> [!IMPORTANT]
+> In previous releases of Code Base Investigator, the main script was called `codebasin.py`. The old naming was a bug that needed to be fixed, and we made the difficult decision to rename the script ahead of the next major release.
 
 ### Summary Report
 The summary report (`-R summary`) gives a high-level summary of a code base, as shown below:
