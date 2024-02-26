@@ -143,9 +143,15 @@ def main():
 
     # Warnings for deprecated functionality with no planned replacement.
     if args.batchmode:
-        warnings.warn("--batchmode will be removed in a future release.")
+        warnings.warn(
+            "--batchmode will be removed in a future release.",
+            DeprecationWarning,
+        )
     if args.dump:
-        warnings.warn("--dump will be removed in a future release.")
+        warnings.warn(
+            "--dump will be removed in a future release.",
+            DeprecationWarning,
+        )
 
     # Determine the root directory based on the -S and -r flags.
     rootpath = None
