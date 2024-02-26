@@ -1,6 +1,24 @@
 name: CBI unittest
 
-on: [push]
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'bin/**'
+      - 'codebasin/**'
+      - 'etc/**'
+      - 'tests/**'
+      - 'MANIFEST.in'
+      - 'setup.py'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'bin/**'
+      - 'codebasin/**'
+      - 'etc/**'
+      - 'tests/**'
+      - 'MANIFEST.in'
+      - 'setup.py'
 
 jobs:
   build:
