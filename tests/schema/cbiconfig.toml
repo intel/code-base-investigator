@@ -1,0 +1,9 @@
+[compiler.test_one]
+options = [
+    "TEST_ONE"
+]
+
+[compiler.test_two]
+options = [
+    "TEST_TWO"
+]
