@@ -141,6 +141,12 @@ def main():
         max(1, logging.WARNING - 10 * (args.verbose - args.quiet)),
     )
 
+    # Warnings for deprecated functionality with no planned replacement.
+    if args.batchmode:
+        warnings.warn("--batchmode will be removed in a future release.")
+    if args.dump:
+        warnings.warn("--dump will be removed in a future release.")
+
     # Determine the root directory based on the -S and -r flags.
     rootpath = None
     if args.source_dir and args.rootdir:
