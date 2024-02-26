@@ -22,6 +22,9 @@ The `codebasin` script analyzes a code base described in a YAML configuration fi
 
 To see a complete list of `codebasin` options, run `codebasin -h`.
 
+> [!IMPORTANT]
+> In previous releases of Code Base Investigator, the main script was called `codebasin.py`. The old naming was a bug that needed to be fixed, and we made the difficult decision to rename the script ahead of the next major release.
+
 ### Summary Report
 The summary report (`-R summary`) gives a high-level summary of a code base, as shown below:
 ```
