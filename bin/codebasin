@@ -203,7 +203,7 @@ def main():
         filtered_platforms.append(p)
 
     # A legacy config file is required if:
-    # - No additional platforms are specified; or
+    # - No additional platforms are specified; and
     # - No TOML analysis file is specified
     config_file = args.config_file
     config_required = (
