@@ -210,6 +210,7 @@ def main():
         len(additional_platforms) == 0 and args.analysis_file is None
     )
     if config_file is None and config_required:
+        warnings.warn("Implicitly defined configuration files are deprecated.")
         config_file = os.path.join(rootdir, "config.yaml")
         if not os.path.exists(config_file):
             raise RuntimeError(f"Could not find config file {config_file}")
