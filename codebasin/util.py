@@ -123,7 +123,7 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
     json_object : Object
         The JSON to validate.
 
-    schema_name : {'compiledb', 'config', 'coverage', 'cbiconfig'}
+    schema_name : {'compiledb', 'config', 'coverage', 'cbiconfig', 'analysis'}
         The schema to validate against.
 
     Returns
@@ -140,6 +140,7 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
         If the schema file cannot be located.
     """
     schema_paths = {
+        "analysis": "schema/analysis.schema",
         "compiledb": "schema/compilation-database.schema",
         "config": "schema/config.schema",
         "coverage": "schema/coverage-0.1.0.schema",
@@ -270,18 +271,18 @@ def _load_toml(file_object: typing.TextIO, schema_name: str) -> object:
     file_object : typing.TextIO
         The file object to load from.
 
-    schema_name : {'cbiconfig'}
+    schema_name : {'cbiconfig', 'analysis'}
         The schema to validate against.
 
     Returns
     -------
     Object
-        The loaded JSON.
+        The loaded TOML.
 
     Raises
     ------
     ValueError
-        If the JSON fails to validate, or the schema name is unrecognized.
+        If the TOML fails to validate, or the schema name is unrecognized.
 
     RuntimeError
         If the schema file cannot be located.

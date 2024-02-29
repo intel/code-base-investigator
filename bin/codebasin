@@ -64,9 +64,9 @@ def main():
         "-c",
         "--config",
         dest="config_file",
-        metavar="FILE",
+        metavar="<config-file>",
         action="store",
-        help="configuration file (default: <DIR>/config.yaml)",
+        help="Configuration YAML file. " + "Defaults to config.yaml",
     )
     parser.add_argument(
         "-v",
@@ -131,6 +131,14 @@ def main():
         + "May be specified multiple times. "
         + "If not specified, all known platforms will be included.",
     )
+    # The analysis-file argument is optional while we support the -c option.
+    parser.add_argument(
+        "analysis_file",
+        metavar="<analysis-file>",
+        nargs="?",
+        help="TOML file describing the analysis to be performed,"
+        + "including the codebase and platform descriptions.",
+    )
 
     args = parser.parse_args()
 
@@ -170,6 +178,11 @@ def main():
         rootpath = args.rootdir
     rootdir = os.path.realpath(rootpath)
 
+    if args.config_file and args.analysis_file:
+        raise RuntimeError(
+            "Cannot use --config (-c) with TOML analysis files.",
+        )
+
     # Process the -p flag first to infer wider context.
     filtered_platforms = []
     additional_platforms = []
@@ -189,9 +202,15 @@ def main():
             )
         filtered_platforms.append(p)
 
-    # If no additional platforms are specified, a config file is required.
+    # A legacy config file is required if:
+    # - No additional platforms are specified; and
+    # - No TOML analysis file is specified
     config_file = args.config_file
-    if len(additional_platforms) == 0 and config_file is None:
+    config_required = (
+        len(additional_platforms) == 0 and args.analysis_file is None
+    )
+    if config_file is None and config_required:
+        warnings.warn("Implicitly defined configuration files are deprecated.")
         config_file = os.path.join(rootdir, "config.yaml")
         if not os.path.exists(config_file):
             raise RuntimeError(f"Could not find config file {config_file}")
@@ -208,6 +227,10 @@ def main():
 
     # Load the configuration file if it exists, obeying any platform filter.
     if config_file is not None:
+        warnings.warn(
+            "YAML configuration files are deprecated. "
+            + "Use TOML analysis files instead.",
+        )
         if not util.ensure_yaml(config_file):
             logging.getLogger("codebasin").error(
                 "Configuration file does not have YAML file extension.",
@@ -219,6 +242,32 @@ def main():
             exclude_patterns=args.excludes,
             filtered_platforms=filtered_platforms,
         )
+
+    # Load the analysis file if it exists.
+    if args.analysis_file is not None:
+        path = os.path.realpath(args.analysis_file)
+        if os.path.exists(path):
+            if not os.path.splitext(path)[1] == ".toml":
+                raise RuntimeError(f"Analysis file {p} must end in .toml.")
+
+        with util.safe_open_read_nofollow(path, "rb") as f:
+            try:
+                analysis_toml = util._load_toml(f, "analysis")
+            except BaseException:
+                raise ValueError("Analysis file failed validation")
+
+        if "exclude" in analysis_toml["codebase"]:
+            excludes = analysis_toml["codebase"]["exclude"]
+            codebase["exclude_patterns"] += excludes
+
+        for name in analysis_toml["platform"].keys():
+            if filtered_platforms and name not in filtered_platforms:
+                continue
+            if "commands" not in analysis_toml["platform"][name]:
+                raise ValueError(f"Missing 'commands' for platform {name}")
+            p = analysis_toml["platform"][name]["commands"]
+            db = config.load_database(p, rootdir)
+            configuration.update({name: db})
 
     # Extend configuration with any additional platforms.
     for p in additional_platforms:
