@@ -160,6 +160,11 @@ def main():
             "--dump will be removed in a future release.",
             DeprecationWarning,
         )
+    if len(args.reports) > 1:
+        warnings.warn(
+            "Passing more than one value to --report (-R) is deprecated.",
+            DeprecationWarning,
+        )
 
     # Determine the root directory based on the -S and -r flags.
     rootpath = None
