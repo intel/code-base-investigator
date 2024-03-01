@@ -175,6 +175,7 @@ def main():
     elif args.rootdir:
         warnings.warn(
             "--rootdir (-r) is deprecated. Use --source-dir (-S) instead.",
+            DeprecationWarning,
         )
         rootpath = args.rootdir
     rootdir = os.path.realpath(rootpath)
@@ -211,7 +212,10 @@ def main():
         len(additional_platforms) == 0 and args.analysis_file is None
     )
     if config_file is None and config_required:
-        warnings.warn("Implicitly defined configuration files are deprecated.")
+        warnings.warn(
+            "Implicitly defined configuration files are deprecated.",
+            DeprecationWarning,
+        )
         config_file = os.path.join(rootdir, "config.yaml")
         if not os.path.exists(config_file):
             raise RuntimeError(f"Could not find config file {config_file}")
@@ -231,6 +235,7 @@ def main():
         warnings.warn(
             "YAML configuration files are deprecated. "
             + "Use TOML analysis files instead.",
+            DeprecationWarning,
         )
         if not util.ensure_yaml(config_file):
             logging.getLogger("codebasin").error(
