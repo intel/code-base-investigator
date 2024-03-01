@@ -43,7 +43,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Code Base Investigator v" + str(version),
     )
-    parser.add_argument(
+    deprecated_args = parser.add_argument_group("deprecated options")
+    deprecated_args.add_argument(
         "-r",
         "--rootdir",
         dest="rootdir",
@@ -60,7 +61,7 @@ def main():
         help="Set path to source directory. "
         + "The default is the current directory.",
     )
-    parser.add_argument(
+    deprecated_args.add_argument(
         "-c",
         "--config",
         dest="config_file",
@@ -94,7 +95,7 @@ def main():
         nargs="+",
         help="desired output reports (default: all)",
     )
-    parser.add_argument(
+    deprecated_args.add_argument(
         "-d",
         "--dump",
         dest="dump",
@@ -102,7 +103,7 @@ def main():
         action="store",
         help="dump out annotated platform/parsing tree to <file.json>",
     )
-    parser.add_argument(
+    deprecated_args.add_argument(
         "--batchmode",
         dest="batchmode",
         action="store_true",
