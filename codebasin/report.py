@@ -7,6 +7,7 @@ Contains functions for generating command-line reports.
 import itertools as it
 import json
 import logging
+import warnings
 
 from codebasin import util
 
@@ -166,8 +167,10 @@ def clustering(output_name, setmap):
     clusters = hierarchy.linkage(squareform(matrix), method="average")
 
     # Plot dendrogram of hierarchical clustering
+    # Ignore SciPy warning about axis limits, because we override them
     fig, ax = plt.subplots()
-    hierarchy.dendrogram(clusters, labels=platforms, orientation="right")
+    with warnings.catch_warnings(action="ignore"):
+        hierarchy.dendrogram(clusters, labels=platforms, orientation="right")
     ax.set_xlim(xmin=0, xmax=1)
     ax.axvline(x=divergence(setmap), linestyle="--", label="Average")
     ax.text(
