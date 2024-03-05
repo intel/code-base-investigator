@@ -267,9 +267,10 @@ def main():
             except BaseException:
                 raise ValueError("Analysis file failed validation")
 
-        if "exclude" in analysis_toml["codebase"]:
-            excludes = analysis_toml["codebase"]["exclude"]
-            codebase["exclude_patterns"] += excludes
+        if "codebase" in analysis_toml:
+            if "exclude" in analysis_toml["codebase"]:
+                excludes = analysis_toml["codebase"]["exclude"]
+                codebase["exclude_patterns"] += excludes
 
         for name in analysis_toml["platform"].keys():
             if filtered_platforms and name not in filtered_platforms:
