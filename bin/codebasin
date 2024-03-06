@@ -247,6 +247,13 @@ def main():
                 excludes = analysis_toml["codebase"]["exclude"]
                 codebase["exclude_patterns"] += excludes
 
+        for name in args.platforms:
+            if name not in analysis_toml["platform"].keys():
+                raise RuntimeError(
+                    f"Platform {name} requested on the command line "
+                    + "does not exist in the configuration file.",
+                )
+
         for name in analysis_toml["platform"].keys():
             if args.platforms and name not in args.platforms:
                 continue
