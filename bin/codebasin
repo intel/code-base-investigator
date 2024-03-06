@@ -261,6 +261,7 @@ def main():
                 raise ValueError(f"Missing 'commands' for platform {name}")
             p = analysis_toml["platform"][name]["commands"]
             db = config.load_database(p, rootdir)
+            codebase["platforms"].append(name)
             configuration.update({name: db})
 
     # Parse the source tree, and determine source line associations.
