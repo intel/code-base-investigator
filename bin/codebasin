@@ -127,10 +127,9 @@ def main():
         metavar="<platform>",
         action="append",
         default=[],
-        help="Add the specified platform to the analysis. "
-        + "May be a name or a path to a compilation database. "
+        help="Include the specified platform in the analysis. "
         + "May be specified multiple times. "
-        + "If not specified, all known platforms will be included.",
+        + "If not specified, all platforms will be included.",
     )
     # The analysis-file argument is optional while we support the -c option.
     parser.add_argument(
@@ -190,33 +189,9 @@ def main():
             "Cannot use --config (-c) with TOML analysis files.",
         )
 
-    # Process the -p flag first to infer wider context.
-    filtered_platforms = []
-    additional_platforms = []
-    for p in args.platforms:
-        # If it's a path, it has to be a compilation database.
-        if os.path.exists(p):
-            if not os.path.splitext(p)[1] == ".json":
-                raise RuntimeError(f"Platform file {p} must end in .json.")
-            additional_platforms.append(p)
-            continue
-
-        # Otherwise, treat it as a name in the configuration file.
-        # Explain the logic above in cases that look suspiciously like paths.
-        if "/" in p or os.path.splitext(p)[1] == ".json":
-            logging.getLogger("codebasin").warning(
-                f"{p} doesn't exist, so will be treated as a name.",
-            )
-        filtered_platforms.append(p)
-
-    # A legacy config file is required if:
-    # - No additional platforms are specified; and
-    # - No TOML analysis file is specified
+    # If no file is specified, legacy behavior checks for config.yaml
     config_file = args.config_file
-    config_required = (
-        len(additional_platforms) == 0 and args.analysis_file is None
-    )
-    if config_file is None and config_required:
+    if args.config_file is None and args.analysis_file is None:
         warnings.warn(
             "Implicitly defined configuration files are deprecated.",
             DeprecationWarning,
@@ -251,7 +226,7 @@ def main():
             config_file,
             rootdir,
             exclude_patterns=args.excludes,
-            filtered_platforms=filtered_platforms,
+            filtered_platforms=args.platforms,
         )
 
     # Load the analysis file if it exists.
@@ -259,7 +234,7 @@ def main():
         path = os.path.realpath(args.analysis_file)
         if os.path.exists(path):
             if not os.path.splitext(path)[1] == ".toml":
-                raise RuntimeError(f"Analysis file {p} must end in .toml.")
+                raise RuntimeError(f"Analysis file {path} must end in .toml.")
 
         with util.safe_open_read_nofollow(path, "rb") as f:
             try:
@@ -273,21 +248,13 @@ def main():
                 codebase["exclude_patterns"] += excludes
 
         for name in analysis_toml["platform"].keys():
-            if filtered_platforms and name not in filtered_platforms:
+            if args.platforms and name not in args.platforms:
                 continue
             if "commands" not in analysis_toml["platform"][name]:
                 raise ValueError(f"Missing 'commands' for platform {name}")
             p = analysis_toml["platform"][name]["commands"]
             db = config.load_database(p, rootdir)
             configuration.update({name: db})
-
-    # Extend configuration with any additional platforms.
-    for p in additional_platforms:
-        name = os.path.splitext(os.path.basename(p))[0]
-        if name in codebase["platforms"]:
-            raise RuntimeError(f"Platform name {p} conflicts with {name}.")
-        db = config.load_database(p, rootdir)
-        configuration.update({name: db})
 
     # Parse the source tree, and determine source line associations.
     # The trees and associations are housed in state.
