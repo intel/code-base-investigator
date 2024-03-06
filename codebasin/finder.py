@@ -41,7 +41,7 @@ class ParserState:
         self.langs = {}
         self.summarize_only = summarize_only
         self.fileinfo = collections.defaultdict(list)
-        self.merge_duplicates = True
+        self.merge_duplicates = False
 
     def _map_filename(self, fn):
         """
