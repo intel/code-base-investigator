@@ -52,15 +52,6 @@ def main():
         default=None,
         help="Set working root directory (default .)",
     )
-    parser.add_argument(
-        "-S",
-        "--source-dir",
-        metavar="<path>",
-        dest="source_dir",
-        default=None,
-        help="Set path to source directory. "
-        + "The default is the current directory.",
-    )
     deprecated_args.add_argument(
         "-c",
         "--config",
@@ -167,19 +158,13 @@ def main():
             DeprecationWarning,
         )
 
-    # Determine the root directory based on the -S and -r flags.
+    # Determine the root directory based on the -r flag.
     rootpath = None
-    if args.source_dir and args.rootdir:
-        raise RuntimeError(
-            "Cannot specify both --source-dir (-S) and --rootdir (-r).",
-        )
-    if not args.source_dir and not args.rootdir:
+    if not args.rootdir:
         rootpath = os.getcwd()
-    elif args.source_dir:
-        rootpath = args.source_dir
     elif args.rootdir:
         warnings.warn(
-            "--rootdir (-r) is deprecated. Use --source-dir (-S) instead.",
+            "--rootdir (-r) is deprecated.",
             DeprecationWarning,
         )
         rootpath = args.rootdir
