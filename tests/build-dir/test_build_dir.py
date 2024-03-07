@@ -18,7 +18,7 @@ class TestBuildDirectories(unittest.TestCase):
 
     def setUp(self):
         self.rootdir = str(Path(__file__).parent)
-        logging.getLogger("codebasin").disabled = True
+        logging.getLogger("codebasin").disabled = False
 
     def test_absolute_paths(self):
         """
@@ -73,6 +73,37 @@ class TestBuildDirectories(unittest.TestCase):
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
+
+    def test_empty_platform(self):
+        """
+        Check that we warn if all files from a platform are excluded.
+        This may be a sign that the compilation database has incorrect paths.
+        """
+
+        source = str(Path(__file__).parent.joinpath("foo.cpp"))
+
+        # CBI only understands how to load compilation databases from file.
+        # For now, create temporary files every time we test.
+        build = str(Path(__file__).parent.joinpath("build/"))
+        tmp = tempfile.NamedTemporaryFile()
+        obj = [
+            {
+                "command": f"/usr/bin/c++ -o foo.cpp.o -c {source}",
+                "directory": f"{build}",
+                "file": "foo.cpp",
+            },
+        ]
+        with open(tmp.name, "w") as f:
+            json.dump(obj, f)
+
+        with self.assertLogs("codebasin", level="WARNING") as log:
+            config.load_database(tmp.name, self.rootdir)
+
+        found_expected_warning = False
+        for msg in log.output:
+            if msg.find("No files found in compilation database"):
+                found_expected_warning = True
+        self.assertTrue(found_expected_warning)
 
 
 if __name__ == "__main__":
