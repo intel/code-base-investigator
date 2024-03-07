@@ -495,6 +495,12 @@ def load_database(dbpath, rootdir):
         else:
             log.warning("Couldn't find file %s -- ignoring it.", path)
 
+    if len(configuration) == 0:
+        log.warning(
+            f"No files found in compilation database at '{dbpath}'.\n"
+            + "Ensure that 'directory' and 'file' are in the root directory.",
+        )
+
     return configuration
 
 
