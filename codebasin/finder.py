@@ -8,9 +8,10 @@ and parsing source files as part of a code base.
 import collections
 import logging
 import os
+import warnings
 
 from codebasin import file_parser, platform, preprocessor, util
-from codebasin.language import FileLanguage
+from codebasin.source import Language
 from codebasin.walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger("codebasin")
@@ -84,11 +85,19 @@ class ParserState:
         self.fileinfo[bn].append(FileInfo(fn, size, sha))
         return fn
 
-    def insert_file(self, fn, language=None):
+    def insert_file(self, fn, language=Language.UNKNOWN):
         """
         Build a new tree for a source file, and create an association
         map for it.
         """
+        if language is None:
+            warnings.warn(
+                "Using a 'language' value of None is deprecated."
+                + "Please use Language.UNKNOWN instead.",
+                UserWarning,
+            )
+            language = Language.UNKNOWN
+
         fn = self._map_filename(fn)
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
@@ -97,10 +106,10 @@ class ParserState:
                 language=language,
             )
             self.maps[fn] = collections.defaultdict(set)
-            if language:
-                self.langs[fn] = language
+            if language == Language.UNKNOWN:
+                self.langs[fn] = Language.from_path(fn)
             else:
-                self.langs[fn] = FileLanguage(fn).get_language()
+                self.langs[fn] = language
 
     def get_filenames(self):
         """

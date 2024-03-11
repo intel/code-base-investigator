@@ -8,7 +8,7 @@ C/C++ files as well as fixed-form Fortran
 import itertools as it
 import logging
 
-from codebasin.language import FileLanguage
+from codebasin.source import Language
 
 log = logging.getLogger("codebasin")
 
@@ -698,20 +698,20 @@ def asm_file_source(fp, relaxed=False):
     return (total_sloc, total_physical_lines)
 
 
-def get_file_source(path, assumed_lang=None):
+def get_file_source(path, assumed_lang=Language.UNKNOWN):
     """
     Return a C or Fortran line source for path depending on
     the language we can detect, or fail.
     """
-    lang = FileLanguage(path).get_language()
-    if assumed_lang:
+    lang = Language.from_path(path)
+    if assumed_lang != Language.UNKNOWN:
         lang = assumed_lang
 
-    if lang == "fortran-free":
+    if lang == Language.FORTRAN_FREE:
         return fortran_file_source
-    elif lang in ["c", "c++"]:
+    elif lang in [Language.C, Language.CPLUSPLUS]:
         return c_file_source
-    elif lang in ["asm"]:
+    elif lang in [Language.ASM]:
         return asm_file_source
     else:
         raise RuntimeError(f"Could not determine language of {path}.")
