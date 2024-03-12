@@ -113,7 +113,7 @@ def summary(setmap):
     cd = divergence(setmap)
     unused = (setmap[frozenset()] / total_count) * 100.0
     lines += [f"Code Divergence: {cd:.2f}"]
-    lines += [f"Unused Code (%%): {unused:.2f}"]
+    lines += [f"Unused Code (%): {unused:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
     return "\n".join(lines)
