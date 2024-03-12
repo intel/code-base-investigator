@@ -249,7 +249,7 @@ def main():
 
         for name in args.platforms:
             if name not in analysis_toml["platform"].keys():
-                raise RuntimeError(
+                raise KeyError(
                     f"Platform {name} requested on the command line "
                     + "does not exist in the configuration file.",
                 )
