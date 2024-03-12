@@ -234,7 +234,7 @@ def main():
 
         for name in args.platforms:
             if name not in analysis_toml["platform"].keys():
-                raise RuntimeError(
+                raise KeyError(
                     f"Platform {name} requested on the command line "
                     + "does not exist in the configuration file.",
                 )
@@ -291,11 +291,17 @@ def main():
 
     # Print clustering report
     if report_enabled("clustering"):
-        if config_file is None:
-            platform_names = [p[0] for p in args.platforms]
-            output_prefix = "-".join(platform_names)
-        else:
+        # Legacy behavior: guess prefix from YAML filename
+        if config_file is not None:
             output_prefix = os.path.realpath(guess_project_name(config_file))
+
+        # Modern behavior: append platforms to TOML filename
+        else:
+            basename = os.path.basename(args.analysis_file)
+            filename = os.path.splitext(basename)[0]
+            platform_names = [p for p in codebase["platforms"]]
+            output_prefix = "-".join([filename] + platform_names)
+
         clustering_output_name = output_prefix + "-dendrogram.png"
         clustering = report.clustering(clustering_output_name, setmap)
         if clustering is not None:
