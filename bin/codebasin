@@ -41,7 +41,13 @@ def guess_project_name(config_path):
 def main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
-        description="Code Base Investigator v" + str(version),
+        description="Code Base Investigator " + str(version),
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"Code Base Investigator {version}",
+        help="Display version information and exit.",
     )
     deprecated_args = parser.add_argument_group("deprecated options")
     deprecated_args.add_argument(
