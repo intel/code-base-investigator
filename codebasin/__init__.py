@@ -90,15 +90,14 @@ class CompileCommand:
             True if the command can be emulated and False otherwise.
             Commands that are not supported will not impact analysis.
         """
-        # Empty commands don't do anything
-        if len(self.arguments) == 0:
-            return False
+        # Commands must be non-empty in order to do something.
+        # Commands must operate on source files.
+        if len(self.arguments) > 0 and codebasin.source.is_source_file(
+            self.filename,
+        ):
+            return True
 
-        # Ignore commands operating on non-source files (e.g. linking)
-        if not codebasin.source.is_source_file(self.filename):
-            return False
-
-        return True
+        return False
 
     @classmethod
     def from_json(cls, instance: dict):
