@@ -112,10 +112,10 @@ class CompileCommand:
         CompileCommand
             A CompileCommand corresponding to the JSON object.
         """
-        directory = instance["directory"] if "directory" in instance else None
-        arguments = instance["arguments"] if "arguments" in instance else None
-        command = instance["command"] if "command" in instance else None
-        output = instance["output"] if "output" in instance else None
+        directory = instance.get("directory", None)
+        arguments = instance.get("arguments", None)
+        command = instance.get("command", None)
+        output = instance.get("output", None)
         return cls(
             instance["file"],
             directory=directory,
