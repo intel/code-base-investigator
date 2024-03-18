@@ -11,12 +11,11 @@ import itertools as it
 import logging
 import os
 import re
-import shlex
 import warnings
 
 import yaml
 
-from codebasin import util
+from codebasin import CompileCommand, util
 
 log = logging.getLogger("codebasin")
 
@@ -418,11 +417,10 @@ def load_database(dbpath, rootdir):
 
     configuration = []
     for e in db:
-        # Database may not have tokenized arguments
-        if "command" in e:
-            argv = shlex.split(e["command"])
-        elif "arguments" in e:
-            argv = e["arguments"]
+        command = CompileCommand.from_json(e)
+        if not command.is_supported():
+            continue
+        argv = command.arguments
 
         # Extract defines, include paths and include files
         # from command-line arguments
@@ -444,19 +442,19 @@ def load_database(dbpath, rootdir):
         # - relative to a directory
         # - as an absolute path
         filedir = rootdir
-        if "directory" in e:
-            if os.path.isabs(e["directory"]):
-                filedir = e["directory"]
+        if command.directory is not None:
+            if os.path.isabs(command.directory):
+                filedir = command.directory
             else:
                 filedir = os.path.realpath(
                     rootdir,
-                    os.path.join(e["directory"]),
+                    os.path.join(command.directory),
                 )
 
-        if os.path.isabs(e["file"]):
-            path = os.path.realpath(e["file"])
+        if os.path.isabs(command.filename):
+            path = os.path.realpath(command.filename)
         else:
-            path = os.path.realpath(os.path.join(filedir, e["file"]))
+            path = os.path.realpath(os.path.join(filedir, command.filename))
 
         # Compilation database may contain files that don't
         # exist without running make
