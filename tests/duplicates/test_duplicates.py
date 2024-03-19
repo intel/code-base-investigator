@@ -12,7 +12,6 @@ from codebasin.walkers.platform_mapper import PlatformMapper
 class TestDuplicates(unittest.TestCase):
     """
     Test ability to detect and report identical files in a codebase.
-    Such duplicates SHOULD count towards divergence.
     """
 
     def setUp(self):
@@ -20,7 +19,7 @@ class TestDuplicates(unittest.TestCase):
         logging.getLogger("codebasin").disabled = True
 
     def test_duplicates(self):
-        """duplicates/duplicates.yaml"""
+        """Check that duplicate files count towards divergence."""
 
         cpufile = str(Path(__file__).parent.joinpath("cpu/foo.cpp"))
         gpufile = str(Path(__file__).parent.joinpath("gpu/foo.cpp"))
