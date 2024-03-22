@@ -68,7 +68,9 @@ to actually run :code:`make`.
     executed, allowing us to generate compilation databases without also
     building the application. Other tools (like Bear) may require a build.
 
-In this case, it contains::
+In this case, it contains:
+
+.. code :: json
 
     [
     {
@@ -102,7 +104,9 @@ compilation database for the GPU.
 
 As expected, we can see that the compilation database refers to ``gpu.cpp``
 instead of ``cpu.cpp``, and that the ``GPU_OFFLOAD`` macro is defined as part
-of each compilation command::
+of each compilation command:
+
+.. code :: json
 
     [
     {
