@@ -42,6 +42,13 @@ def main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
         description="Code Base Investigator " + str(version),
+        add_help=False,
+    )
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        help="Display help message and exit.",
     )
     parser.add_argument(
         "--version",
@@ -54,9 +61,10 @@ def main():
         "-r",
         "--rootdir",
         dest="rootdir",
-        metavar="DIR",
+        metavar="<dir>",
         default=None,
-        help="Set working root directory (default .)",
+        help="Set working root directory. "
+        + "Defaults to current working directory.",
     )
     deprecated_args.add_argument(
         "-c",
@@ -64,7 +72,7 @@ def main():
         dest="config_file",
         metavar="<config-file>",
         action="store",
-        help="Configuration YAML file. " + "Defaults to config.yaml",
+        help="Configuration YAML file. " + "Defaults to config.yaml.",
     )
     parser.add_argument(
         "-v",
@@ -72,7 +80,7 @@ def main():
         dest="verbose",
         action="count",
         default=0,
-        help="increase verbosity level",
+        help="Increase verbosity level.",
     )
     parser.add_argument(
         "-q",
@@ -80,17 +88,17 @@ def main():
         dest="quiet",
         action="count",
         default=0,
-        help="decrease verbosity level",
+        help="Decrease verbosity level.",
     )
     parser.add_argument(
         "-R",
         "--report",
         dest="reports",
-        metavar="REPORT",
+        metavar="<report>",
         default=["all"],
         choices=["all", "summary", "clustering"],
         nargs="+",
-        help="desired output reports (default: all)",
+        help="Generate a report of the specified type.",
     )
     deprecated_args.add_argument(
         "-d",
@@ -98,14 +106,14 @@ def main():
         dest="dump",
         metavar="<file.json>",
         action="store",
-        help="dump out annotated platform/parsing tree to <file.json>",
+        help="Dump out annotated platform/parsing tree to <file.json>.",
     )
     deprecated_args.add_argument(
         "--batchmode",
         dest="batchmode",
         action="store_true",
         default=False,
-        help="Set batch mode (additional output for bulk operation.)",
+        help="Enable additional output for bulk operation.",
     )
     parser.add_argument(
         "-x",
@@ -133,7 +141,7 @@ def main():
         "analysis_file",
         metavar="<analysis-file>",
         nargs="?",
-        help="TOML file describing the analysis to be performed,"
+        help="TOML file describing the analysis to be performed, "
         + "including the codebase and platform descriptions.",
     )
 
