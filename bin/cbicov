@@ -22,13 +22,21 @@ if __name__ == "__main__":
     desc = "Code Base Investigator Coverage Tool"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument(
+        "-S",
+        "--source-dir",
+        metavar="<path>",
+        dest="source_dir",
+        help="path to source directory",
+        default=os.getcwd(),
+    )
+    parser.add_argument(
         "ifile",
-        metavar="INPUT",
+        metavar="<input path>",
         help="path to compilation database JSON file",
     )
     parser.add_argument(
         "ofile",
-        metavar="OUTPUT",
+        metavar="<output path>",
         help="path to coverage JSON file",
     )
     args = parser.parse_args()
@@ -41,6 +49,8 @@ if __name__ == "__main__":
         if not util.ensure_ext(path, [".json"]):
             raise ValueError(f"{path} is not a JSON file.")
 
+    source_dir = os.path.realpath(args.source_dir)
+
     # Ensure regular CBI output goes to stderr
     stderr_log = logging.StreamHandler(sys.stderr)
     stderr_log.setFormatter(logging.Formatter("[%(levelname)-8s] %(message)s"))
@@ -50,21 +60,33 @@ if __name__ == "__main__":
     # Run CBI configured as-if:
     # - configuration contains a single (dummy) platform
     # - codebase contains all files in the specified compilation database
-    db = config.load_database(dbpath, os.getcwd())
+    db = config.load_database(dbpath, source_dir)
     configuration = {"cli": db}
-    files = [e["file"] for e in db]
-    codebase = {"files": files, "platforms": ["cli"], "exclude_files": []}
+    codebase = {
+        "files": [],
+        "platforms": ["cli"],
+        "exclude_files": [],
+        "exclude_patterns": [],
+        "rootdir": source_dir,
+    }
 
-    state = finder.find(os.getcwd(), codebase, configuration)
+    state = finder.find(source_dir, codebase, configuration)
 
-    exporter = Exporter(codebase)
+    exporter = Exporter(codebase, hash_filenames=False, export_regions=False)
     exports = exporter.walk(state)
     for p in codebase["platforms"]:
         covarray = []
         for filename in exports[p]:
-            covobject = {"file": filename, "regions": []}
-            for region in exports[p][filename]:
-                covobject["regions"].append(list(region))
+            relative_path = os.path.relpath(filename, start=source_dir)
+            covobject = {
+                "file": relative_path,
+                "id": util.compute_file_hash(filename),
+                "lines": [],
+            }
+            # This initial implementation makes no attempt to compress
+            # consecutive lines, even though this is permitted.
+            for lines in exports[p][filename]:
+                covobject["lines"].extend(lines)
             covarray.append(covobject)
         util._validate_json(covarray, "coverage")
         json_string = json.dumps(covarray)

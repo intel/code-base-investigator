@@ -646,11 +646,22 @@ class CodeNode(Node):
     the original source.
     """
 
-    def __init__(self, start_line=-1, end_line=-1, num_lines=0, source=None):
+    def __init__(
+        self,
+        start_line=-1,
+        end_line=-1,
+        num_lines=0,
+        source=None,
+        lines=None,
+    ):
         super().__init__()
         self.start_line = start_line
         self.end_line = end_line
         self.num_lines = num_lines
+        if lines is None:
+            self.lines = []
+        else:
+            self.lines = lines
         self.source = source
 
     def to_json(self, assoc):

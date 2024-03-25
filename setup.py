@@ -13,7 +13,7 @@ setup(
     url="https://www.github.com/intel/code-base-investigator",
     packages=["codebasin", "codebasin.schema", "codebasin.walkers"],
     include_package_data=True,
-    scripts=["bin/codebasin"],
+    scripts=["bin/codebasin", "bin/cbicov"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: Console",

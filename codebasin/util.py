@@ -143,7 +143,7 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
         "analysis": "schema/analysis.schema",
         "compiledb": "schema/compilation-database.schema",
         "config": "schema/config.schema",
-        "coverage": "schema/coverage-0.1.0.schema",
+        "coverage": "schema/coverage-0.3.0.schema",
         "cbiconfig": "schema/cbiconfig.schema",
     }
     if schema_name not in schema_paths.keys():

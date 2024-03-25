@@ -24,6 +24,7 @@ class LineGroup:
         self.line_count = 0
         self.start_line = -1
         self.end_line = -1
+        self.lines = []
         self.body = []
 
     def empty(self):
@@ -39,7 +40,7 @@ class LineGroup:
             return False
         return True
 
-    def add_line(self, phys_int, sloc_count, source=None):
+    def add_line(self, phys_int, sloc_count, source=None, lines=None):
         """
         Add a line to this line group. Update the extent appropriately,
         and if it's a countable line, add it to the line count.
@@ -54,6 +55,8 @@ class LineGroup:
         self.line_count += sloc_count
         if source is not None:
             self.body.append(source)
+        if lines is not None:
+            self.lines.extend(lines)
 
     def reset(self):
         """
@@ -62,6 +65,7 @@ class LineGroup:
         self.line_count = 0
         self.start_line = -1
         self.end_line = -1
+        self.lines = []
         self.body = []
 
     def merge(self, line_group):
@@ -77,6 +81,7 @@ class LineGroup:
             line_group.start_line = self.start_line
         self.start_line = min(self.start_line, line_group.start_line)
 
+        self.lines.extend(line_group.lines)
         self.body.extend(line_group.body)
 
         self.end_line = max(self.end_line, line_group.end_line)
@@ -125,6 +130,7 @@ class FileParser:
             line_group.end_line,
             line_group.line_count,
             line_group.body,
+            lines=line_group.lines,
         )
         tree.insert(new_node)
 
@@ -140,6 +146,7 @@ class FileParser:
         new_node.start_line = line_group.start_line
         new_node.end_line = line_group.end_line
         new_node.num_lines = line_group.line_count
+        new_node.lines = line_group.lines
 
         # Issue a warning for unrecognized directives, but suppress warnings
         # for common directives that shouldn't impact correctness.
@@ -156,7 +163,7 @@ class FileParser:
 
         tree.insert(new_node)
 
-    def parse_file(self, *, summarize_only=True, language=None):
+    def parse_file(self, *, summarize_only=False, language=None):
         """
         Parse the file that this parser points at, build a SourceTree
         representing this file, and return it.
@@ -197,6 +204,7 @@ class FileParser:
                             phys_int,
                             logical_line.local_sloc,
                             logical_line.flushed_line,
+                            lines=logical_line.lines,
                         )
 
                         FileParser.handle_directive(
@@ -211,12 +219,14 @@ class FileParser:
                             groups["code"].add_line(
                                 phys_int,
                                 logical_line.local_sloc,
+                                lines=logical_line.lines,
                             )
                         else:
                             groups["code"].add_line(
                                 phys_int,
                                 logical_line.local_sloc,
                                 logical_line.flushed_line,
+                                lines=logical_line.lines,
                             )
             except StopIteration as it:
                 _, physical_loc = it.value
