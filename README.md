@@ -1,72 +1,38 @@
 # Code Base Investigator
-Code Base Investigator (CBI) is a tool designed to help developers reason about the use of _specialization_ (i.e. code written specifically to provide support for or improve performance on some set of platforms) in a code base.  Specialization is often necessary, but how a developer chooses to express it may impact code portability and future maintenance costs.
 
-The [definition of platform](https://doi.org/10.1016/j.future.2017.08.007) used by CBI is deliberately very flexible and completely user-defined; a platform can represent any execution environment for which code may be specialized.  A platform could be a compiler, an operating system, a micro-architecture or some combination of these options.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018974.svg)](https://doi.org/10.5281/zenodo.5018974)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8679/badge)](https://www.bestpractices.dev/projects/8679)
 
-## Code Divergence
-CBI measures the amount of specialization in a code base using [code divergence](http://doi.org/10.1109/P3HPC.2018.00006), which is defined as the arithmetic mean pair-wise distance between the code-paths used by each platform.
+Code Base Investigator (CBI) is an analysis tool that provides insight into the
+portability and maintainability of an application's source code.
 
-At the two extremes, a code divergence of 0 means that all of the platforms use exactly the same code, while a code divergence of 1 means that there is no code shared between any of the platforms.  The code divergence of real codes will fall somewhere in between.
+- Measure [code divergence](http://doi.org/10.1109/P3HPC.2018.00006) to
+  understand how much code is specialized for different compilers, operating
+  systems, hardware micro-architectures and more.
 
-## How it Works
-![Abstract Syntax Tree](./docs/example-ast.png)
+- Visualize the distance between the code paths used to support different
+  compilation targets.
 
-CBI tracks specialization in two forms: source files that are not compiled for all platforms; and regions of source files that are guarded by C preprocessor directives (e.g. `#ifdef`).  A typical run of CBI consists of a three step process:
-1) Extract source files and compilation commands from a configuration file or compilation database.
-2) Build an AST representing which source lines of code (LOC) are associated with each specialization.
-3) Record which specializations are used by each platform.
+- Identify stale, legacy, code paths that are unused by any compilation target.
 
-## Usage
+- Export metrics and code path information required for P3 analysis using [other
+  tools](https://intel.github.io/p3-analysis-library/).
 
-The `codebasin` script analyzes a code base described in a YAML configuration file and produces one or more output reports.  Example configuration files can be found in the [examples](./examples) directory, and see the [configuration file documentation](docs/configuration.md) for a detailed description of the configuration file format.
 
-To see a complete list of `codebasin` options, run `codebasin -h`.
+## Table of Contents
 
-> [!IMPORTANT]
-> In previous releases of Code Base Investigator, the main script was called `codebasin.py`. The old naming was a bug that needed to be fixed, and we made the difficult decision to rename the script ahead of the next major release.
+- [Dependencies](#dependencies)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Contribute](#contribute)
+- [License](#license)
+- [Security](#security)
+- [Code of Conduct](#code-of-conduct)
+- [Citations](#citations)
 
-### Summary Report
-The summary report (`-R summary`) gives a high-level summary of a code base, as shown below:
-```
----------------------------------------------
-                      Platform Set LOC % LOC
----------------------------------------------
-                                {}   2  4.88
-                           {GPU 1}   1  2.44
-                           {GPU 2}   1  2.44
-                           {CPU 2}   1  2.44
-                           {CPU 1}   1  2.44
-                            {FPGA}  14 34.15
-                    {GPU 2, GPU 1}   6 14.63
-                    {CPU 1, CPU 2}   6 14.63
-{FPGA, CPU 1, GPU 2, GPU 1, CPU 2}   9 21.95
----------------------------------------------
-Code Divergence: 0.55
-Unused Code (%): 4.88
-Total SLOC: 41
-```
-Each row in the table shows the amount of code that is unique to a given set of platforms.  Listed below the table are the computed code divergence, the amount of code in the code base that was not compiled for any platform, and the total size of the code base.
-
-### Clustering Report
-The clustering report (`-R clustering`) consists of a pair-wise distance matrix, showing the ratio of platform-specific code to code used by both platforms.  These distances are the same as those used to compute code divergence.
-```
-Distance Matrix
------------------------------------
-      FPGA CPU 1 GPU 2 GPU 1 CPU 2
------------------------------------
- FPGA 0.00  0.70  0.70  0.70  0.70
-CPU 1 0.70  0.00  0.61  0.61  0.12
-GPU 2 0.70  0.61  0.00  0.12  0.61
-GPU 1 0.70  0.61  0.12  0.00  0.61
-CPU 2 0.70  0.12  0.61  0.61  0.00
------------------------------------
-```
-
-The distances can also be used to produce a dendrogram, showing the result of hierarchical clustering by platform similarity:
-
-![Dendrogram](./docs/example-dendrogram.png)
 
 ## Dependencies
+
 - jsonschema
 - Matplotlib
 - NumPy
@@ -75,15 +41,59 @@ The distances can also be used to produce a dendrogram, showing the result of hi
 - PyYAML
 - SciPy
 
-CBI and its dependencies can be installed using `setup.py`:
+
+## Installation
+
+The latest release of CBI is version 1.2.0. To download and install this
+release, run the following:
+
 ```
-python3 setup.py install
+git clone --branch 1.2.0 https://github.com/intel/code-base-investigator.git
+cd code-base-investigator
+pip install .
 ```
 
-The master branch of CBI is the development branch, and should not be used in production.  Tagged releases are available [here](https://github.com/intel/code-base-investigator/releases).
+We strongly recommend installing CBI within a [virtual
+environment](https://docs.python.org/3/library/venv.html).
+
+## Getting Started
+
+After installation, run `codebasin -h` to see a complete list of options.
+
+A full tutorial can be found in the [online
+documentation](https://intel.github.io/code-base-investigator/).
+
+
+## Contribute
+
+Contributions to CBI are welcome in the form of issues and pull requests.
+
+See [CONTRIBUTING](CONTRIBUTING.md) for more information.
+
 
 ## License
+
 [BSD 3-Clause](./LICENSE)
 
-## Contributing
-See the [contribution guidelines](./CONTRIBUTING.md) for details.
+
+## Security
+
+See [SECURITY](SECURITY.md) for more information.
+
+The main branch of CBI is the development branch, and should not be used in
+production.  Tagged releases are available
+[here](https://github.com/intel/code-base-investigator/releases).
+
+
+## Code of Conduct
+
+Intel has adopted the Contributor Covenant as the Code of Conduct for all of
+its open source projects. See [CODE OF CONDUCT](CODE_OF_CONDUCT.md) for more
+information.
+
+
+## Citations
+
+If your use of CBI results in a research publication, please consider citing
+the software and/or the papers that inspired its functionality (as
+appropriate). See [CITATION](CITATION.cff) for more information.
