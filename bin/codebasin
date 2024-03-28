@@ -108,13 +108,6 @@ def main():
         action="store",
         help="Dump out annotated platform/parsing tree to <file.json>.",
     )
-    deprecated_args.add_argument(
-        "--batchmode",
-        dest="batchmode",
-        action="store_true",
-        default=False,
-        help="Enable additional output for bulk operation.",
-    )
     parser.add_argument(
         "-x",
         "--exclude",
@@ -155,11 +148,6 @@ def main():
     )
 
     # Warnings for deprecated functionality with no planned replacement.
-    if args.batchmode:
-        warnings.warn(
-            "--batchmode will be removed in a future release.",
-            DeprecationWarning,
-        )
     if args.dump:
         warnings.warn(
             "--dump will be removed in a future release.",
@@ -290,12 +278,6 @@ def main():
         if "all" in args.reports:
             return True
         return name in args.reports
-
-    if args.batchmode and (
-        report_enabled("summary") or report_enabled("clustering")
-    ):
-        print(f"Config file: {config_file}")
-        print(f"Root: {rootdir}")
 
     # Print summary report
     if report_enabled("summary"):
