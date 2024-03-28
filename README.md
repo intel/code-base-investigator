@@ -1,6 +1,6 @@
 # Code Base Investigator
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018974.svg)](https://doi.org/10.5281/zenodo.5018974)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018973.svg)](https://doi.org/10.5281/zenodo.5018973)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8679/badge)](https://www.bestpractices.dev/projects/8679)
 
 Code Base Investigator (CBI) is an analysis tool that provides insight into the

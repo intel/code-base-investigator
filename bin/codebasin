@@ -14,7 +14,7 @@ import warnings
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
 
-version = "1.1.1"
+version = "1.2.0"
 
 
 def guess_project_name(config_path):

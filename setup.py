@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name="codebasin",
-    version="1.1.1",
+    version="1.2.0",
     description="Code Base Investigator",
     author="John Pennycook",
     author_email="john.pennycook@intel.com",
@@ -15,7 +15,7 @@ setup(
     include_package_data=True,
     scripts=["bin/codebasin"],
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",

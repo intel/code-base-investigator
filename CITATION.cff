@@ -11,7 +11,14 @@ authors:
   given-names: "Douglas"
   orcid: "https://orcid.org/0000-0002-3836-207X"
 title: "Code Base Investigator"
-version: 1.05
-doi: 10.5281/zenodo.5019024
-date-released: 2022-10-05
+version: 1.2.0
+date-released: "2024-03-28"
+doi: "10.5281/zenodo.10890422"
+identifiers:
+  - description: Archive of all previous releases.
+    type: doi
+    value: "10.5281/zenodo.5018973"
+  - description: Latest release.
+    type: doi
+    value: "10.5281/zenodo.10890422"
 url: "https://github.com/intel/code-base-investigator"
