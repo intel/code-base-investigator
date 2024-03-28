@@ -58,15 +58,6 @@ def main():
     )
     deprecated_args = parser.add_argument_group("deprecated options")
     deprecated_args.add_argument(
-        "-r",
-        "--rootdir",
-        dest="rootdir",
-        metavar="<dir>",
-        default=None,
-        help="Set working root directory. "
-        + "Defaults to current working directory.",
-    )
-    deprecated_args.add_argument(
         "-c",
         "--config",
         dest="config_file",
@@ -171,17 +162,8 @@ def main():
             DeprecationWarning,
         )
 
-    # Determine the root directory based on the -r flag.
-    rootpath = None
-    if not args.rootdir:
-        rootpath = os.getcwd()
-    elif args.rootdir:
-        warnings.warn(
-            "--rootdir (-r) is deprecated.",
-            DeprecationWarning,
-        )
-        rootpath = args.rootdir
-    rootdir = os.path.realpath(rootpath)
+    # Determine the root directory based on where codebasin is run.
+    rootdir = os.path.realpath(os.getcwd())
 
     if args.config_file and args.analysis_file:
         raise RuntimeError(
