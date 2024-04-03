@@ -1,0 +1,28 @@
+name: Run pre-commit hooks
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        name: Install Python 3.12
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+      - run: pip install -U pip setuptools
+      - uses: pre-commit/action@v3.0.1
+        name: Configure and run pre-commit on changed files
+        with:
+          # the intention with this is to run pre-commit only
+          # on the diff submitted with this PR
+          extra_args: --color=always --from-ref ${{ github.event.pull_request.base.sha }} --to-ref ${{ github.event.pull_request.head.sha }}
+permissions: read-all
