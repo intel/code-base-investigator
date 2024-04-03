@@ -1,0 +1,58 @@
+# Copyright (C) 2024 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools >= 61.0"]
+
+[project]
+authors = [
+  {"name" = "S. John Pennycook", "email" = "john.pennycook@intel.com"},
+]
+description = "Code Base Investigator"
+version = "1.2.0"
+dynamic = ["readme"]
+keywords = ["performance", "portability", "productivity"]
+name = "codebasin"
+requires-python = ">=3.9"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development",
+]
+dependencies = [
+  "numpy==1.26.0",
+  "matplotlib==3.8.2",
+  "pathspec==0.12.1",
+  "pyyaml==6.0.1",
+  "scipy==1.12.0",
+  "jsonschema==4.21.1",
+]
+
+[project.urls]
+"Github" = "https://www.github.com/intel/code-base-investigator"
+"Issues" = "https://www.github.com/intel/code-base-investigator/issues"
+"Pull requests" = "https://www.github.com/intel/code-base-investigator/pulls"
+
+[project.optional-dependencies]
+dev = [
+  "sphinx",
+  "sphinx-gallery",
+  "pre-commit",
+]
+
+[tool.setuptools]
+# TODO this practice is deprecated and will need updating later
+script-files = ["bin/codebasin"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["codebasin*"]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"]}
