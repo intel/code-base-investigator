@@ -551,12 +551,6 @@ class Node:
         self.children.append(child)
         child.parent = self
 
-    def to_json(self, assoc):
-        return {
-            "platforms": list(assoc[self]),
-            "children": [x.to_json(assoc) for x in self.children],
-        }
-
     @staticmethod
     def is_start_node():
         """
@@ -614,17 +608,6 @@ class FileNode(Node):
 
         return hasher.hexdigest()
 
-    def to_json(self, assoc):
-        parent_json = super().to_json(assoc)
-        mydict = {
-            "type": "file",
-            "file": self.filename,
-            "name": os.path.basename(self.filename),
-            "sloc": self.total_sloc,
-        }
-        parent_json.update(mydict)
-        return parent_json
-
     def __repr__(self):
         return _representation_string(self, attrs=["filename"])
 
@@ -652,23 +635,6 @@ class CodeNode(Node):
         self.end_line = end_line
         self.num_lines = num_lines
         self.source = source
-
-    def to_json(self, assoc):
-        parent_json = super().to_json(assoc)
-        if self.source:
-            source = "\n".join(self.source)
-        else:
-            source = None
-
-        mydict = {
-            "type": "code",
-            "start_line": self.start_line,
-            "end_line": self.end_line,
-            "sloc": self.num_lines,
-            "source": source,
-        }
-        parent_json.update(mydict)
-        return parent_json
 
     def __repr__(self):
         return _representation_string(
@@ -706,12 +672,6 @@ class DirectiveNode(CodeNode):
 
     def __init__(self):
         super().__init__()
-
-    def to_json(self, assoc):
-        parent_json = super().to_json(assoc)
-        mydict = {"type": "directive", "source": "\n".join(self.spelling())}
-        parent_json.update(mydict)
-        return parent_json
 
 
 class UnrecognizedDirectiveNode(DirectiveNode):
