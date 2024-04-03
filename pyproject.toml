@@ -41,7 +41,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "sphinx",
-  "sphinx-gallery",
   "pre-commit",
 ]
 
