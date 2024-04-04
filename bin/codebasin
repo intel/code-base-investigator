@@ -9,7 +9,6 @@ import argparse
 import logging
 import os
 import sys
-import warnings
 
 from codebasin import config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
@@ -55,15 +54,6 @@ def main():
         action="version",
         version=f"Code Base Investigator {version}",
         help="Display version information and exit.",
-    )
-    deprecated_args = parser.add_argument_group("deprecated options")
-    deprecated_args.add_argument(
-        "-c",
-        "--config",
-        dest="config_file",
-        metavar="<config-file>",
-        action="store",
-        help="Configuration YAML file. " + "Defaults to config.yaml.",
     )
     parser.add_argument(
         "-v",
@@ -140,22 +130,6 @@ def main():
     # Determine the root directory based on where codebasin is run.
     rootdir = os.path.realpath(os.getcwd())
 
-    if args.config_file and args.analysis_file:
-        raise RuntimeError(
-            "Cannot use --config (-c) with TOML analysis files.",
-        )
-
-    # If no file is specified, legacy behavior checks for config.yaml
-    config_file = args.config_file
-    if args.config_file is None and args.analysis_file is None:
-        warnings.warn(
-            "Implicitly defined configuration files are deprecated.",
-            DeprecationWarning,
-        )
-        config_file = os.path.join(rootdir, "config.yaml")
-        if not os.path.exists(config_file):
-            raise RuntimeError(f"Could not find config file {config_file}")
-
     # Set up a default codebase and configuration object.
     codebase = {
         "files": [],
@@ -165,25 +139,6 @@ def main():
         "rootdir": rootdir,
     }
     configuration = {}
-
-    # Load the configuration file if it exists, obeying any platform filter.
-    if config_file is not None:
-        warnings.warn(
-            "YAML configuration files are deprecated. "
-            + "Use TOML analysis files instead.",
-            DeprecationWarning,
-        )
-        if not util.ensure_yaml(config_file):
-            logging.getLogger("codebasin").error(
-                "Configuration file does not have YAML file extension.",
-            )
-            sys.exit(1)
-        codebase, configuration = config.load(
-            config_file,
-            rootdir,
-            exclude_patterns=args.excludes,
-            filtered_platforms=args.platforms,
-        )
 
     # Load the analysis file if it exists.
     if args.analysis_file is not None:
@@ -222,12 +177,11 @@ def main():
 
     # Parse the source tree, and determine source line associations.
     # The trees and associations are housed in state.
-    legacy_warnings = True if config_file else False
     state = finder.find(
         rootdir,
         codebase,
         configuration,
-        legacy_warnings=legacy_warnings,
+        legacy_warnings=False,
     )
 
     # Count lines for platforms
@@ -247,16 +201,10 @@ def main():
 
     # Print clustering report
     if report_enabled("clustering"):
-        # Legacy behavior: guess prefix from YAML filename
-        if config_file is not None:
-            output_prefix = os.path.realpath(guess_project_name(config_file))
-
-        # Modern behavior: append platforms to TOML filename
-        else:
-            basename = os.path.basename(args.analysis_file)
-            filename = os.path.splitext(basename)[0]
-            platform_names = [p for p in codebase["platforms"]]
-            output_prefix = "-".join([filename] + platform_names)
+        basename = os.path.basename(args.analysis_file)
+        filename = os.path.splitext(basename)[0]
+        platform_names = [p for p in codebase["platforms"]]
+        output_prefix = "-".join([filename] + platform_names)
 
         clustering_output_name = output_prefix + "-dendrogram.png"
         clustering = report.clustering(clustering_output_name, setmap)
