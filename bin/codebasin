@@ -86,10 +86,12 @@ def main():
         "--report",
         dest="reports",
         metavar="<report>",
-        default=["all"],
+        action="append",
+        default=[],
         choices=["all", "summary", "clustering"],
-        nargs="+",
-        help="Generate a report of the specified type.",
+        help="Generate a report of the specified type. "
+        + "May be specified multiple times. "
+        + "If not specified, all reports will be generated.",
     )
     deprecated_args.add_argument(
         "-d",
@@ -144,11 +146,11 @@ def main():
             "--dump will be removed in a future release.",
             DeprecationWarning,
         )
-    if len(args.reports) > 1:
-        warnings.warn(
-            "Passing more than one value to --report (-R) is deprecated.",
-            DeprecationWarning,
-        )
+
+    # If no specific report was specified, generate all reports.
+    # Handled here to prevent "all" always being in the list.
+    if len(args.reports) == 0:
+        args.reports = ["all"]
 
     # Determine the root directory based on where codebasin is run.
     rootdir = os.path.realpath(os.getcwd())
