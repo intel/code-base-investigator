@@ -71,11 +71,6 @@ def ensure_source(fname):
     return ensure_ext(fname, extensions)
 
 
-def ensure_yaml(fname):
-    """Return true if the path passed in specifies a YAML file"""
-    return ensure_ext(fname, ".yaml")
-
-
 def ensure_json(fname):
     """Return true if the path passed in specifies a JSON file"""
     return ensure_ext(fname, ".json")
@@ -169,38 +164,6 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
     return True
 
 
-def _validate_yaml(yaml_object: object, schema_name: str) -> bool:
-    """
-    Validate YAML against a schema.
-
-    Parameters
-    ----------
-    yaml_object : Object
-        The YAML to validate.
-
-    schema_name : {'config'}
-        The schema to validate against.
-
-    Returns
-    -------
-    bool
-        True if the YAML is valid.
-
-    Raises
-    ------
-    ValueError
-        If the YAML fails to validate, or the schema name is unrecognized.
-
-    RuntimeError
-        If the schema file cannot be located.
-    """
-    if schema_name != "config":
-        raise ValueError("Unrecognized schema name.")
-
-    # We don't use any advanced features of YAML, so can use JSON here
-    return _validate_json(yaml_object, schema_name)
-
-
 def _validate_toml(toml_object: object, schema_name: str) -> bool:
     """
     Validate TOML against a schema.
@@ -241,7 +204,7 @@ def _load_json(file_object: typing.TextIO, schema_name: str) -> object:
     file_object : typing.TextIO
         The file object to load from.
 
-    schema_name : {'compiledb', 'config', 'coverage'}
+    schema_name : {'compiledb', 'coverage'}
         The schema to validate against.
 
     Returns
