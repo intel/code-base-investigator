@@ -1,6 +1,0 @@
-codebase:
-    files: [ test.s, test.S, test.asm ]
-    platforms: [ CPU ]
-
-CPU:
-    files: [ test.s, test.S, test.asm ]
