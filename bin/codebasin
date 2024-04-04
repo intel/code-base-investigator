@@ -93,14 +93,6 @@ def main():
         + "May be specified multiple times. "
         + "If not specified, all reports will be generated.",
     )
-    deprecated_args.add_argument(
-        "-d",
-        "--dump",
-        dest="dump",
-        metavar="<file.json>",
-        action="store",
-        help="Dump out annotated platform/parsing tree to <file.json>.",
-    )
     parser.add_argument(
         "-x",
         "--exclude",
@@ -139,13 +131,6 @@ def main():
     logging.getLogger("codebasin").setLevel(
         max(1, logging.WARNING - 10 * (args.verbose - args.quiet)),
     )
-
-    # Warnings for deprecated functionality with no planned replacement.
-    if args.dump:
-        warnings.warn(
-            "--dump will be removed in a future release.",
-            DeprecationWarning,
-        )
 
     # If no specific report was specified, generate all reports.
     # Handled here to prevent "all" always being in the list.
@@ -248,15 +233,6 @@ def main():
     # Count lines for platforms
     platform_mapper = PlatformMapper(codebase)
     setmap = platform_mapper.walk(state)
-
-    if args.dump:
-        if util.ensure_json(args.dump):
-            report.annotated_dump(args.dump, state)
-        else:
-            logging.getLogger("codebasin").warning(
-                "Output path for annotation dump does not end with .json: "
-                f"'{args.dump}'. Skipping dump.",
-            )
 
     def report_enabled(name):
         if "all" in args.reports:
