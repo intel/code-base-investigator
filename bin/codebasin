@@ -104,11 +104,9 @@ def main():
         + "May be specified multiple times. "
         + "If not specified, all platforms will be included.",
     )
-    # The analysis-file argument is optional while we support the -c option.
     parser.add_argument(
         "analysis_file",
         metavar="<analysis-file>",
-        nargs="?",
         help="TOML file describing the analysis to be performed, "
         + "including the codebase and platform descriptions.",
     )
