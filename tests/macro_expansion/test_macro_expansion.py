@@ -1,12 +1,15 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import unittest
 import logging
-from codebasin import config, finder, walkers, preprocessor, platform
+import os
+import unittest
+
+from codebasin import finder, platform, preprocessor
 from codebasin.walkers.platform_mapper import PlatformMapper
 
-class TestExampleFile(unittest.TestCase):
+
+class TestMacroExpansion(unittest.TestCase):
     """
     Simple test to handle macro expansion
     """
@@ -15,19 +18,61 @@ class TestExampleFile(unittest.TestCase):
         self.rootdir = "./tests/macro_expansion/"
         logging.getLogger("codebasin").disabled = True
 
-        self.expected_setmap = {frozenset([]): 14,
-                                frozenset(['CPU', 'GPU']): 258,
-                                frozenset(['GPU']): 2,
-                                frozenset(['CPU']): 3}
+        self.expected_setmap = {
+            frozenset([]): 14,
+            frozenset(["CPU", "GPU"]): 258,
+            frozenset(["GPU"]): 2,
+            frozenset(["CPU"]): 3,
+        }
 
-    def test_yaml(self):
+    def test_macro_expansion(self):
         """macro_expansion/macro_expansion.yaml"""
-        codebase, configuration = config.load(
-            "./tests/macro_expansion/macro_expansion.yaml", self.rootdir)
+        files = [
+            "defined_undefined_test.cpp",
+            "infinite_loop_test.cpp",
+            "function_like_test.cpp",
+            "max_level.cpp",
+        ]
+        codebase = {
+            "files": [
+                os.path.realpath(os.path.join(self.rootdir, f)) for f in files
+            ],
+            "platforms": ["CPU"],
+            "exclude_files": set(),
+            "exclude_patterns": [],
+            "rootdir": self.rootdir,
+        }
+        cpu_entries = []
+        gpu_entries = []
+        for f in files:
+            cpu_entries.append(
+                {
+                    "file": os.path.realpath(os.path.join(self.rootdir, f)),
+                    "defines": ["CPU"],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            )
+            gpu_entries.append(
+                {
+                    "file": os.path.realpath(os.path.join(self.rootdir, f)),
+                    "defines": ["GPU"],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            )
+        configuration = {
+            "CPU": cpu_entries,
+            "GPU": gpu_entries,
+        }
         state = finder.find(self.rootdir, codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
-        self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
+        self.assertDictEqual(
+            setmap,
+            self.expected_setmap,
+            "Mismatch in setmap",
+        )
 
     def test_cat(self):
         test_str = "CATTEST=first ## 2"
@@ -37,17 +82,23 @@ class TestExampleFile(unittest.TestCase):
         p._definitions = {macro.name: macro}
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
         expected_tokens = preprocessor.Lexer("first2").tokenize()
-        self.assertEqual([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
+        self.assertEqual(
+            [x.token for x in expanded_tokens],
+            [x.token for x in expected_tokens],
+        )
 
     def test_stringify_quote(self):
         test_str = "STR(x)= #x"
         macro = preprocessor.macro_from_definition_string(test_str)
-        tokens = preprocessor.Lexer("STR(foo(\"4 + 5\"))").tokenize()
+        tokens = preprocessor.Lexer('STR(foo("4 + 5"))').tokenize()
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {macro.name: macro}
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
-        expected_tokens = preprocessor.Lexer("\"foo(\\\"4 + 5\\\")\"").tokenize()
-        self.assertEqual([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
+        expected_tokens = preprocessor.Lexer('"foo(\\"4 + 5\\")"').tokenize()
+        self.assertEqual(
+            [x.token for x in expanded_tokens],
+            [x.token for x in expected_tokens],
+        )
 
     def test_stringify_ws(self):
         test_str = "STR(x)= TEST #x"
@@ -59,7 +110,10 @@ class TestExampleFile(unittest.TestCase):
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
         expected_str = r'TEST "L + 2-2 \"\\\" \\n\""'
         expected_tokens = preprocessor.Lexer(expected_str).tokenize()
-        self.assertEqual([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
+        self.assertEqual(
+            [x.token for x in expanded_tokens],
+            [x.token for x in expected_tokens],
+        )
 
     def test_stringify_nested(self):
         mac_xstr = preprocessor.macro_from_definition_string("xstr(s)=str(s)")
@@ -70,52 +124,68 @@ class TestExampleFile(unittest.TestCase):
 
         tokens = preprocessor.Lexer("str(foo)").tokenize()
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
-        expected_tokens = preprocessor.Lexer("\"foo\"").tokenize()
-        self.assertEqual([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
+        expected_tokens = preprocessor.Lexer('"foo"').tokenize()
+        self.assertEqual(
+            [x.token for x in expanded_tokens],
+            [x.token for x in expected_tokens],
+        )
 
         tokens = preprocessor.Lexer("xstr(foo)").tokenize()
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
-        expected_tokens = preprocessor.Lexer("\"4\"").tokenize()
-        self.assertEqual([x.token for x in expanded_tokens], [x.token for x in expected_tokens])
+        expected_tokens = preprocessor.Lexer('"4"').tokenize()
+        self.assertEqual(
+            [x.token for x in expanded_tokens],
+            [x.token for x in expected_tokens],
+        )
 
     def test_variadic(self):
         """variadic macros"""
 
-        expected_expansion = [preprocessor.Identifier("Unknown", 0, False, "fprintf"),
-                              preprocessor.Punctuator("Unknown", 0, False, "("),
-                              preprocessor.Identifier("Unknown", 0, False, "stderr"),
-                              preprocessor.Punctuator("Unknown", 0, False, ","),
-                              preprocessor.StringConstant("Unknown", 0, True, "%d, %f, %e"),
-                              preprocessor.Punctuator("Unknown", 0, False, ","),
-                              preprocessor.Identifier("Unknown", 0, True, "a"),
-                              preprocessor.Punctuator("Unknown", 0, False, ","),
-                              preprocessor.Identifier("Unknown", 0, True, "b"),
-                              preprocessor.Punctuator("Unknown", 0, False, ","),
-                              preprocessor.Identifier("Unknown", 0, True, "c"),
-                              preprocessor.Punctuator("Unknown", 0, False, ")")]
+        expected_expansion = [
+            preprocessor.Identifier("Unknown", 0, False, "fprintf"),
+            preprocessor.Punctuator("Unknown", 0, False, "("),
+            preprocessor.Identifier("Unknown", 0, False, "stderr"),
+            preprocessor.Punctuator("Unknown", 0, False, ","),
+            preprocessor.StringConstant("Unknown", 0, True, "%d, %f, %e"),
+            preprocessor.Punctuator("Unknown", 0, False, ","),
+            preprocessor.Identifier("Unknown", 0, True, "a"),
+            preprocessor.Punctuator("Unknown", 0, False, ","),
+            preprocessor.Identifier("Unknown", 0, True, "b"),
+            preprocessor.Punctuator("Unknown", 0, False, ","),
+            preprocessor.Identifier("Unknown", 0, True, "c"),
+            preprocessor.Punctuator("Unknown", 0, False, ")"),
+        ]
 
         for def_string in [
             "eprintf(...)=fprintf(stderr, __VA_ARGS__)",
-                "eprintf(args...)=fprintf(stderr, args)"]:
+            "eprintf(args...)=fprintf(stderr, args)",
+        ]:
             macro = preprocessor.macro_from_definition_string(def_string)
-            tokens = preprocessor.Lexer("eprintf(\"%d, %f, %e\", a, b, c)").tokenize()
+            tokens = preprocessor.Lexer(
+                'eprintf("%d, %f, %e", a, b, c)',
+            ).tokenize()
             p = platform.Platform("Test", self.rootdir)
             p._definitions = {macro.name: macro}
             expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
             self.assertTrue(len(expanded_tokens) == len(expected_expansion))
             for i in range(len(expected_expansion)):
-                self.assertEqual(expanded_tokens[i].token, expected_expansion[i].token)
+                self.assertEqual(
+                    expanded_tokens[i].token,
+                    expected_expansion[i].token,
+                )
 
     def test_self_reference_macros_1(self):
         """Self referencing macros test 1"""
 
-        expected_expansion = [preprocessor.Punctuator('Unknown', 4, False, '('),
-                              preprocessor.NumericalConstant('Unknown', 5, False, '4'),
-                              preprocessor.Operator('Unknown', 7, True, '+'),
-                              preprocessor.Identifier('Unknown', 9, True, 'FOO'),
-                              preprocessor.Punctuator('Unknown', 12, False, ')')]
+        expected_expansion = [
+            preprocessor.Punctuator("Unknown", 4, False, "("),
+            preprocessor.NumericalConstant("Unknown", 5, False, "4"),
+            preprocessor.Operator("Unknown", 7, True, "+"),
+            preprocessor.Identifier("Unknown", 9, True, "FOO"),
+            preprocessor.Punctuator("Unknown", 12, False, ")"),
+        ]
 
-        def_string = 'FOO=(4 + FOO)'
+        def_string = "FOO=(4 + FOO)"
         macro = preprocessor.macro_from_definition_string(def_string)
         tokens = preprocessor.Lexer("FOO").tokenize()
         p = platform.Platform("Test", self.rootdir)
@@ -123,17 +193,28 @@ class TestExampleFile(unittest.TestCase):
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
         self.assertTrue(len(expanded_tokens) == len(expected_expansion))
         for i in range(len(expected_expansion)):
-            self.assertEqual(expanded_tokens[i].line, expected_expansion[i].line)
+            self.assertEqual(
+                expanded_tokens[i].line,
+                expected_expansion[i].line,
+            )
             self.assertEqual(expanded_tokens[i].col, expected_expansion[i].col)
-            self.assertEqual(expanded_tokens[i].prev_white, expected_expansion[i].prev_white)
-            self.assertEqual(expanded_tokens[i].token, expected_expansion[i].token)
+            self.assertEqual(
+                expanded_tokens[i].prev_white,
+                expected_expansion[i].prev_white,
+            )
+            self.assertEqual(
+                expanded_tokens[i].token,
+                expected_expansion[i].token,
+            )
 
     def test_self_reference_macros_2(self):
         """Self referencing macros test 2"""
 
-        expected_expansion = [preprocessor.Identifier('Unknown', 4, False, 'FOO')]
+        expected_expansion = [
+            preprocessor.Identifier("Unknown", 4, False, "FOO"),
+        ]
 
-        def_string = 'FOO=FOO'
+        def_string = "FOO=FOO"
         macro = preprocessor.macro_from_definition_string(def_string)
         tokens = preprocessor.Lexer("FOO").tokenize()
         p = platform.Platform("Test", self.rootdir)
@@ -141,49 +222,65 @@ class TestExampleFile(unittest.TestCase):
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
         self.assertTrue(len(expanded_tokens) == len(expected_expansion))
         for i in range(len(expected_expansion)):
-            self.assertEqual(expanded_tokens[i].line, expected_expansion[i].line)
+            self.assertEqual(
+                expanded_tokens[i].line,
+                expected_expansion[i].line,
+            )
             self.assertEqual(expanded_tokens[i].col, expected_expansion[i].col)
-            self.assertEqual(expanded_tokens[i].prev_white, expected_expansion[i].prev_white)
-            self.assertEqual(expanded_tokens[i].token, expected_expansion[i].token)
+            self.assertEqual(
+                expanded_tokens[i].prev_white,
+                expected_expansion[i].prev_white,
+            )
+            self.assertEqual(
+                expanded_tokens[i].token,
+                expected_expansion[i].token,
+            )
 
     def test_self_reference_macros_3(self):
         """Self referencing macros test 3"""
 
-        def_string = 'foo(x)=bar x'
+        def_string = "foo(x)=bar x"
         macro = preprocessor.macro_from_definition_string(def_string)
         tokens = preprocessor.Lexer("foo(foo) (2)").tokenize()
         p = platform.Platform("Test", self.rootdir)
         p._definitions = {macro.name: macro}
         expanded_tokens = preprocessor.MacroExpander(p).expand(tokens)
         expected_tokens = preprocessor.Lexer("bar foo (2)").tokenize()
-        self.assertEqual([(x.prev_white, x.token) for x in expanded_tokens], [(x.prev_white, x.token) for x in expected_tokens])
+        self.assertEqual(
+            [(x.prev_white, x.token) for x in expanded_tokens],
+            [(x.prev_white, x.token) for x in expected_tokens],
+        )
 
     def test_indirect_self_reference_macros(self):
-        """ Indirect self referencing macros test"""
+        """Indirect self referencing macros test"""
 
-        x_expected_expansion = [preprocessor.Punctuator('Unknown', 2, False, '('),
-                                preprocessor.NumericalConstant('Unknown', 3, False, '4'),
-                                preprocessor.Operator('Unknown', 5, True, '+'),
-                                preprocessor.Punctuator('Unknown', 2, True, '('),
-                                preprocessor.NumericalConstant('Unknown', 3, False, '2'),
-                                preprocessor.Operator('Unknown', 5, True, '*'),
-                                preprocessor.Identifier('Unknown', 7, True, 'x'),
-                                preprocessor.Punctuator('Unknown', 8, False, ')'),
-                                preprocessor.Punctuator('Unknown', 8, False, ')')]
+        x_expected_expansion = [
+            preprocessor.Punctuator("Unknown", 2, False, "("),
+            preprocessor.NumericalConstant("Unknown", 3, False, "4"),
+            preprocessor.Operator("Unknown", 5, True, "+"),
+            preprocessor.Punctuator("Unknown", 2, True, "("),
+            preprocessor.NumericalConstant("Unknown", 3, False, "2"),
+            preprocessor.Operator("Unknown", 5, True, "*"),
+            preprocessor.Identifier("Unknown", 7, True, "x"),
+            preprocessor.Punctuator("Unknown", 8, False, ")"),
+            preprocessor.Punctuator("Unknown", 8, False, ")"),
+        ]
 
-        y_expected_expansion = [preprocessor.Punctuator('Unknown', 2, False, '('),
-                                preprocessor.NumericalConstant('Unknown', 3, False, '2'),
-                                preprocessor.Operator('Unknown', 5, True, '*'),
-                                preprocessor.Punctuator('Unknown', 2, True, '('),
-                                preprocessor.NumericalConstant('Unknown', 3, False, '4'),
-                                preprocessor.Operator('Unknown', 5, True, '+'),
-                                preprocessor.Identifier('Unknown', 7, True, 'y'),
-                                preprocessor.Punctuator('Unknown', 8, False, ')'),
-                                preprocessor.Punctuator('Unknown', 8, False, ')')]
+        y_expected_expansion = [
+            preprocessor.Punctuator("Unknown", 2, False, "("),
+            preprocessor.NumericalConstant("Unknown", 3, False, "2"),
+            preprocessor.Operator("Unknown", 5, True, "*"),
+            preprocessor.Punctuator("Unknown", 2, True, "("),
+            preprocessor.NumericalConstant("Unknown", 3, False, "4"),
+            preprocessor.Operator("Unknown", 5, True, "+"),
+            preprocessor.Identifier("Unknown", 7, True, "y"),
+            preprocessor.Punctuator("Unknown", 8, False, ")"),
+            preprocessor.Punctuator("Unknown", 8, False, ")"),
+        ]
 
-        x_string = 'x=(4 + y)'
+        x_string = "x=(4 + y)"
         x_macro = preprocessor.macro_from_definition_string(x_string)
-        y_string = 'y=(2 * x)'
+        y_string = "y=(2 * x)"
         y_macro = preprocessor.macro_from_definition_string(y_string)
 
         x_tokens = preprocessor.Lexer("x").tokenize()
@@ -198,18 +295,42 @@ class TestExampleFile(unittest.TestCase):
 
         self.assertTrue(len(x_expanded_tokens) == len(x_expected_expansion))
         for i in range(len(x_expected_expansion)):
-            self.assertEqual(x_expanded_tokens[i].line, x_expected_expansion[i].line)
-            self.assertEqual(x_expanded_tokens[i].col, x_expected_expansion[i].col)
-            self.assertEqual(x_expanded_tokens[i].prev_white, x_expected_expansion[i].prev_white)
-            self.assertEqual(x_expanded_tokens[i].token, x_expected_expansion[i].token)
+            self.assertEqual(
+                x_expanded_tokens[i].line,
+                x_expected_expansion[i].line,
+            )
+            self.assertEqual(
+                x_expanded_tokens[i].col,
+                x_expected_expansion[i].col,
+            )
+            self.assertEqual(
+                x_expanded_tokens[i].prev_white,
+                x_expected_expansion[i].prev_white,
+            )
+            self.assertEqual(
+                x_expanded_tokens[i].token,
+                x_expected_expansion[i].token,
+            )
 
         self.assertTrue(len(y_expanded_tokens) == len(y_expected_expansion))
         for i in range(len(y_expected_expansion)):
-            self.assertEqual(y_expanded_tokens[i].line, y_expected_expansion[i].line)
-            self.assertEqual(y_expanded_tokens[i].col, y_expected_expansion[i].col)
-            self.assertEqual(y_expanded_tokens[i].prev_white, y_expected_expansion[i].prev_white)
-            self.assertEqual(y_expanded_tokens[i].token, y_expected_expansion[i].token)
+            self.assertEqual(
+                y_expanded_tokens[i].line,
+                y_expected_expansion[i].line,
+            )
+            self.assertEqual(
+                y_expanded_tokens[i].col,
+                y_expected_expansion[i].col,
+            )
+            self.assertEqual(
+                y_expanded_tokens[i].prev_white,
+                y_expected_expansion[i].prev_white,
+            )
+            self.assertEqual(
+                y_expanded_tokens[i].token,
+                y_expected_expansion[i].token,
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
