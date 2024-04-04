@@ -16,27 +16,6 @@ from codebasin.walkers.platform_mapper import PlatformMapper
 version = "1.2.0"
 
 
-def guess_project_name(config_path):
-    """
-    Guess a useful name from the given path so that we can pick
-    meaningful filenames for output.
-    """
-    fullpath = os.path.realpath(config_path)
-    (thedir, thename) = os.path.split(fullpath)
-    if config_path == "config.yaml":
-        (base, end) = os.path.split(thedir)
-        res = end.strip()
-    else:
-        (base, end) = os.path.splitext(thename)
-        res = base.strip()
-    if not res:
-        logging.getLogger("codebasin").warning(
-            "Can't guess meaningful output name from input",
-        )
-        res = "unknown"
-    return res
-
-
 def main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
