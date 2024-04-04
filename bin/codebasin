@@ -90,7 +90,8 @@ def main():
         default=[],
         choices=["all", "summary", "clustering"],
         help="Generate a report of the specified type. "
-        + "May be specified multiple times.",
+        + "May be specified multiple times. "
+        + "If not specified, all reports will be generated.",
     )
     deprecated_args.add_argument(
         "-d",
