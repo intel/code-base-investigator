@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
+import os
 import unittest
 
 from codebasin import config, finder
@@ -18,11 +19,15 @@ class TestExclude(unittest.TestCase):
         logging.getLogger("codebasin").disabled = True
 
     def _get_setmap(self, excludes):
-        codebase, configuration = config.load(
-            "./tests/exclude/exclude.yaml",
-            self.rootdir,
-            exclude_patterns=excludes,
-        )
+        codebase = {
+            "files": [],
+            "platforms": ["test"],
+            "exclude_files": set(),
+            "exclude_patterns": excludes,
+            "rootdir": os.path.realpath(self.rootdir),
+        }
+        dbpath = os.path.realpath(os.path.join(self.rootdir, "commands.json"))
+        configuration = {"test": config.load_database(dbpath, self.rootdir)}
         state = finder.find(self.rootdir, codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)

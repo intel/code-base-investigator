@@ -1,6 +1,0 @@
-codebase:
-    files: [ ]
-    platforms: [ test ]
-
-test:
-    commands: "commands.json"
