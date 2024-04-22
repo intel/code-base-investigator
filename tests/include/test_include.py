@@ -1,13 +1,15 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import unittest
 import logging
-from codebasin import config, finder, walkers
+import os
+import unittest
+
+from codebasin import config, finder
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
-class TestExampleFile(unittest.TestCase):
+class TestInclude(unittest.TestCase):
     """
     Simple test of ability to follow #include directives to additional
     files.
@@ -17,26 +19,42 @@ class TestExampleFile(unittest.TestCase):
         self.rootdir = "./tests/include/"
         logging.getLogger("codebasin").disabled = True
 
-        self.expected_setmap = {frozenset(['CPU']): 11,
-                                frozenset(['GPU']): 12,
-                                frozenset(['CPU', 'GPU']): 16}
+        self.expected_setmap = {
+            frozenset(["CPU"]): 11,
+            frozenset(["GPU"]): 12,
+            frozenset(["CPU", "GPU"]): 16,
+        }
 
-    def test_yaml(self):
+    def test_include(self):
         """include/include.yaml"""
-        codebase, configuration = config.load("./tests/include/include.yaml", self.rootdir)
+        codebase = {
+            "files": [],
+            "platforms": ["CPU", "GPU"],
+            "exclude_files": set(),
+            "exclude_patterns": [],
+            "rootdir": os.path.realpath(self.rootdir),
+        }
+
+        cpu_path = os.path.realpath(
+            os.path.join(self.rootdir, "cpu_commands.json"),
+        )
+        gpu_path = os.path.realpath(
+            os.path.join(self.rootdir, "gpu_commands.json"),
+        )
+        configuration = {
+            "CPU": config.load_database(cpu_path, self.rootdir),
+            "GPU": config.load_database(gpu_path, self.rootdir),
+        }
+
         state = finder.find(self.rootdir, codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
-        self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
-
-    def test_db(self):
-        """include/include-db.yaml"""
-        codebase, configuration = config.load("./tests/include/include-db.yaml", self.rootdir)
-        state = finder.find(self.rootdir, codebase, configuration)
-        mapper = PlatformMapper(codebase)
-        setmap = mapper.walk(state)
-        self.assertDictEqual(setmap, self.expected_setmap, "Mismatch in setmap")
+        self.assertDictEqual(
+            setmap,
+            self.expected_setmap,
+            "Mismatch in setmap",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

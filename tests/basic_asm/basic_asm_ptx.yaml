@@ -1,6 +1,0 @@
-codebase:
-    files: [ test.ptx ]
-    platforms: [ GPU ]
-
-GPU:
-    files: [ test.ptx ]

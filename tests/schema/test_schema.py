@@ -1,8 +1,8 @@
 # Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import unittest
 import logging
+import unittest
 
 import codebasin.config as config
 import codebasin.util as util
@@ -20,21 +20,11 @@ class TestSchema(unittest.TestCase):
         """schema/compilation_database"""
 
         path = "./tests/schema/compile_commands.json"
-        db = config.load_database(path, "")
+        _ = config.load_database(path, "")
 
         with self.assertRaises(ValueError):
             path = "./tests/schema/invalid_compile_commands.json"
-            db = config.load_database(path, "")
-
-    def test_configuration_file(self):
-        """schema/configuration_file"""
-
-        path = "./tests/schema/config.yaml"
-        config.load(path, "./tests/schema/")
-
-        with self.assertRaises(ValueError):
-            path = "./tests/schema/invalid_config.yaml"
-            config.load(path, "")
+            _ = config.load_database(path, "")
 
     def test_cbiconfig_file(self):
         """schema/cbiconfig_file"""
@@ -82,5 +72,5 @@ class TestSchema(unittest.TestCase):
                 toml = util._load_toml(f, "analysis")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

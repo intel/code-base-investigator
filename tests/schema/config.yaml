@@ -1,7 +1,0 @@
-codebase:
-    files: [ "*.cpp" ]
-    platforms: [ "CPU" ]
-
-CPU:
-    files: [ "*.cpp" ]
-    defines: [ "-D CPU" ]
