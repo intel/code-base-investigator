@@ -118,7 +118,7 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
     json_object : Object
         The JSON to validate.
 
-    schema_name : {'compiledb', 'config', 'coverage', 'cbiconfig', 'analysis'}
+    schema_name : {'compiledb', 'coverage', 'cbiconfig', 'analysis'}
         The schema to validate against.
 
     Returns
@@ -137,7 +137,6 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
     schema_paths = {
         "analysis": "schema/analysis.schema",
         "compiledb": "schema/compilation-database.schema",
-        "config": "schema/config.schema",
         "coverage": "schema/coverage-0.1.0.schema",
         "cbiconfig": "schema/cbiconfig.schema",
     }
