@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import os
 import unittest
+from pathlib import Path
 
-from codebasin import finder, platform, preprocessor
+from codebasin import CodeBase, finder, platform, preprocessor
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -16,26 +16,18 @@ class TestOperators(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = "./tests/operators/"
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = True
 
         self.expected_setmap = {frozenset(["CPU", "GPU"]): 32}
 
     def test_operators(self):
         """operators/operators.yaml"""
-        codebase = {
-            "files": [
-                os.path.realpath(os.path.join(self.rootdir, "main.cpp")),
-            ],
-            "platforms": ["CPU", "GPU"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
         configuration = {
             "CPU": [
                 {
-                    "file": codebase["files"][0],
+                    "file": str(self.rootdir / "main.cpp"),
                     "defines": ["CPU"],
                     "include_paths": [],
                     "include_files": [],
@@ -43,14 +35,14 @@ class TestOperators(unittest.TestCase):
             ],
             "GPU": [
                 {
-                    "file": codebase["files"][0],
+                    "file": str(self.rootdir / "main.cpp"),
                     "defines": ["GPU"],
                     "include_paths": [],
                     "include_files": [],
                 },
             ],
         }
-        state = finder.find(self.rootdir, codebase, configuration)
+        state = finder.find(str(self.rootdir), codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(
