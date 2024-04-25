@@ -6,7 +6,6 @@ import logging
 
 from codebasin import util
 from codebasin.preprocessor import CodeNode, FileNode
-from codebasin.walkers.platform_mapper import exclude
 from codebasin.walkers.tree_walker import TreeWalker
 
 log = logging.getLogger("codebasin")
@@ -38,10 +37,7 @@ class Exporter(TreeWalker):
     def _export_node(self, _filename, _node, _map):
         # Do not export files that the user does not consider to be part of
         # the codebase
-        if isinstance(_node, FileNode) and exclude(
-            _node.filename,
-            self.codebase,
-        ):
+        if isinstance(_node, FileNode) and _node.filename not in self.codebase:
             return
 
         if isinstance(_node, CodeNode):

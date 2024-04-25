@@ -142,11 +142,11 @@ def find(
 
     # Build a tree for each unique file for all platforms.
     state = ParserState(summarize_only)
-    for f in codebase["files"]:
+    for f in codebase:
         state.insert_file(f)
     for p in configuration:
         for e in configuration[p]:
-            if e["file"] not in codebase["files"]:
+            if e["file"] not in codebase:
                 filename = e["file"]
                 if legacy_warnings:
                     log.warning(

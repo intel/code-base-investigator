@@ -10,7 +10,7 @@ import logging
 import os
 import sys
 
-from codebasin import config, finder, report, util
+from codebasin import CodeBase, config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 version = "1.2.0"
@@ -107,14 +107,7 @@ def main():
     # Determine the root directory based on where codebasin is run.
     rootdir = os.path.realpath(os.getcwd())
 
-    # Set up a default codebase and configuration object.
-    codebase = {
-        "files": [],
-        "platforms": [],
-        "exclude_files": set(),
-        "exclude_patterns": args.excludes,
-        "rootdir": rootdir,
-    }
+    # Set up a default configuration object.
     configuration = {}
 
     # Load the analysis file if it exists.
@@ -132,8 +125,7 @@ def main():
 
         if "codebase" in analysis_toml:
             if "exclude" in analysis_toml["codebase"]:
-                excludes = analysis_toml["codebase"]["exclude"]
-                codebase["exclude_patterns"] += excludes
+                args.excludes += analysis_toml["codebase"]["exclude"]
 
         for name in args.platforms:
             if name not in analysis_toml["platform"].keys():
@@ -142,15 +134,19 @@ def main():
                     + "does not exist in the configuration file.",
                 )
 
+        cmd_platforms = args.platforms.copy()
         for name in analysis_toml["platform"].keys():
-            if args.platforms and name not in args.platforms:
+            if cmd_platforms and name not in cmd_platforms:
                 continue
             if "commands" not in analysis_toml["platform"][name]:
                 raise ValueError(f"Missing 'commands' for platform {name}")
             p = analysis_toml["platform"][name]["commands"]
             db = config.load_database(p, rootdir)
-            codebase["platforms"].append(name)
+            args.platforms.append(name)
             configuration.update({name: db})
+
+    # Construct a codebase object associated with the root directory.
+    codebase = CodeBase(rootdir, exclude_patterns=args.excludes)
 
     # Parse the source tree, and determine source line associations.
     # The trees and associations are housed in state.
@@ -180,8 +176,7 @@ def main():
     if report_enabled("clustering"):
         basename = os.path.basename(args.analysis_file)
         filename = os.path.splitext(basename)[0]
-        platform_names = [p for p in codebase["platforms"]]
-        output_prefix = "-".join([filename] + platform_names)
+        output_prefix = "-".join([filename] + args.platforms)
 
         clustering_output_name = output_prefix + "-dendrogram.png"
         clustering = report.clustering(clustering_output_name, setmap)
