@@ -36,6 +36,13 @@ The table's name is the name of the platform, and we can use any meaningful
 string. The ``commands`` key tells CBI where to find the compilation database
 for this platform.
 
+.. important::
+
+    By default, ``codebasin`` searches the current working directory for source
+    files to include in its analysis. Since we'll be running in the ``src``
+    directory, we need to specify the ``commands`` paths relative to the
+    ``src`` directory or as absolute paths.
+
 In our example, we have two platforms that we're calling "cpu" and "gpu",
 and our build directories are called ``build-cpu`` and ``build-gpu``, so
 our platform definitions should look like this:
@@ -43,10 +50,10 @@ our platform definitions should look like this:
 .. code-block:: toml
 
     [platform.cpu]
-    commands = "build-cpu/compile_commands.json"
+    commands = "../build-cpu/compile_commands.json"
 
     [platform.gpu]
-    commands = "build-gpu/compile_commands.json"
+    commands = "../build-gpu/compile_commands.json"
 
 .. warning::
     Platform names are case sensitive! The names "cpu" and "CPU" would refer to
@@ -56,7 +63,8 @@ our platform definitions should look like this:
 Running ``codebasin``
 #####################
 
-Running ``codebasin`` with this analysis file gives the following output:
+Running ``codebasin`` in the ``src`` directory with this analysis file gives
+the following output:
 
 .. code-block:: text
    :emphasize-lines: 4,5,6,7,9
@@ -85,6 +93,15 @@ platform, 7 lines of code used only by the CPU compilation, 7 lines of code
 used only by the GPU compilation, and 17 lines of code shared by both
 platforms. Plugging these numbers into the equation for code divergence gives
 0.45.
+
+.. caution::
+    If we had run ``codebasin`` in the parent directory, everything in the
+    ``src``, ``build-cpu`` and ``build-gpu`` directories would have been
+    included in the analysis. For our sample code base, this would have
+    resulted in over 2000 lines of code being identified as unused! Why so
+    many? CMake generates multiple ``*.cpp`` files, which it uses as part of
+    the build process. ``codebasin`` will analyze such files unless we tell it
+    not to (more on that later).
 
 
 Filtering Platforms

@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import os
 import unittest
+from pathlib import Path
 
-from codebasin import config, finder
+from codebasin import CodeBase, config, finder
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -16,7 +16,7 @@ class TestInclude(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = "./tests/include/"
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = True
 
         self.expected_setmap = {
@@ -27,26 +27,16 @@ class TestInclude(unittest.TestCase):
 
     def test_include(self):
         """include/include.yaml"""
-        codebase = {
-            "files": [],
-            "platforms": ["CPU", "GPU"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": os.path.realpath(self.rootdir),
-        }
+        codebase = CodeBase(self.rootdir)
 
-        cpu_path = os.path.realpath(
-            os.path.join(self.rootdir, "cpu_commands.json"),
-        )
-        gpu_path = os.path.realpath(
-            os.path.join(self.rootdir, "gpu_commands.json"),
-        )
+        cpu_path = self.rootdir / "cpu_commands.json"
+        gpu_path = self.rootdir / "gpu_commands.json"
         configuration = {
-            "CPU": config.load_database(cpu_path, self.rootdir),
-            "GPU": config.load_database(gpu_path, self.rootdir),
+            "CPU": config.load_database(str(cpu_path), str(self.rootdir)),
+            "GPU": config.load_database(str(gpu_path), str(self.rootdir)),
         }
 
-        state = finder.find(self.rootdir, codebase, configuration)
+        state = finder.find(str(self.rootdir), codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(

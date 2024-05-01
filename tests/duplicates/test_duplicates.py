@@ -5,7 +5,7 @@ import logging
 import unittest
 from pathlib import Path
 
-from codebasin import finder
+from codebasin import CodeBase, finder
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -15,22 +15,16 @@ class TestDuplicates(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = str(Path(__file__).parent)
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = True
 
     def test_duplicates(self):
         """Check that duplicate files count towards divergence."""
 
-        cpufile = str(Path(__file__).parent.joinpath("cpu/foo.cpp"))
-        gpufile = str(Path(__file__).parent.joinpath("gpu/foo.cpp"))
+        cpufile = str(self.rootdir / "cpu/foo.cpp")
+        gpufile = str(self.rootdir / "gpu/foo.cpp")
 
-        codebase = {
-            "files": [cpufile, gpufile],
-            "platforms": ["cpu", "gpu"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
 
         configuration = {
             "cpu": [
@@ -53,7 +47,7 @@ class TestDuplicates(unittest.TestCase):
 
         expected_setmap = {frozenset(["cpu"]): 1, frozenset(["gpu"]): 1}
 
-        state = finder.find(self.rootdir, codebase, configuration)
+        state = finder.find(str(self.rootdir), codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")

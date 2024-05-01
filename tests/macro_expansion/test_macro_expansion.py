@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import os
 import unittest
+from pathlib import Path
 
-from codebasin import finder, platform, preprocessor
+from codebasin import CodeBase, finder, platform, preprocessor
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -15,7 +15,7 @@ class TestMacroExpansion(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = "./tests/macro_expansion/"
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = True
 
         self.expected_setmap = {
@@ -27,27 +27,13 @@ class TestMacroExpansion(unittest.TestCase):
 
     def test_macro_expansion(self):
         """macro_expansion/macro_expansion.yaml"""
-        files = [
-            "defined_undefined_test.cpp",
-            "infinite_loop_test.cpp",
-            "function_like_test.cpp",
-            "max_level.cpp",
-        ]
-        codebase = {
-            "files": [
-                os.path.realpath(os.path.join(self.rootdir, f)) for f in files
-            ],
-            "platforms": ["CPU"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
         cpu_entries = []
         gpu_entries = []
-        for f in files:
+        for f in list(codebase):
             cpu_entries.append(
                 {
-                    "file": os.path.realpath(os.path.join(self.rootdir, f)),
+                    "file": str(f),
                     "defines": ["CPU"],
                     "include_paths": [],
                     "include_files": [],
@@ -55,7 +41,7 @@ class TestMacroExpansion(unittest.TestCase):
             )
             gpu_entries.append(
                 {
-                    "file": os.path.realpath(os.path.join(self.rootdir, f)),
+                    "file": str(f),
                     "defines": ["GPU"],
                     "include_paths": [],
                     "include_files": [],
@@ -65,7 +51,7 @@ class TestMacroExpansion(unittest.TestCase):
             "CPU": cpu_entries,
             "GPU": gpu_entries,
         }
-        state = finder.find(self.rootdir, codebase, configuration)
+        state = finder.find(str(self.rootdir), codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(
