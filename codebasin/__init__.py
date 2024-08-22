@@ -184,7 +184,7 @@ class CodeBase:
     def __contains__(self, path: os.PathLike) -> bool:
         """
         Returns
-        _______
+        -------
         bool
             True if `path` is a recognized source file in one of the code
             base's listed directories and does not match any exclude
