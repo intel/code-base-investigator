@@ -3,6 +3,7 @@
 import os
 import shlex
 import warnings
+from collections.abc import Iterable
 from pathlib import Path
 
 import pathspec
@@ -145,7 +146,7 @@ class CodeBase:
     def __init__(
         self,
         *directories: str | os.PathLike[str],
-        exclude_patterns: list[str] = [],
+        exclude_patterns: Iterable[str] = [],
     ):
         """
         Raises
