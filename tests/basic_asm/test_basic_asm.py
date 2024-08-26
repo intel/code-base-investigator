@@ -34,7 +34,7 @@ class TestBasicAsm(unittest.TestCase):
                 },
             )
         configuration = {"CPU": entries}
-        state = finder.find(str(self.rootdir), codebase, configuration)
+        state = finder.find(self.rootdir, codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(
@@ -56,7 +56,7 @@ class TestBasicAsm(unittest.TestCase):
         self.assertRaises(
             RuntimeError,
             finder.find,
-            str(self.rootdir),
+            self.rootdir,
             codebase,
             configuration,
         )

@@ -8,6 +8,7 @@ and parsing source files as part of a code base.
 import collections
 import logging
 import os
+from pathlib import Path
 
 from codebasin import file_parser, platform, preprocessor, util
 from codebasin.language import FileLanguage
@@ -139,6 +140,11 @@ def find(
     Find codepaths in the files provided and return a mapping of source
     lines to platforms.
     """
+
+    # Ensure rootdir is a string for compatibility with legacy code.
+    # TODO: Remove this once all other functionality is ported to Path.
+    if isinstance(rootdir, Path):
+        rootdir = str(rootdir)
 
     # Build a tree for each unique file for all platforms.
     state = ParserState(summarize_only)

@@ -27,7 +27,7 @@ class TestExclude(unittest.TestCase):
         configuration = {
             "test": config.load_database(str(dbpath), str(self.rootdir)),
         }
-        state = finder.find(str(self.rootdir), codebase, configuration)
+        state = finder.find(self.rootdir, codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         return setmap

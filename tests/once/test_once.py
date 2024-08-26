@@ -44,7 +44,7 @@ class TestOnce(unittest.TestCase):
                 },
             ],
         }
-        state = finder.find(str(self.rootdir), codebase, configuration)
+        state = finder.find(self.rootdir, codebase, configuration)
         mapper = PlatformMapper(codebase)
         setmap = mapper.walk(state)
         self.assertDictEqual(
