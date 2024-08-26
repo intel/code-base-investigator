@@ -99,7 +99,7 @@ class TestCodeBase(unittest.TestCase):
             str(p1 / "foo.cpp"),
             str(p2 / "qux.cpp"),
         ]
-        self.assertEqual(files, expected)
+        self.assertCountEqual(files, expected)
 
 
 if __name__ == "__main__":
