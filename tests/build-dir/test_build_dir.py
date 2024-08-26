@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from codebasin import config, finder
+from codebasin import CodeBase, config, finder
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -17,7 +17,7 @@ class TestBuildDirectories(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = str(Path(__file__).parent)
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = False
 
     def test_absolute_paths(self):
@@ -26,11 +26,11 @@ class TestBuildDirectories(unittest.TestCase):
         All "file" fields are absolute paths.
         """
 
-        source = str(Path(__file__).parent.joinpath("foo.cpp"))
+        source = self.rootdir / "foo.cpp"
 
         # CBI only understands how to load compilation databases from file.
         # For now, create temporary files every time we test.
-        dir1 = str(Path(__file__).parent.joinpath("build1/"))
+        dir1 = self.rootdir / "build1/"
         build1 = tempfile.NamedTemporaryFile()
         json1 = [
             {
@@ -42,7 +42,7 @@ class TestBuildDirectories(unittest.TestCase):
         with open(build1.name, "w") as f:
             json.dump(json1, f)
 
-        dir2 = str(Path(__file__).parent.joinpath("build2/"))
+        dir2 = self.rootdir / "build2/"
         build2 = tempfile.NamedTemporaryFile()
         json2 = [
             {
@@ -54,13 +54,7 @@ class TestBuildDirectories(unittest.TestCase):
         with open(build2.name, "w") as f:
             json.dump(json2, f)
 
-        codebase = {
-            "files": [source],
-            "platforms": ["one", "two"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
 
         configuration = {}
         for name, path in [("one", build1.name), ("two", build2.name)]:
@@ -80,11 +74,11 @@ class TestBuildDirectories(unittest.TestCase):
         This may be a sign that the compilation database has incorrect paths.
         """
 
-        source = str(Path(__file__).parent.joinpath("foo.cpp"))
+        source = self.rootdir / "foo.cpp"
 
         # CBI only understands how to load compilation databases from file.
         # For now, create temporary files every time we test.
-        build = str(Path(__file__).parent.joinpath("build/"))
+        build = self.rootdir / "build/"
         tmp = tempfile.NamedTemporaryFile()
         obj = [
             {

@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import os
 import unittest
+from pathlib import Path
 
-from codebasin import finder
+from codebasin import CodeBase, finder
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -17,54 +17,28 @@ class TestDisjointCodebase(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = "./tests/disjoint/"
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = True
 
         self.expected_setmap = {frozenset(["CPU"]): 6, frozenset(["GPU"]): 6}
 
     def test_yaml(self):
         """disjoint/disjoint.yaml"""
-        files = [
-            "cpu.cpp",
-            "gpu.cpp",
-            "cpu_headers/header.h",
-            "gpu_headers/header.h",
-        ]
-        codebase = {
-            "files": [
-                os.path.realpath(os.path.join(self.rootdir, f)) for f in files
-            ],
-            "platforms": ["CPU", "GPU"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
         configuration = {
             "CPU": [
                 {
-                    "file": os.path.realpath(
-                        os.path.join(self.rootdir, "cpu.cpp"),
-                    ),
+                    "file": str(self.rootdir / "cpu.cpp"),
                     "defines": ["CPU"],
-                    "include_paths": [
-                        os.path.realpath(
-                            os.path.join(self.rootdir, "cpu_headers"),
-                        ),
-                    ],
+                    "include_paths": [str(self.rootdir / "cpu_headers")],
                     "include_files": [],
                 },
             ],
             "GPU": [
                 {
-                    "file": os.path.realpath(
-                        os.path.join(self.rootdir, "gpu.cpp"),
-                    ),
+                    "file": str(self.rootdir / "gpu.cpp"),
                     "defines": ["GPU"],
-                    "include_paths": [
-                        os.path.realpath(
-                            os.path.join(self.rootdir, "gpu_headers"),
-                        ),
-                    ],
+                    "include_paths": [str(self.rootdir / "gpu_headers")],
                     "include_files": [],
                 },
             ],

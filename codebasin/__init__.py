@@ -1,7 +1,12 @@
 # Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
+import os
 import shlex
 import warnings
+from collections.abc import Iterable
+from pathlib import Path
+
+import pathspec
 
 import codebasin.source
 import codebasin.walkers
@@ -123,3 +128,112 @@ class CompileCommand:
             command=command,
             output=output,
         )
+
+
+class CodeBase:
+    """
+    A representation of all source files in the code base.
+
+    Attributes
+    ----------
+    directories: list[str | os.PathLike[str]]
+        The set of source directories that make up the code base.
+
+    exclude_patterns: list[str]
+        A set of patterns describing source files excluded from the code base.
+    """
+
+    def __init__(
+        self,
+        *directories: str | os.PathLike[str],
+        exclude_patterns: Iterable[str] = [],
+    ):
+        """
+        Raises
+        ------
+        TypeError
+            If any directory in `directories` is not a path.
+            If `exclude_patterns` is not a list of strings.
+        """
+        if not isinstance(exclude_patterns, list):
+            raise TypeError("'exclude_patterns' must be a list.")
+        if not all([isinstance(d, (str, os.PathLike)) for d in directories]):
+            raise TypeError(
+                "Each directory in 'directories' must be PathLike.",
+            )
+        if not all([isinstance(p, str) for p in exclude_patterns]):
+            raise TypeError(
+                "Each pattern in 'exclude_patterns' must be a string.",
+            )
+        self._directories = [Path(d).resolve() for d in directories]
+        self._excludes = exclude_patterns
+
+    def __repr__(self):
+        return (
+            f"CodeBase(directories={self.directories}, "
+            + f"exclude_patterns={self.exclude_patterns})"
+        )
+
+    @property
+    def directories(self):
+        return [str(d) for d in self._directories]
+
+    @property
+    def exclude_patterns(self):
+        return self._excludes
+
+    def __contains__(self, path: os.PathLike) -> bool:
+        """
+        Returns
+        -------
+        bool
+            True if `path` is a recognized source file in one of the code
+            base's listed directories and does not match any exclude
+            pattern(s).
+        """
+        path = Path(path).resolve()
+
+        # Files that don't exist aren't part of the code base.
+        if not path.exists():
+            return False
+
+        # Directories cannot be source files.
+        if path.is_dir():
+            return False
+
+        # Files with unrecognized extensions are not source files.
+        if not codebasin.source.is_source_file(path):
+            return False
+
+        # Files outside of any directory are not in the code base.
+        # Store the root for evaluation of relative exclude paths later.
+        root = None
+        for directory in self.directories:
+            if path.is_relative_to(directory):
+                root = directory
+                break
+        if root is None:
+            return False
+
+        # Files matching an exclude pattern are not in the code base.
+        #
+        # Use GitIgnoreSpec to match git behavior in weird corner cases.
+        # Convert relative paths to match .gitignore subdirectory behavior.
+        spec = pathspec.GitIgnoreSpec.from_lines(self.exclude_patterns)
+        try:
+            relative_path = path.relative_to(root)
+            if spec.match_file(relative_path):
+                return False
+        except ValueError:
+            pass
+
+        return True
+
+    def __iter__(self):
+        """
+        Iterate over all files in the code base by walking each directory.
+        """
+        for directory in self.directories:
+            for path in Path(directory).rglob("*"):
+                if self.__contains__(path):
+                    yield str(path)

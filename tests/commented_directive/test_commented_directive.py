@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import os
 import unittest
+from pathlib import Path
 
-from codebasin import finder
+from codebasin import CodeBase, finder
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -16,7 +16,7 @@ class TestCommentedDirective(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = "./tests/commented_directive/"
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = True
 
         self.expected_setmap = {frozenset(["CPU", "GPU"]): 5}
@@ -30,19 +30,11 @@ class TestCommentedDirective(unittest.TestCase):
 
     def test_yaml(self):
         """commented_directive/commented_directive.yaml"""
-        codebase = {
-            "files": [
-                os.path.realpath(os.path.join(self.rootdir, "main.cpp")),
-            ],
-            "platforms": ["CPU", "GPU"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
         configuration = {
             "CPU": [
                 {
-                    "file": codebase["files"][0],
+                    "file": str(self.rootdir / "main.cpp"),
                     "defines": ["CPU"],
                     "include_paths": [],
                     "include_files": [],
@@ -50,7 +42,7 @@ class TestCommentedDirective(unittest.TestCase):
             ],
             "GPU": [
                 {
-                    "file": codebase["files"][0],
+                    "file": str(self.rootdir / "main.cpp"),
                     "defines": ["GPU"],
                     "include_paths": [],
                     "include_files": [],

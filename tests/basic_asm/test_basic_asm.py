@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
-import os
 import unittest
+from pathlib import Path
 
-from codebasin import finder
+from codebasin import CodeBase, finder
 from codebasin.walkers.platform_mapper import PlatformMapper
 
 
@@ -15,25 +15,16 @@ class TestBasicAsm(unittest.TestCase):
     """
 
     def setUp(self):
-        self.rootdir = "./tests/basic_asm/"
+        self.rootdir = Path(__file__).parent.resolve()
         logging.getLogger("codebasin").disabled = True
 
         self.expected_setmap = {frozenset(["CPU"]): 24}
 
     def test_yaml(self):
         """basic_asm/basic_asm.yaml"""
-        files = ["test.s", "test.S", "test.asm"]
-        codebase = {
-            "files": [
-                os.path.realpath(os.path.join(self.rootdir, f)) for f in files
-            ],
-            "platforms": ["CPU"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
         entries = []
-        for f in codebase["files"]:
+        for f in codebase:
             entries.append(
                 {
                     "file": f,
@@ -54,17 +45,9 @@ class TestBasicAsm(unittest.TestCase):
 
     def test_ptx(self):
         """basic_asm/basic_asm_ptx.yaml"""
-        codebase = {
-            "files": [
-                os.path.realpath(os.path.join(self.rootdir, "test.ptx")),
-            ],
-            "platforms": ["GPU"],
-            "exclude_files": set(),
-            "exclude_patterns": [],
-            "rootdir": self.rootdir,
-        }
+        codebase = CodeBase(self.rootdir)
         entry = {
-            "file": codebase["files"][0],
+            "file": str(self.rootdir / "test.ptx"),
             "defines": [],
             "include_paths": [],
             "include_files": [],
