@@ -88,6 +88,10 @@ class CompileCommand:
         else:
             return self._command
 
+    def __eq__(self, other):
+        props = ["directory", "filename", "arguments", "output"]
+        return all([getattr(self, p) == getattr(other, p) for p in props])
+
     def is_supported(self):
         """
         Returns
