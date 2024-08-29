@@ -9,6 +9,7 @@ from pathlib import Path
 import pathspec
 
 import codebasin.source
+import codebasin.util
 import codebasin.walkers
 
 warnings.warn(
@@ -128,6 +129,67 @@ class CompileCommand:
             command=command,
             output=output,
         )
+
+
+class CompilationDatabase:
+    """
+    A compilation database containing multiple CompileCommands.
+    """
+
+    def __init__(self, commands: list[CompileCommand]):
+        self.commands = commands
+
+    def __iter__(self):
+        """
+        Iterate over all commands in the compilation database.
+        """
+        yield from self.commands
+
+    @classmethod
+    def from_json(cls, instance: list):
+        """
+        Parameters
+        ----------
+        instance: list
+            A JSON representation of a list of compile commands.
+
+        Raises
+        ------
+        ValueError
+            If the JSON fails validation.
+
+        Returns
+        -------
+        CompilationDatabase
+            A CompilationDatabase corresponding to the provided JSON.
+        """
+        codebasin.util._validate_json(instance, "compiledb")
+        commands = [CompileCommand.from_json(c) for c in instance]
+        return cls(commands)
+
+    @classmethod
+    def from_file(cls, filename: str | os.PathLike[str]):
+        """
+        Parameters
+        ---------
+        filename: str | os.PathLike[str]
+            A JSON file containing a compilation database.
+
+        Raises
+        ------
+        ValueError
+            If the JSON fails validation.
+
+        FileNotFoundError
+            If the file with the specified name does not exist.
+
+        Returns
+        -------
+            A CompilationDatbase corresponding to the provided JSON file.
+        """
+        with codebasin.util.safe_open_read_nofollow(filename, "r") as f:
+            db = codebasin.util._load_json(f, schema_name="compiledb")
+        return CompilationDatabase.from_json(db)
 
 
 class CodeBase:
