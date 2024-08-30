@@ -20,19 +20,20 @@ def main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
         description="Code Base Investigator " + str(version),
+        formatter_class=argparse.RawTextHelpFormatter,
         add_help=False,
     )
     parser.add_argument(
         "-h",
         "--help",
         action="help",
-        help="Display help message and exit.",
+        help="\nDisplay help message and exit.\n ",
     )
     parser.add_argument(
         "--version",
         action="version",
         version=f"Code Base Investigator {version}",
-        help="Display version information and exit.",
+        help="\nDisplay version information and exit.\n ",
     )
     parser.add_argument(
         "-v",
@@ -40,7 +41,7 @@ def main():
         dest="verbose",
         action="count",
         default=0,
-        help="Increase verbosity level.",
+        help="\nIncrease verbosity level.\n ",
     )
     parser.add_argument(
         "-q",
@@ -48,7 +49,7 @@ def main():
         dest="quiet",
         action="count",
         default=0,
-        help="Decrease verbosity level.",
+        help="\nDecrease verbosity level.\n ",
     )
     parser.add_argument(
         "-R",
@@ -58,9 +59,9 @@ def main():
         action="append",
         default=[],
         choices=["all", "summary", "clustering"],
-        help="Generate a report of the specified type. "
-        + "May be specified multiple times. "
-        + "If not specified, all reports will be generated.",
+        help="Generate a report of the specified type.\n"
+        + "May be specified multiple times.\n"
+        + "If not specified, all reports will be generated.\n ",
     )
     parser.add_argument(
         "-x",
@@ -69,8 +70,8 @@ def main():
         metavar="<pattern>",
         action="append",
         default=[],
-        help="Exclude files matching this pattern from the code base. "
-        + "May be specified multiple times.",
+        help="Exclude files matching this pattern from the code base.\n"
+        + "May be specified multiple times.\n ",
     )
     parser.add_argument(
         "-p",
@@ -79,14 +80,14 @@ def main():
         metavar="<platform>",
         action="append",
         default=[],
-        help="Include the specified platform in the analysis. "
-        + "May be specified multiple times. "
-        + "If not specified, all platforms will be included.",
+        help="Include the specified platform in the analysis.\n"
+        + "May be specified multiple times.\n"
+        + "If not specified, all platforms will be included.\n ",
     )
     parser.add_argument(
         "analysis_file",
         metavar="<analysis-file>",
-        help="TOML file describing the analysis to be performed, "
+        help="\nTOML file describing the analysis to be performed, "
         + "including the codebase and platform descriptions.",
     )
 
