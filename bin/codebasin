@@ -40,6 +40,10 @@ def _help_string(*lines: str, is_long=False, is_last=False):
     if not is_long:
         result = "\n"
 
+    # argparse.HelpFormatter indents by 24 characters.
+    # We cannot override this directly, but can delete them with backspaces.
+    lines = ["\b" * 20 + x for x in lines]
+
     # The additional space is required for argparse to respect newlines.
     result += "\n".join(lines)
 
