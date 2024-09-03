@@ -10,7 +10,7 @@ import logging
 import os
 import re
 
-from codebasin import CompileCommand, util
+from codebasin import CompilationDatabase, util
 
 log = logging.getLogger("codebasin")
 
@@ -304,12 +304,10 @@ def load_database(dbpath, rootdir):
     Return a list of compilation commands, where each command is
     represented as a compilation database entry.
     """
-    with util.safe_open_read_nofollow(dbpath, "r") as fi:
-        db = util._load_json(fi, schema_name="compiledb")
+    db = CompilationDatabase.from_file(dbpath)
 
     configuration = []
-    for e in db:
-        command = CompileCommand.from_json(e)
+    for command in db:
         if not command.is_supported():
             continue
         argv = command.arguments
