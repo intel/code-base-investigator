@@ -10,7 +10,7 @@ import warnings
 
 from codebasin import util
 
-log = logging.getLogger("codebasin")
+log = logging.getLogger(__name__)
 
 
 def extract_platforms(setmap):

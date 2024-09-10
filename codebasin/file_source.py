@@ -10,7 +10,7 @@ import logging
 
 from codebasin.language import FileLanguage
 
-log = logging.getLogger("codebasin")
+log = logging.getLogger(__name__)
 
 # This string was created by looking at all unicode code points
 # and checking to see if they are considered whitespace

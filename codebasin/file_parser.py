@@ -11,7 +11,7 @@ import os
 from codebasin import preprocessor, util
 from codebasin.file_source import get_file_source
 
-log = logging.getLogger("codebasin")
+log = logging.getLogger(__name__)
 
 
 class LineGroup:

@@ -12,7 +12,7 @@ import re
 
 from codebasin import CompilationDatabase, util
 
-log = logging.getLogger("codebasin")
+log = logging.getLogger(__name__)
 
 
 def extract_defines(argv):

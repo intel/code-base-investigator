@@ -20,7 +20,7 @@ from os.path import splitext
 
 import jsonschema
 
-log = logging.getLogger("codebasin")
+log = logging.getLogger(__name__)
 
 
 def compute_file_hash(fname):
