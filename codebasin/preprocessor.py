@@ -11,7 +11,9 @@ import collections
 import hashlib
 import logging
 import os
+from collections.abc import Iterable
 from copy import copy
+from typing import Self
 
 import numpy as np
 
@@ -582,6 +584,18 @@ class Node:
         Return False by default.
         """
         return False
+
+    def walk(self) -> Iterable[Self]:
+        """
+        Returns
+        -------
+        Iterable[Self]
+            An Iterable visiting all descendants of this node via a preorder
+            traversal.
+        """
+        yield self
+        for child in self.children:
+            yield from child.walk()
 
 
 class FileNode(Node):
@@ -2329,6 +2343,16 @@ class SourceTree:
     def __init__(self, filename):
         self.root = FileNode(filename)
         self._latest_node = self.root
+
+    def walk(self) -> Iterable[Node]:
+        """
+        Returns
+        -------
+        Iterable[Node]
+            An Iterable visiting all nodes in the tree via a preorder
+            traversal.
+        """
+        yield from self.root.walk()
 
     def associate_file(self, filename):
         self.root.filename = filename
