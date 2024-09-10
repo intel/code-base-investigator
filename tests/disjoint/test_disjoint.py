@@ -18,7 +18,7 @@ class TestDisjointCodebase(unittest.TestCase):
 
     def setUp(self):
         self.rootdir = Path(__file__).parent.resolve()
-        logging.getLogger("codebasin").disabled = True
+        logging.disable()
 
         self.expected_setmap = {frozenset(["CPU"]): 6, frozenset(["GPU"]): 6}
 

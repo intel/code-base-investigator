@@ -16,7 +16,7 @@ class TestDuplicates(unittest.TestCase):
 
     def setUp(self):
         self.rootdir = Path(__file__).parent.resolve()
-        logging.getLogger("codebasin").disabled = True
+        logging.disable()
 
     def test_duplicates(self):
         """Check that duplicate files count towards divergence."""

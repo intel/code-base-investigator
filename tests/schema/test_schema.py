@@ -14,7 +14,7 @@ class TestSchema(unittest.TestCase):
     """
 
     def setUp(self):
-        logging.getLogger("codebasin").disabled = True
+        logging.disable()
 
     def test_compilation_database(self):
         """schema/compilation_database"""

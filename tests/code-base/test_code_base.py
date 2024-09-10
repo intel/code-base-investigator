@@ -16,7 +16,7 @@ class TestCodeBase(unittest.TestCase):
     """
 
     def setUp(self):
-        logging.getLogger("codebasin").disabled = False
+        logging.disable()
         warnings.simplefilter("ignore", ResourceWarning)
 
         # Create a temporary codebase spread across two directories
