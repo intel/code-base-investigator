@@ -3,10 +3,9 @@
 
 import os
 from pathlib import Path
-from typing import Union
 
 
-def is_source_file(filename: Union[str, os.PathLike]) -> bool:
+def is_source_file(filename: str | os.PathLike) -> bool:
     """
     Parameters
     ----------

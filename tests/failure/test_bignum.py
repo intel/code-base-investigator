@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import unittest
+
 from codebasin import preprocessor
 
 
@@ -13,13 +14,17 @@ class TestBigNum(unittest.TestCase):
     def test_oversized_constant(self):
         """oversized constant"""
         with self.assertRaises(OverflowError):
-            tokens = preprocessor.Lexer("10000000000000000000000000000000000000").tokenize()
+            tokens = preprocessor.Lexer(
+                "10000000000000000000000000000000000000",
+            ).tokenize()
             preprocessor.ExpressionEvaluator(tokens).evaluate()
 
     def test_overflow(self):
         """integer overflow"""
         with self.assertRaises(OverflowError):
-            tokens = preprocessor.Lexer("0xFFFFFFFFFFFFFFFF * 0xFFFFFFFFFFFFFFFF").tokenize()
+            tokens = preprocessor.Lexer(
+                "0xFFFFFFFFFFFFFFFF * 0xFFFFFFFFFFFFFFFF",
+            ).tokenize()
             preprocessor.ExpressionEvaluator(tokens).evaluate()
 
     def test_power(self):

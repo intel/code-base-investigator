@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import unittest
+
 from codebasin import preprocessor
 
 
@@ -18,15 +19,25 @@ class TestLexer(unittest.TestCase):
 
     def test_numerical(self):
         """numbers"""
-        numbers = ["123", "123ul", "123.4", "123.4e+05", ".123", "0xFF", "0b10"]
+        numbers = [
+            "123",
+            "123ul",
+            "123.4",
+            "123.4e+05",
+            ".123",
+            "0xFF",
+            "0b10",
+        ]
         for number in numbers:
             tokens = preprocessor.Lexer(number).tokenize()
             self.assertTrue(len(tokens) == 1)
-            self.assertTrue(isinstance(tokens[0], preprocessor.NumericalConstant))
+            self.assertTrue(
+                isinstance(tokens[0], preprocessor.NumericalConstant),
+            )
 
     def test_string(self):
         """strings"""
-        tokens = preprocessor.Lexer("\"this is a string constant\"").tokenize()
+        tokens = preprocessor.Lexer('"this is a string constant"').tokenize()
         self.assertTrue(len(tokens) == 1)
         self.assertTrue(isinstance(tokens[0], preprocessor.StringConstant))
 
@@ -34,12 +45,30 @@ class TestLexer(unittest.TestCase):
         """identifiers"""
         tokens = preprocessor.Lexer("this is a string of words").tokenize()
         self.assertTrue(len(tokens) == 6)
-        self.assertTrue(all([isinstance(t, preprocessor.Identifier) for t in tokens]))
+        self.assertTrue(
+            all([isinstance(t, preprocessor.Identifier) for t in tokens]),
+        )
 
     def test_operator(self):
         """operators"""
-        operators = ["||", "&&", ">>", "<<", "!=", ">=", "<=", "==", "##"] + \
-            ["-", "+", "!", "*", "/", "|", "&", "^", "<", ">", "?", ":", "~", "#", "=", "%"]
+        operators = ["||", "&&", ">>", "<<", "!=", ">=", "<=", "==", "##"] + [
+            "-",
+            "+",
+            "!",
+            "*",
+            "/",
+            "|",
+            "&",
+            "^",
+            "<",
+            ">",
+            "?",
+            ":",
+            "~",
+            "#",
+            "=",
+            "%",
+        ]
         for op in operators:
             tokens = preprocessor.Lexer(op).tokenize()
             self.assertTrue(len(tokens) == 1)
@@ -48,7 +77,20 @@ class TestLexer(unittest.TestCase):
 
     def test_puncuator(self):
         """punctuators"""
-        punctuators = ["(", ")", "{", "}", "[", "]", ",", ".", ";", "'", "\"", "\\"]
+        punctuators = [
+            "(",
+            ")",
+            "{",
+            "}",
+            "[",
+            "]",
+            ",",
+            ".",
+            ";",
+            "'",
+            '"',
+            "\\",
+        ]
         for punc in punctuators:
             tokens = preprocessor.Lexer(punc).tokenize()
             self.assertTrue(len(tokens) == 1)
@@ -70,7 +112,9 @@ class TestLexer(unittest.TestCase):
         self.assertTrue(isinstance(tokens[8], preprocessor.Operator))
         self.assertTrue(isinstance(tokens[9], preprocessor.CharacterConstant))
 
-        tokens = preprocessor.Lexer("a > b ? \"true_string\" : \"false_string\"").tokenize()
+        tokens = preprocessor.Lexer(
+            'a > b ? "true_string" : "false_string"',
+        ).tokenize()
         self.assertTrue(len(tokens) == 7)
         self.assertTrue(isinstance(tokens[0], preprocessor.Identifier))
         self.assertTrue(isinstance(tokens[1], preprocessor.Operator))
@@ -81,5 +125,5 @@ class TestLexer(unittest.TestCase):
         self.assertTrue(isinstance(tokens[6], preprocessor.StringConstant))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
