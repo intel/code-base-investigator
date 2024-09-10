@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import unittest
+
 from codebasin import preprocessor
 
 
@@ -68,13 +69,17 @@ class TestDirectiveParser(unittest.TestCase):
 
     def test_include(self):
         """include"""
-        tokens = preprocessor.Lexer("#include <path/to/system/header>").tokenize()
+        tokens = preprocessor.Lexer(
+            "#include <path/to/system/header>",
+        ).tokenize()
         node = preprocessor.DirectiveParser(tokens).parse()
         self.assertTrue(isinstance(node, preprocessor.IncludeNode))
         self.assertTrue(isinstance(node.value, preprocessor.IncludePath))
         self.assertTrue(node.value.system)
 
-        tokens = preprocessor.Lexer("#include \"path/to/local/header\"").tokenize()
+        tokens = preprocessor.Lexer(
+            '#include "path/to/local/header"',
+        ).tokenize()
         node = preprocessor.DirectiveParser(tokens).parse()
         self.assertTrue(isinstance(node, preprocessor.IncludeNode))
         self.assertTrue(isinstance(node.value, preprocessor.IncludePath))
@@ -143,8 +148,10 @@ class TestDirectiveParser(unittest.TestCase):
         for directive in ["#line", "#warning", "#error"]:
             tokens = preprocessor.Lexer(directive).tokenize()
             node = preprocessor.DirectiveParser(tokens).parse()
-            self.assertTrue(isinstance(node, preprocessor.UnrecognizedDirectiveNode))
+            self.assertTrue(
+                isinstance(node, preprocessor.UnrecognizedDirectiveNode),
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

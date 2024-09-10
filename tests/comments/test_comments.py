@@ -1,10 +1,10 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import unittest
-import logging
 import os
-from codebasin import preprocessor, file_parser
+import unittest
+
+from codebasin import file_parser
 
 
 class TestExampleFortranFile(unittest.TestCase):
@@ -27,11 +27,13 @@ class TestExampleCFile(unittest.TestCase):
 
     def test_c_comments(self):
         rootdir = "./tests/comments/"
-        parser = file_parser.FileParser(os.path.join(rootdir, "continuation.cpp"))
+        parser = file_parser.FileParser(
+            os.path.join(rootdir, "continuation.cpp"),
+        )
 
         tree = parser.parse_file()
         self.assertEqual(tree.root.total_sloc, 25)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

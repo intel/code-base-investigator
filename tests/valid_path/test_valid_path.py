@@ -29,5 +29,5 @@ class TestValidPath(unittest.TestCase):
         self.assertFalse(util.valid_path("/invalid/\n/path/"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

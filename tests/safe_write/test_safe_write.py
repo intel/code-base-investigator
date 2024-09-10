@@ -1,10 +1,10 @@
 # Copyright (C) 2019 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-import unittest
-import tempfile
-import shutil
 import os
+import shutil
+import tempfile
+import unittest
 
 from codebasin import util
 
@@ -76,5 +76,5 @@ class TestSafeWrite(unittest.TestCase):
             self.assertEqual(st.st_mode & 0o111, 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
