@@ -13,6 +13,7 @@ import sys
 from codebasin import CodeBase, config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
 
+log = logging.getLogger("codebasin")
 version = "1.2.0"
 
 
@@ -146,8 +147,8 @@ def main():
 
     stdout_log = logging.StreamHandler(sys.stdout)
     stdout_log.setFormatter(logging.Formatter("[%(levelname)-8s] %(message)s"))
-    logging.getLogger("codebasin").addHandler(stdout_log)
-    logging.getLogger("codebasin").setLevel(
+    log.addHandler(stdout_log)
+    log.setLevel(
         max(1, logging.WARNING - 10 * (args.verbose - args.quiet)),
     )
 
@@ -243,5 +244,5 @@ if __name__ == "__main__":
         sys.argv[0] = "codebasin"
         main()
     except Exception as e:
-        logging.getLogger("codebasin").error(str(e))
+        log.error(str(e))
         sys.exit(1)
