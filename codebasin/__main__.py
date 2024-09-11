@@ -145,12 +145,25 @@ def main():
 
     args = parser.parse_args()
 
-    stdout_log = logging.StreamHandler(sys.stdout)
-    stdout_log.setFormatter(logging.Formatter("[%(levelname)-8s] %(message)s"))
-    log.addHandler(stdout_log)
-    log.setLevel(
-        max(1, logging.WARNING - 10 * (args.verbose - args.quiet)),
-    )
+    # Configure logging such that:
+    # - All messages are written to a log file
+    # - Only errors are written to the terminal by default
+    # - Messages written to terminal are based on -q and -v flags
+    formatter = logging.Formatter("[%(levelname)-8s] %(message)s")
+    log.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler("cbi.log", mode="w")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    log.addHandler(file_handler)
+    log_path = os.path.realpath("cbi.log")
+    print(f"Log file created at {log_path}")
+
+    log_level = max(1, logging.ERROR - 10 * (args.verbose - args.quiet))
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(log_level)
+    stdout_handler.setFormatter(formatter)
+    log.addHandler(stdout_handler)
 
     # If no specific report was specified, generate all reports.
     # Handled here to prevent "all" always being in the list.
