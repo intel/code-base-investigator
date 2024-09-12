@@ -6,7 +6,6 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'bin/**'
       - 'codebasin/**'
       - 'etc/**'
       - 'tests/**'
@@ -15,7 +14,6 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'bin/**'
       - 'codebasin/**'
       - 'etc/**'
       - 'tests/**'
