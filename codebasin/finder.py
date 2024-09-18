@@ -14,7 +14,7 @@ from codebasin import file_parser, platform, preprocessor, util
 from codebasin.language import FileLanguage
 from codebasin.walkers.tree_associator import TreeAssociator
 
-log = logging.getLogger("codebasin")
+log = logging.getLogger(__name__)
 
 
 class FileInfo:

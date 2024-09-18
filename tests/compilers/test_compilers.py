@@ -14,7 +14,7 @@ class TestCompilers(unittest.TestCase):
     """
 
     def setUp(self):
-        logging.getLogger("codebasin").disabled = True
+        logging.disable()
 
     def test_clang(self):
         """compilers/clang"""

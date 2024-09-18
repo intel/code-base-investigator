@@ -20,7 +20,7 @@ import numpy as np
 from codebasin import util
 from codebasin.walkers.tree_associator import TreeAssociator
 
-log = logging.getLogger("codebasin")
+log = logging.getLogger(__name__)
 
 
 def toklist_print(toklist):

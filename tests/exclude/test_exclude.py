@@ -16,7 +16,7 @@ class TestExclude(unittest.TestCase):
 
     def setUp(self):
         self.rootdir = Path(__file__).parent.resolve()
-        logging.getLogger("codebasin").disabled = True
+        logging.disable()
 
     def _get_setmap(self, excludes):
         codebase = CodeBase(

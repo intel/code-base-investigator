@@ -18,7 +18,7 @@ class TestBuildDirectories(unittest.TestCase):
 
     def setUp(self):
         self.rootdir = Path(__file__).parent.resolve()
-        logging.getLogger("codebasin").disabled = False
+        logging.disable(logging.NOTSET)
 
     def test_absolute_paths(self):
         """
