@@ -8,6 +8,7 @@ This script is the main executable of Code Base Investigator.
 import argparse
 import logging
 import os
+import re
 import sys
 
 from codebasin import CodeBase, config, finder, report, util
@@ -86,20 +87,48 @@ class Formatter(logging.Formatter):
         return f"{BOLD}{color}{level}{RESET}: {msg}"
 
 
+class MetaWarning:
+    """
+    A MetaWarning is used to represent multiple warnings, and provide suggested
+    actions to the user.
+    """
+
+    def __init__(self, regex: str, msg: str):
+        self.regex = re.compile(regex)
+        self.msg = msg
+        self._count = 0
+
+    def inspect(self, record):
+        if self.regex.match(record.msg):
+            self._count += 1
+
+    def warn(self):
+        if self._count == 0:
+            return
+        log.warning(self.msg.format(self._count))
+
+
 class WarningAggregator(logging.Filter):
     """
     Inspect warnings to generate meta-warnings and statistics.
     """
 
     def __init__(self):
-        self.count = 0
+        self.meta_warnings = [
+            MetaWarning(".*", "{} warnings generated during preprocessing."),
+        ]
 
     def filter(self, record):
         if record.levelno == logging.WARNING:
-            self.count += 1
+            for meta_warning in self.meta_warnings:
+                meta_warning.inspect(record)
 
         # Do not filter anything.
         return True
+
+    def warn(self):
+        for meta_warning in self.meta_warnings:
+            meta_warning.warn()
 
 
 def main():
@@ -278,13 +307,9 @@ def main():
 
     # Generate meta-warnings and statistics.
     # Temporarily override log_level to ensure they are visible.
-    if aggregator.count > 0:
-        stdout_handler.setLevel(logging.WARNING)
-        log.warning(
-            f"{aggregator.count} warnings generated during preprocessing."
-            + " See cbi.log for details.",
-        )
-        stdout_handler.setLevel(log_level)
+    stdout_handler.setLevel(logging.WARNING)
+    aggregator.warn()
+    stdout_handler.setLevel(log_level)
 
     # Count lines for platforms
     platform_mapper = PlatformMapper(codebase)
