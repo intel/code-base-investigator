@@ -240,6 +240,7 @@ def main():
 
 if __name__ == "__main__":
     try:
+        sys.argv[0] = "codebasin"
         main()
     except Exception as e:
         logging.getLogger("codebasin").error(str(e))

@@ -33,6 +33,9 @@ dependencies = [
   "jsonschema==4.21.1",
 ]
 
+[project.scripts]
+codebasin = "codebasin:__main__.main"
+
 [project.urls]
 "Github" = "https://www.github.com/intel/code-base-investigator"
 "Issues" = "https://www.github.com/intel/code-base-investigator/issues"
@@ -45,8 +48,6 @@ dev = [
 ]
 
 [tool.setuptools]
-# TODO this practice is deprecated and will need updating later
-script-files = ["bin/codebasin"]
 include-package-data = true
 
 [tool.setuptools.packages.find]
