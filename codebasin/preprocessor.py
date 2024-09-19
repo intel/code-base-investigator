@@ -897,7 +897,12 @@ class IncludeNode(DirectiveNode):
         if not include_file:
             filename = kwargs["filename"]
             line = self.start_line
-            log.warning(f"{filename}:{line}: '{include_path}' not found")
+            spelling = self.spelling()[0]
+            kind = "system include" if is_system_include else "user include"
+            log.warning(
+                f"{filename}:{line}: {kind} '{include_path}' not found\n"
+                + f"{line:>5} | {spelling}",
+            )
 
 
 class IfNode(DirectiveNode):
