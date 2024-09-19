@@ -55,3 +55,10 @@ include = ["codebasin*"]
 
 [tool.setuptools.dynamic]
 readme = {file = ["README.md"]}
+
+[tool.coverage.run]
+command_line = "-m unittest"
+source = ["codebasin"]
+
+[tool.coverage.report]
+show_missing = true
