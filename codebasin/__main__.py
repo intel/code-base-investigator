@@ -99,7 +99,7 @@ class MetaWarning:
         self._count = 0
 
     def inspect(self, record):
-        if self.regex.match(record.msg):
+        if self.regex.search(record.msg):
             self._count += 1
 
     def warn(self):
@@ -115,7 +115,25 @@ class WarningAggregator(logging.Filter):
 
     def __init__(self):
         self.meta_warnings = [
-            MetaWarning(".*", "{} warnings generated during preprocessing."),
+            MetaWarning(".", "{} warnings generated during preprocessing."),
+            MetaWarning(
+                "user include",
+                "{} user include files could not be found.\n"
+                + "  These could contain important macros and includes.\n"
+                + "  Suggested solutions:\n"
+                + "  - Check that the file(s) exist in the code base.\n"
+                + "  - Check the include paths in the compilation database.\n"
+                + "  - Check if the include(s) should have used '<>'.",
+            ),
+            MetaWarning(
+                "system include",
+                "{} system include files could not be found.\n"
+                + "  These could define important feature macros.\n"
+                + "  Suggested solutions:\n"
+                + "  - Check that the file(s) exist on your system.\n"
+                + "  - Use .cbi/config to define system include paths.\n"
+                + "  - Use .cbi/config to define important macros.",
+            ),
         ]
 
     def filter(self, record):
