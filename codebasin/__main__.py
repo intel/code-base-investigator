@@ -156,7 +156,7 @@ def main():
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
     log.addHandler(file_handler)
-    log_path = os.path.realpath("cbi.log")
+    log_path = os.path.abspath("cbi.log")
     print(f"Log file created at {log_path}")
 
     log_level = max(1, logging.ERROR - 10 * (args.verbose - args.quiet))
