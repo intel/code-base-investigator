@@ -156,6 +156,9 @@ def main():
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
     log.addHandler(file_handler)
+
+    # Inform the user that a log file has been created.
+    # 'print' instead of 'log' to ensure the message is visible in the output.
     log_path = os.path.abspath("cbi.log")
     print(f"Log file created at {log_path}")
 
