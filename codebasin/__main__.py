@@ -13,6 +13,7 @@ import sys
 from codebasin import CodeBase, config, finder, report, util
 from codebasin.walkers.platform_mapper import PlatformMapper
 
+log = logging.getLogger("codebasin")
 version = "1.2.0"
 
 
@@ -144,12 +145,28 @@ def main():
 
     args = parser.parse_args()
 
-    stdout_log = logging.StreamHandler(sys.stdout)
-    stdout_log.setFormatter(logging.Formatter("[%(levelname)-8s] %(message)s"))
-    logging.getLogger("codebasin").addHandler(stdout_log)
-    logging.getLogger("codebasin").setLevel(
-        max(1, logging.WARNING - 10 * (args.verbose - args.quiet)),
-    )
+    # Configure logging such that:
+    # - All messages are written to a log file
+    # - Only errors are written to the terminal by default
+    # - Messages written to terminal are based on -q and -v flags
+    formatter = logging.Formatter("[%(levelname)-8s] %(message)s")
+    log.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler("cbi.log", mode="w")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    log.addHandler(file_handler)
+
+    # Inform the user that a log file has been created.
+    # 'print' instead of 'log' to ensure the message is visible in the output.
+    log_path = os.path.abspath("cbi.log")
+    print(f"Log file created at {log_path}")
+
+    log_level = max(1, logging.ERROR - 10 * (args.verbose - args.quiet))
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(log_level)
+    stdout_handler.setFormatter(formatter)
+    log.addHandler(stdout_handler)
 
     # If no specific report was specified, generate all reports.
     # Handled here to prevent "all" always being in the list.
@@ -243,5 +260,5 @@ if __name__ == "__main__":
         sys.argv[0] = "codebasin"
         main()
     except Exception as e:
-        logging.getLogger("codebasin").error(str(e))
+        log.error(str(e))
         sys.exit(1)
