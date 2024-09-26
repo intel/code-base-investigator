@@ -40,6 +40,7 @@ portability and maintainability of an application's source code.
 - Python 3
 - PyYAML
 - SciPy
+- tqdm
 
 
 ## Installation
