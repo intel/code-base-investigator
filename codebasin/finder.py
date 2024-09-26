@@ -10,22 +10,11 @@ import logging
 import os
 from pathlib import Path
 
-from codebasin import file_parser, platform, preprocessor, util
+from codebasin import file_parser, platform, preprocessor
 from codebasin.language import FileLanguage
 from codebasin.walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger(__name__)
-
-
-class FileInfo:
-    """
-    Data class storing (path, size, sha) for a file.
-    """
-
-    def __init__(self, path, size=None, sha=None):
-        self.path = path
-        self.size = size
-        self.sha = sha
 
 
 class ParserState:
@@ -41,56 +30,12 @@ class ParserState:
         self.maps = {}
         self.langs = {}
         self.summarize_only = summarize_only
-        self.fileinfo = collections.defaultdict(list)
-        self.merge_duplicates = False
-
-    def _map_filename(self, fn):
-        """
-        Map the real filename to an internal filename used by the parser.
-        Enables duplicate files to be merged.
-        """
-        if not self.merge_duplicates:
-            return fn
-
-        # The first time we encounter a filename, store limited info
-        bn = os.path.basename(fn)
-        if bn not in self.fileinfo:
-            self.fileinfo[bn] = [FileInfo(fn)]
-            return fn
-
-        # If filename has been encountered, check for matching size/hash
-        size = os.path.getsize(fn)
-        sha = None
-        for fi in self.fileinfo[bn]:
-            # Fill in missing size information
-            if fi.size is None:
-                fi.size = os.path.getsize(fi.path)
-
-            # If sizes don't match, the file is different
-            if fi.size != size:
-                continue
-
-            # Fill in missing hash information
-            if sha is None:
-                sha = util.compute_file_hash(fn)
-            if fi.sha is None:
-                fi.sha = util.compute_file_hash(fi.path)
-
-            # Use hash to determine if file is duplicate or not
-            if fi.sha != sha:
-                continue
-            return fi.path
-
-        # If no match, this is the first time encountering this file
-        self.fileinfo[bn].append(FileInfo(fn, size, sha))
-        return fn
 
     def insert_file(self, fn, language=None):
         """
         Build a new tree for a source file, and create an association
         map for it.
         """
-        fn = self._map_filename(fn)
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
             self.trees[fn] = parser.parse_file(
@@ -113,7 +58,6 @@ class ParserState:
         """
         Return the SourceTree associated with a filename
         """
-        fn = self._map_filename(fn)
         if fn not in self.trees:
             return None
         return self.trees[fn]
@@ -122,7 +66,6 @@ class ParserState:
         """
         Return the NodeAssociationMap associated with a filename
         """
-        fn = self._map_filename(fn)
         if fn not in self.maps:
             return None
         return self.maps[fn]
