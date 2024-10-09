@@ -54,6 +54,38 @@ def _help_string(*lines: str, is_long=False, is_last=False):
     return result
 
 
+class Formatter(logging.Formatter):
+    def __init__(self, *, colors=False):
+        self.colors = colors
+
+    def format(self, record):
+        msg = record.msg
+        level = record.levelname.lower()
+
+        # Display info messages with no special formatting.
+        if level == "info":
+            return f"{msg}"
+
+        # Drop colors if requested.
+        if not self.colors:
+            return f"{level}: {msg}"
+
+        # Otherwise, use ASCII codes to improve readability.
+        BOLD = "\033[1m"
+        DEFAULT = "\033[39m"
+        YELLOW = "\033[93m"
+        RED = "\033[91m"
+        RESET = "\033[0m"
+
+        if level == "warning":
+            color = YELLOW
+        elif level == "error":
+            color = RED
+        else:
+            color = DEFAULT
+        return f"{BOLD}{color}{level}{RESET}: {msg}"
+
+
 def main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
@@ -149,12 +181,11 @@ def main():
     # - All messages are written to a log file
     # - Only errors are written to the terminal by default
     # - Messages written to terminal are based on -q and -v flags
-    formatter = logging.Formatter("[%(levelname)-8s] %(message)s")
     log.setLevel(logging.DEBUG)
 
     file_handler = logging.FileHandler("cbi.log", mode="w")
     file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(Formatter())
     log.addHandler(file_handler)
 
     # Inform the user that a log file has been created.
@@ -165,7 +196,7 @@ def main():
     log_level = max(1, logging.ERROR - 10 * (args.verbose - args.quiet))
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setLevel(log_level)
-    stdout_handler.setFormatter(formatter)
+    stdout_handler.setFormatter(Formatter(colors=sys.stdout.isatty()))
     log.addHandler(stdout_handler)
 
     # If no specific report was specified, generate all reports.
