@@ -7,7 +7,6 @@ Contains utility functions for common operations, including:
 - Checking paths
 """
 
-import hashlib
 import json
 import logging
 import os
@@ -21,16 +20,6 @@ from os.path import splitext
 import jsonschema
 
 log = logging.getLogger(__name__)
-
-
-def compute_file_hash(fname):
-    """Return sha512 for fname"""
-    chunk_size = 4096
-    hasher = hashlib.sha512()
-    with safe_open_read_nofollow(fname, "rb") as in_file:
-        for chunk in iter(lambda: in_file.read(chunk_size), b""):
-            hasher.update(chunk)
-    return hasher.hexdigest()
 
 
 def ensure_ext(fname, extensions):
