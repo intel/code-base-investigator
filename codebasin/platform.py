@@ -97,7 +97,7 @@ class Platform:
 
         # Determine the path to the include file, if it exists
         for path in local_paths + self._include_paths:
-            test_path = os.path.realpath(os.path.join(path, filename))
+            test_path = os.path.abspath(os.path.join(path, filename))
             if os.path.isfile(test_path):
                 include_file = test_path
                 self.found_incl[filename] = include_file

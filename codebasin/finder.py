@@ -38,6 +38,7 @@ class ParserState:
         Build a new tree for a source file, and create an association
         map for it.
         """
+        fn = os.path.realpath(fn)
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
             self.trees[fn] = parser.parse_file(
@@ -60,6 +61,7 @@ class ParserState:
         """
         Return the SourceTree associated with a filename
         """
+        fn = os.path.realpath(fn)
         if fn not in self.trees:
             return None
         return self.trees[fn]
@@ -68,6 +70,7 @@ class ParserState:
         """
         Return the NodeAssociationMap associated with a filename
         """
+        fn = os.path.realpath(fn)
         if fn not in self.maps:
             return None
         return self.maps[fn]

@@ -271,19 +271,19 @@ def main():
         args.reports = ["all"]
 
     # Determine the root directory based on where codebasin is run.
-    rootdir = os.path.realpath(os.getcwd())
+    rootdir = os.path.abspath(os.getcwd())
 
     # Set up a default configuration object.
     configuration = {}
 
     # Load the analysis file if it exists.
     if args.analysis_file is not None:
-        path = os.path.realpath(args.analysis_file)
+        path = os.path.abspath(args.analysis_file)
         if os.path.exists(path):
             if not os.path.splitext(path)[1] == ".toml":
                 raise RuntimeError(f"Analysis file {path} must end in .toml.")
 
-        with util.safe_open_read_nofollow(path, "rb") as f:
+        with open(path, "rb") as f:
             try:
                 analysis_toml = util._load_toml(f, "analysis")
             except BaseException:
