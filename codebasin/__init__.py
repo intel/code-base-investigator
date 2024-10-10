@@ -10,7 +10,6 @@ import pathspec
 
 import codebasin.source
 import codebasin.util
-import codebasin.walkers
 
 warnings.warn(
     "Calling codebasin package internals is deprecated. "

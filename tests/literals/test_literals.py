@@ -6,7 +6,6 @@ import unittest
 from pathlib import Path
 
 from codebasin import CodeBase, finder, preprocessor
-from codebasin.walkers.platform_mapper import PlatformMapper
 
 
 class TestLiterals(unittest.TestCase):
@@ -43,8 +42,7 @@ class TestLiterals(unittest.TestCase):
             ],
         }
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = PlatformMapper(codebase)
-        setmap = mapper.walk(state)
+        setmap = state.get_setmap(codebase)
         self.assertDictEqual(
             setmap,
             self.expected_setmap,

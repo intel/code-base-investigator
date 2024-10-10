@@ -6,7 +6,6 @@ import unittest
 from pathlib import Path
 
 from codebasin import CodeBase, config, finder
-from codebasin.walkers.platform_mapper import PlatformMapper
 
 
 class TestExclude(unittest.TestCase):
@@ -28,8 +27,7 @@ class TestExclude(unittest.TestCase):
             "test": config.load_database(str(dbpath), str(self.rootdir)),
         }
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = PlatformMapper(codebase)
-        setmap = mapper.walk(state)
+        setmap = state.get_setmap(codebase)
         return setmap
 
     def test_exclude_nothing(self):

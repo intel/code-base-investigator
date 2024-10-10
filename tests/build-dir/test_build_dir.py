@@ -8,7 +8,6 @@ import unittest
 from pathlib import Path
 
 from codebasin import CodeBase, config, finder
-from codebasin.walkers.platform_mapper import PlatformMapper
 
 
 class TestBuildDirectories(unittest.TestCase):
@@ -64,8 +63,7 @@ class TestBuildDirectories(unittest.TestCase):
         expected_setmap = {frozenset(["one", "two"]): 1}
 
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = PlatformMapper(codebase)
-        setmap = mapper.walk(state)
+        setmap = state.get_setmap(codebase)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
 
     def test_empty_platform(self):
