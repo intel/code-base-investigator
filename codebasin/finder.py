@@ -107,7 +107,7 @@ def find(
     for f in tqdm(
         filenames,
         desc="Parsing",
-        unit="file",
+        unit=" file",
         leave=False,
         disable=not show_progress,
     ):
@@ -117,14 +117,14 @@ def find(
     for p in tqdm(
         configuration,
         desc="Preprocessing",
-        unit="platform",
+        unit=" platform",
         leave=False,
         disable=not show_progress,
     ):
         for e in tqdm(
             configuration[p],
             desc=p,
-            unit="file",
+            unit=" file",
             leave=False,
             disable=not show_progress,
         ):
