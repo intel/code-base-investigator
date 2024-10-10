@@ -12,7 +12,6 @@ import re
 import sys
 
 from codebasin import CodeBase, config, finder, report, util
-from codebasin.walkers.platform_mapper import PlatformMapper
 
 log = logging.getLogger("codebasin")
 version = "1.2.0"
@@ -331,8 +330,7 @@ def main():
     stdout_handler.setLevel(log_level)
 
     # Count lines for platforms
-    platform_mapper = PlatformMapper(codebase)
-    setmap = platform_mapper.walk(state)
+    setmap = state.get_setmap(codebase)
 
     def report_enabled(name):
         if "all" in args.reports:
