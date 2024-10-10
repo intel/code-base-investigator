@@ -11,8 +11,9 @@ import collections
 import hashlib
 import logging
 import os
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from copy import copy
+from enum import Enum
 from typing import Self
 
 import numpy as np
@@ -539,6 +540,11 @@ class ParseError(ValueError):
     """
 
 
+class Visit(Enum):
+    NEXT = (0,)
+    NEXT_SIBLING = (1,)
+
+
 class Node:
     """
     Base class for all other Node types.
@@ -596,6 +602,22 @@ class Node:
         yield self
         for child in self.children:
             yield from child.walk()
+
+    def visit(self, visitor: Callable[[Self], Visit]):
+        """
+        Visit all descendants of this node via a preorder traversal, using the
+        supplied visitor.
+
+        Raises
+        ------
+        TypeError
+            If `visitor` is not callable.
+        """
+        if not callable(visitor):
+            raise TypeError("visitor is not callable.")
+        if visitor(self) != Visit.NEXT_SIBLING:
+            for child in self.children:
+                child.visit(visitor)
 
 
 class FileNode(Node):
@@ -2358,6 +2380,18 @@ class SourceTree:
             traversal.
         """
         yield from self.root.walk()
+
+    def visit(self, visitor: Callable[[Node], Visit]):
+        """
+        Visit each node in the tree via a preorder traversal, using the
+        supplied visitor.
+
+        Raises
+        ------
+        TypeError
+            If `visitor` is not callable.
+        """
+        self.root.visit(visitor)
 
     def associate_file(self, filename):
         self.root.filename = filename
