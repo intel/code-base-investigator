@@ -283,7 +283,7 @@ def main():
             if not os.path.splitext(path)[1] == ".toml":
                 raise RuntimeError(f"Analysis file {path} must end in .toml.")
 
-        with util.safe_open_read_nofollow(path, "rb") as f:
+        with open(path, "rb") as f:
             try:
                 analysis_toml = util._load_toml(f, "analysis")
             except BaseException:
