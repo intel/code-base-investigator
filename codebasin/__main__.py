@@ -56,10 +56,10 @@ def _help_string(*lines: str, is_long=False, is_last=False):
 
 
 class Formatter(logging.Formatter):
-    def __init__(self, *, colors=False):
+    def __init__(self, *, colors: bool = False):
         self.colors = colors
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         msg = record.msg
         level = record.levelname.lower()
 
@@ -98,7 +98,7 @@ class MetaWarning:
         self.msg = msg
         self._count = 0
 
-    def inspect(self, record):
+    def inspect(self, record: logging.LogRecord):
         if self.regex.search(record.msg):
             self._count += 1
 
@@ -136,7 +136,7 @@ class WarningAggregator(logging.Filter):
             ),
         ]
 
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno == logging.WARNING:
             for meta_warning in self.meta_warnings:
                 meta_warning.inspect(record)
