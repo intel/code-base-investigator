@@ -91,7 +91,7 @@ class FileParser:
     """
 
     def __init__(self, _filename):
-        self._filename = os.path.realpath(_filename)
+        self._filename = os.path.abspath(_filename)
 
     @staticmethod
     def handle_directive(out_tree, groups, logical_line):

@@ -324,7 +324,7 @@ def load_database(dbpath, rootdir):
 
         # Include paths may be specified relative to root
         include_paths = [
-            os.path.realpath(os.path.join(rootdir, f)) for f in include_paths
+            os.path.abspath(os.path.join(rootdir, f)) for f in include_paths
         ]
 
         # Files may be specified:
@@ -336,15 +336,15 @@ def load_database(dbpath, rootdir):
             if os.path.isabs(command.directory):
                 filedir = command.directory
             else:
-                filedir = os.path.realpath(
+                filedir = os.path.abspath(
                     rootdir,
                     os.path.join(command.directory),
                 )
 
         if os.path.isabs(command.filename):
-            path = os.path.realpath(command.filename)
+            path = os.path.abspath(command.filename)
         else:
-            path = os.path.realpath(os.path.join(filedir, command.filename))
+            path = os.path.abspath(os.path.join(filedir, command.filename))
 
         # Compilation database may contain files that don't
         # exist without running make
