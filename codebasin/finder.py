@@ -10,6 +10,8 @@ import logging
 import os
 from pathlib import Path
 
+from tqdm import tqdm
+
 from codebasin import file_parser, platform, preprocessor
 from codebasin.language import FileLanguage
 from codebasin.walkers.tree_associator import TreeAssociator
@@ -78,6 +80,7 @@ def find(
     *,
     summarize_only=True,
     legacy_warnings=True,
+    show_progress=False,
 ):
     """
     Find codepaths in the files provided and return a mapping of source
@@ -91,8 +94,7 @@ def find(
 
     # Build a tree for each unique file for all platforms.
     state = ParserState(summarize_only)
-    for f in codebase:
-        state.insert_file(f)
+    filenames = set(codebase)
     for p in configuration:
         for e in configuration[p]:
             if e["file"] not in codebase:
@@ -102,11 +104,31 @@ def find(
                         f"{filename} found in definition of platform {p} "
                         + "but missing from codebase",
                     )
-            state.insert_file(e["file"])
+            filenames.add(e["file"])
+    for f in tqdm(
+        filenames,
+        desc="Parsing",
+        unit=" file",
+        leave=False,
+        disable=not show_progress,
+    ):
+        state.insert_file(f)
 
     # Process each tree, by associating nodes with platforms
-    for p in configuration:
-        for e in configuration[p]:
+    for p in tqdm(
+        configuration,
+        desc="Preprocessing",
+        unit=" platform",
+        leave=False,
+        disable=not show_progress,
+    ):
+        for e in tqdm(
+            configuration[p],
+            desc=p,
+            unit=" file",
+            leave=False,
+            disable=not show_progress,
+        ):
             file_platform = platform.Platform(p, rootdir)
 
             for path in e["include_paths"]:

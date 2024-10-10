@@ -321,6 +321,7 @@ def main():
         codebase,
         configuration,
         legacy_warnings=False,
+        show_progress=True,
     )
 
     # Generate meta-warnings and statistics.
