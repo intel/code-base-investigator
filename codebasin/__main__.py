@@ -149,7 +149,7 @@ class WarningAggregator(logging.Filter):
             meta_warning.warn()
 
 
-def main():
+def _main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
         description="Code Base Investigator " + str(version),
@@ -359,10 +359,14 @@ def main():
     sys.exit(0)
 
 
-if __name__ == "__main__":
+def main():
     try:
-        sys.argv[0] = "codebasin"
-        main()
+        _main()
     except Exception as e:
         log.error(str(e))
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    sys.argv[0] = "codebasin"
+    main()
