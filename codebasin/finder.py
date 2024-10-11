@@ -32,13 +32,26 @@ class ParserState:
         self.maps = {}
         self.langs = {}
         self.summarize_only = summarize_only
+        self._path_cache = {}
+
+    def _get_realpath(self, path: str) -> str:
+        """
+        Returns
+        -------
+        str
+            Equivalent to os.path.realpath(path).
+        """
+        if path not in self._path_cache:
+            real = os.path.realpath(path)
+            self._path_cache[path] = real
+        return self._path_cache[path]
 
     def insert_file(self, fn, language=None):
         """
         Build a new tree for a source file, and create an association
         map for it.
         """
-        fn = os.path.realpath(fn)
+        fn = self._get_realpath(fn)
         if fn not in self.trees:
             parser = file_parser.FileParser(fn)
             self.trees[fn] = parser.parse_file(
@@ -61,7 +74,7 @@ class ParserState:
         """
         Return the SourceTree associated with a filename
         """
-        fn = os.path.realpath(fn)
+        fn = self._get_realpath(fn)
         if fn not in self.trees:
             return None
         return self.trees[fn]
@@ -70,7 +83,7 @@ class ParserState:
         """
         Return the NodeAssociationMap associated with a filename
         """
-        fn = os.path.realpath(fn)
+        fn = self._get_realpath(fn)
         if fn not in self.maps:
             return None
         return self.maps[fn]
