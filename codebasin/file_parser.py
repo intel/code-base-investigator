@@ -8,7 +8,7 @@ and building a tree of nodes from it.
 import logging
 import os
 
-from codebasin import preprocessor, util
+from codebasin import preprocessor
 from codebasin.file_source import get_file_source
 
 log = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ class FileParser:
     """
 
     def __init__(self, _filename):
-        self._filename = os.path.realpath(_filename)
+        self._filename = os.path.abspath(_filename)
 
     @staticmethod
     def handle_directive(out_tree, groups, logical_line):
@@ -170,11 +170,7 @@ class FileParser:
                 f"{filename} doesn't appear "
                 + "to be a language this tool can process",
             )
-        with util.safe_open_read_nofollow(
-            filename,
-            mode="r",
-            errors="replace",
-        ) as source_file:
+        with open(filename, errors="replace") as source_file:
             groups = {
                 "code": LineGroup(),
                 "directive": LineGroup(),

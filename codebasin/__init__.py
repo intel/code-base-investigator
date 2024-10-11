@@ -191,7 +191,7 @@ class CompilationDatabase:
         -------
             A CompilationDatbase corresponding to the provided JSON file.
         """
-        with codebasin.util.safe_open_read_nofollow(filename, "r") as f:
+        with open(filename) as f:
             db = codebasin.util._load_json(f, schema_name="compiledb")
         return CompilationDatabase.from_json(db)
 

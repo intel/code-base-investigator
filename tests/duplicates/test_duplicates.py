@@ -52,6 +52,40 @@ class TestDuplicates(unittest.TestCase):
         setmap = mapper.walk(state)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
 
+    def test_symlinks(self):
+        """Check that symlinks do not count towards divergence."""
+
+        cpufile = str(self.rootdir / "cpu/foo.cpp")
+        cpu2file = str(self.rootdir / "cpu2/foo.cpp")
+
+        codebase = CodeBase(self.rootdir, exclude_patterns=["gpu/"])
+
+        configuration = {
+            "cpu": [
+                {
+                    "file": cpufile,
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+            "cpu2": [
+                {
+                    "file": cpu2file,
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+        }
+
+        expected_setmap = {frozenset(["cpu", "cpu2"]): 1}
+
+        state = finder.find(self.rootdir, codebase, configuration)
+        mapper = PlatformMapper(codebase)
+        setmap = mapper.walk(state)
+        self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
+
 
 if __name__ == "__main__":
     unittest.main()
