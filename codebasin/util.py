@@ -13,7 +13,6 @@ import os
 import pkgutil
 import tomllib
 import typing
-import warnings
 from collections.abc import Iterable
 from os.path import splitext
 
@@ -34,35 +33,6 @@ def ensure_ext(fname, extensions):
 def ensure_png(fname):
     """Return true if the path passed in specifies a png"""
     return ensure_ext(fname, ".png")
-
-
-def ensure_source(fname):
-    """Return true if the path passed in specifies a source file"""
-    extensions = [
-        ".s",
-        ".asm",
-        ".c",
-        ".cpp",
-        ".cxx",
-        ".c++",
-        ".cc",
-        ".h",
-        ".hpp",
-        ".hxx",
-        ".h++",
-        ".hh",
-        ".inc",
-        ".inl",
-        ".tcc",
-        ".icc",
-        ".ipp",
-    ]
-    return ensure_ext(fname, extensions)
-
-
-def ensure_json(fname):
-    """Return true if the path passed in specifies a JSON file"""
-    return ensure_ext(fname, ".json")
 
 
 def safe_open_write_binary(fname):
@@ -235,37 +205,3 @@ def _load_toml(file_object: typing.TextIO, schema_name: str) -> object:
     toml_object = tomllib.load(file_object)
     _validate_json(toml_object, schema_name)
     return toml_object
-
-
-def validate_coverage_json(json_string: str) -> bool:
-    """
-    Validate coverage JSON string against schema.
-
-    Parameters
-    ----------
-    json_string : String
-        The JSON string to validate.
-
-    Returns
-    -------
-    bool
-        True if the JSON string is valid.
-
-    Raises
-    ------
-    ValueError
-        If the JSON string fails to validate.
-
-    TypeError
-        If the JSON string is not a string.
-    """
-    warnings.warn(
-        "Direct access to JSON validation is deprecated.",
-        DeprecationWarning,
-    )
-
-    if not isinstance(json_string, str):
-        raise TypeError("Coverage must be a JSON string.")
-
-    instance = json.loads(json_string)
-    return _validate_json(instance, "coverage")
