@@ -80,8 +80,7 @@ class TestDuplicates(unittest.TestCase):
         expected_setmap = {frozenset(["cpu", "cpu2"]): 1}
 
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = PlatformMapper(codebase)
-        setmap = mapper.walk(state)
+        setmap = state.get_setmap(codebase)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
 
 
