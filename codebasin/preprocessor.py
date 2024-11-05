@@ -541,8 +541,8 @@ class ParseError(ValueError):
 
 
 class Visit(Enum):
-    NEXT = (0,)
-    NEXT_SIBLING = (1,)
+    NEXT = 0
+    NEXT_SIBLING = 1
 
 
 class Node:
