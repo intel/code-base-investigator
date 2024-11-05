@@ -112,7 +112,6 @@ def find(
     configuration,
     *,
     summarize_only=True,
-    legacy_warnings=True,
     show_progress=False,
 ):
     """
@@ -130,13 +129,6 @@ def find(
     filenames = set(codebase)
     for p in configuration:
         for e in configuration[p]:
-            if e["file"] not in codebase:
-                filename = e["file"]
-                if legacy_warnings:
-                    log.warning(
-                        f"{filename} found in definition of platform {p} "
-                        + "but missing from codebase",
-                    )
             filenames.add(e["file"])
     for f in tqdm(
         filenames,
