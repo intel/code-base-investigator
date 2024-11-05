@@ -14,8 +14,8 @@ from tqdm import tqdm
 
 from codebasin import CodeBase, file_parser, platform, preprocessor
 from codebasin.language import FileLanguage
-from codebasin.preprocessor import CodeNode
-from codebasin.walkers.tree_associator import TreeAssociator
+from codebasin.platform import Platform
+from codebasin.preprocessor import CodeNode, Node, Visit
 
 log = logging.getLogger(__name__)
 
@@ -105,6 +105,39 @@ class ParserState:
                 setmap[platform] += node.num_lines
         return setmap
 
+    def associate(self, filename: str, platform: Platform):
+        """
+        Update the association for the provided filename and platform.
+        """
+        tree = self.get_tree(filename)
+        association = self.get_map(filename)
+        branch_taken = []
+
+        def associator(node: Node) -> Visit:
+            association[node].add(platform.name)
+            active = node.evaluate_for_platform(
+                platform=platform,
+                filename=filename,
+                state=self,
+            )
+
+            # Ensure we only descend into one branch of an if/else/endif.
+            if node.is_start_node():
+                branch_taken.append(active)
+            elif node.is_cont_node():
+                if branch_taken[-1]:
+                    return Visit.NEXT_SIBLING
+                branch_taken[-1] = active
+            elif node.is_end_node():
+                branch_taken.pop()
+
+            if active:
+                return Visit.NEXT
+            else:
+                return Visit.NEXT_SIBLING
+
+        tree.visit(associator)
+
 
 def find(
     rootdir,
@@ -181,18 +214,9 @@ def find(
                 )
                 if include_file:
                     state.insert_file(include_file)
-
-                    associator = TreeAssociator(
-                        state.get_tree(include_file),
-                        state.get_map(include_file),
-                    )
-                    associator.walk(file_platform, state)
+                    state.associate(include_file, file_platform)
 
             # Process the file, to build a list of associate nodes
-            associator = TreeAssociator(
-                state.get_tree(e["file"]),
-                state.get_map(e["file"]),
-            )
-            associator.walk(file_platform, state)
+            state.associate(e["file"], file_platform)
 
     return state
