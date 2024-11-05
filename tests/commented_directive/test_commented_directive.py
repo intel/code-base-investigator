@@ -6,7 +6,6 @@ import unittest
 from pathlib import Path
 
 from codebasin import CodeBase, finder
-from codebasin.walkers.platform_mapper import PlatformMapper
 
 
 class TestCommentedDirective(unittest.TestCase):
@@ -50,8 +49,7 @@ class TestCommentedDirective(unittest.TestCase):
             ],
         }
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = PlatformMapper(codebase)
-        setmap = mapper.walk(state)
+        setmap = state.get_setmap(codebase)
 
         node_count = 1
         for fn in state.get_filenames():

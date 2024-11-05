@@ -6,7 +6,6 @@ import unittest
 from pathlib import Path
 
 from codebasin import CodeBase, finder
-from codebasin.walkers.platform_mapper import PlatformMapper
 
 
 class TestDuplicates(unittest.TestCase):
@@ -48,8 +47,7 @@ class TestDuplicates(unittest.TestCase):
         expected_setmap = {frozenset(["cpu"]): 1, frozenset(["gpu"]): 1}
 
         state = finder.find(self.rootdir, codebase, configuration)
-        mapper = PlatformMapper(codebase)
-        setmap = mapper.walk(state)
+        setmap = state.get_setmap(codebase)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
 
     def test_symlinks(self):

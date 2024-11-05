@@ -12,8 +12,9 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from codebasin import file_parser, platform, preprocessor
+from codebasin import CodeBase, file_parser, platform, preprocessor
 from codebasin.language import FileLanguage
+from codebasin.preprocessor import CodeNode
 from codebasin.walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger(__name__)
@@ -87,6 +88,22 @@ class ParserState:
         if fn not in self.maps:
             return None
         return self.maps[fn]
+
+    def get_setmap(self, codebase: CodeBase) -> dict[frozenset, int]:
+        """
+        Returns
+        -------
+        dict[frozenset, int]
+            The number of lines associated with each platform set.
+        """
+        setmap = collections.defaultdict(int)
+        for fn in codebase:
+            tree = self.get_tree(fn)
+            association = self.get_map(fn)
+            for node in [n for n in tree.walk() if isinstance(n, CodeNode)]:
+                platform = frozenset(association[node])
+                setmap[platform] += node.num_lines
+        return setmap
 
 
 def find(
