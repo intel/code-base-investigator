@@ -1,4 +1,4 @@
 include codebasin/schema/analysis.schema
 include codebasin/schema/compilation-database.schema
-include codebasin/schema/coverage-0.1.0.schema
+include codebasin/schema/coverage.schema
 include codebasin/schema/cbiconfig.schema
