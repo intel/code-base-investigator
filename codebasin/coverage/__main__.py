@@ -148,9 +148,8 @@ def _compute(args: argparse.Namespace):
         )
 
     util._validate_json(covarray, "coverage")
-    json_string = json.dumps(covarray)
     with open(covpath, "w") as f:
-        f.write(json_string)
+        json.dump(covarray, f, indent=2)
 
     sys.exit(0)
 
