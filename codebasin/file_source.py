@@ -12,27 +12,6 @@ from codebasin.language import FileLanguage
 
 log = logging.getLogger(__name__)
 
-# This string was created by looking at all unicode code points
-# and checking to see if they are considered whitespace
-# ('\s') by the re module
-whitespace_dict = dict.fromkeys(
-    "".join(
-        [
-            " \t\n\r\x0b\x0c\x1c\x1d\x1e",
-            "\x1f\x85\xa0\u1680\u2000\u2001",
-            "\u2002\u2003\u2004\u2005\u2006",
-            "\u2007\u2008\u2009\u200a\u2028",
-            "\u2029\u202f\u205f\u3000",
-        ],
-    ),
-)
-
-
-def is_whitespace(c):
-    """Returns true if the character c is whitespace"""
-    global whitespace_dict
-    return c in whitespace_dict
-
 
 class one_space_line:
     """
@@ -49,7 +28,7 @@ class one_space_line:
         Append a character of no particular class to the line.
         Whitespace will be dropped if the line already ends in space.
         """
-        if not is_whitespace(c):
+        if not c.isspace():
             self.parts.append(c)
             self.trailing_space = False
         else:
@@ -354,7 +333,7 @@ class fortran_cleaner:
                     else:
                         self.outbuf.append_char(char)
                 elif self.state[-1] == "CONTINUING_FROM_SOL":
-                    if is_whitespace(char):
+                    if char.isspace():
                         self.outbuf.append_space()
                     elif char == "&":
                         self.state.pop()
@@ -395,13 +374,13 @@ class fortran_cleaner:
                     if char == "!" and self.state[-2] == "TOPLEVEL":
                         self.dir_check(inbuffer)
                         break
-                    elif not is_whitespace(char):
+                    elif not char.isspace():
                         for tmp in self.verify_continue:
                             self.outbuf.append_nonspace(tmp)
                         self.verify_continue = []
                         self.state.pop()
                         inbuffer.putback(char)
-                    elif is_whitespace(char):
+                    elif char.isspace():
                         self.verify_continue.append(char)
                 else:
                     raise RuntimeError("Unknown parser state")
