@@ -19,7 +19,6 @@ from typing import Self
 import numpy as np
 
 from codebasin import util
-from codebasin.walkers.tree_associator import TreeAssociator
 
 log = logging.getLogger(__name__)
 
@@ -909,12 +908,7 @@ class IncludeNode(DirectiveNode):
             # irrespective of file extension.
             lang = kwargs["state"].langs[kwargs["filename"]]
             kwargs["state"].insert_file(include_file, lang)
-
-            associator = TreeAssociator(
-                kwargs["state"].get_tree(include_file),
-                kwargs["state"].get_map(include_file),
-            )
-            associator.walk(kwargs["platform"], kwargs["state"])
+            kwargs["state"].associate(include_file, kwargs["platform"])
 
         if not include_file:
             filename = kwargs["filename"]
