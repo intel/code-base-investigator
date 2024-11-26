@@ -136,7 +136,10 @@ def _compute(args: argparse.Namespace):
 
         lines = []
         tree = state.get_tree(filename)
+        association = state.get_map(filename)
         for node in [n for n in tree.walk() if isinstance(n, CodeNode)]:
+            if association[node] == frozenset([]):
+                continue
             lines.extend(node.lines)
 
         covarray.append(
