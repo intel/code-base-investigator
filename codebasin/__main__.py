@@ -319,7 +319,6 @@ def _main():
         rootdir,
         codebase,
         configuration,
-        legacy_warnings=False,
         show_progress=True,
     )
 
