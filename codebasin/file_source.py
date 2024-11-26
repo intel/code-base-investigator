@@ -402,6 +402,7 @@ class line_info:
         self.current_logical_line = one_space_line()
         self.current_physical_start = 1
         self.current_physical_end = None
+        self.lines = []
         self.local_sloc = 0
         self.category = None
         self.flushed_line = None
@@ -412,11 +413,18 @@ class line_info:
         """
         self.current_logical_line.join(other_line)
 
-    def physical_nonblank(self, n):
+    def add_physical_lines(self, lines: list[int]) -> None:
         """
-        Mark nonblank link in this logical like.
+        Add the specified physical lines to this logical line.
         """
-        self.local_sloc += n
+        self.lines.extend(lines)
+        self.local_sloc += len(lines)
+
+    def add_physical_line(self, line: int) -> None:
+        """
+        Add the specified physical line to this logical line.
+        """
+        self.add_physical_lines([line])
 
     def physical_update(self, physical_line_num):
         """
@@ -432,6 +440,7 @@ class line_info:
         """
         self.current_physical_start = self.current_physical_end
         local_sloc_copy = self.local_sloc
+        self.lines = []
         self.local_sloc = 0
         self.flushed_line = None
         return local_sloc_copy
@@ -486,7 +495,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
             cleaner.logical_newline()
 
         if not current_physical_line.category() == "BLANK":
-            curr_line.physical_nonblank(1)
+            curr_line.add_physical_line(physical_line_num)
 
         curr_line.join(current_physical_line)
 
@@ -562,7 +571,7 @@ def fortran_file_source(fp, relaxed=False):
             )
 
             if not current_physical_line.category() == "BLANK":
-                curr_line.physical_nonblank(src_c_line.local_sloc)
+                curr_line.add_physical_lines(src_c_line.lines)
 
             curr_line.join(current_physical_line)
 
@@ -656,7 +665,7 @@ def asm_file_source(fp, relaxed=False):
         cleaner.process(it.islice(line, 0, end))
 
         if not current_physical_line.category() == "BLANK":
-            curr_line.physical_nonblank(1)
+            curr_line.add_physical_line(physical_line_num)
 
         curr_line.join(current_physical_line)
 
