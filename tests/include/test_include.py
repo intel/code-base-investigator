@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
+import os
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -42,6 +44,30 @@ class TestInclude(unittest.TestCase):
             self.expected_setmap,
             "Mismatch in setmap",
         )
+
+    def test_include_from_symlink(self):
+        """Check included file correctly identifies its parent"""
+        tmp = tempfile.TemporaryDirectory()
+        p = Path(tmp.name)
+        with open(p / "test.cpp", mode="w") as f:
+            f.write('#include "test.h"')
+        open(p / "test.h", mode="w").close()
+        os.symlink(p / "test.cpp", p / "symlink.cpp")
+
+        codebase = CodeBase(p)
+        configuration = {
+            "test": [
+                {
+                    "file": str(p / "symlink.cpp"),
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+        }
+        _ = finder.find(self.rootdir, codebase, configuration)
+
+        tmp.cleanup()
 
 
 if __name__ == "__main__":
