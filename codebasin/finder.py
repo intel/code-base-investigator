@@ -98,6 +98,12 @@ class ParserState:
         """
         setmap = collections.defaultdict(int)
         for fn in codebase:
+            # Don't count symlinks if their target is in the code base.
+            # The target will be counted separately.
+            path = Path(fn)
+            if path.is_symlink() and path.resolve() in codebase:
+                continue
+
             tree = self.get_tree(fn)
             association = self.get_map(fn)
             for node in [n for n in tree.walk() if isinstance(n, CodeNode)]:
