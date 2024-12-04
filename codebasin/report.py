@@ -66,7 +66,7 @@ def summary(setmap):
     data = []
     total_count = 0
     for pset in sorted(setmap.keys(), key=len):
-        name = "{" + ", ".join(pset) + "}"
+        name = "{" + ", ".join(sorted(pset)) + "}"
         count = setmap[pset]
         percent = (float(setmap[pset]) / float(total)) * 100
         data += [[name, str(count), f"{percent:.2f}"]]
