@@ -8,6 +8,8 @@ import itertools as it
 import logging
 import warnings
 
+from tabulate import tabulate
+
 from codebasin import util
 
 log = logging.getLogger(__name__)
@@ -19,33 +21,6 @@ def extract_platforms(setmap):
     """
     unique_platforms = set(it.chain.from_iterable(setmap.keys()))
     return list(unique_platforms)
-
-
-def table(headers, rows):
-    """
-    Convert table to ASCII string
-    """
-    # Determine the cell widths
-    widths = [0] * len(headers)
-    for c, h in enumerate(headers):
-        widths[c] = max(widths[c], len(h))
-    for r in rows:
-        for c, data in enumerate(r):
-            widths[c] = max(widths[c], len(data))
-    hline = "-" * (sum(widths) + len(headers))
-
-    # Build the table as a list of strings
-    lines = []
-    lines += [hline]
-    line = [h.rjust(widths[c]) for (c, h) in enumerate(headers)]
-    lines += [" ".join(line)]
-    lines += [hline]
-    for r in rows:
-        line = [data.rjust(widths[c]) for (c, data) in enumerate(r)]
-        lines += [" ".join(line)]
-    lines += [hline]
-
-    return "\n".join(lines)
 
 
 def distance(setmap, p1, p2):
@@ -96,7 +71,16 @@ def summary(setmap):
         percent = (float(setmap[pset]) / float(total)) * 100
         data += [[name, str(count), f"{percent:.2f}"]]
         total_count += setmap[pset]
-    lines += [table(["Platform Set", "LOC", "% LOC"], data)]
+
+    lines += [
+        tabulate(
+            data,
+            headers=["Platform Set", "LOC", "% LOC"],
+            tablefmt="simple_grid",
+            floatfmt=".2f",
+            stralign="right",
+        ),
+    ]
 
     cd = divergence(setmap)
     unused = (setmap[frozenset()] / total_count) * 100.0
@@ -149,7 +133,14 @@ def clustering(output_name, setmap):
         [name] + [f"{column:.2f}" for column in matrix[row]]
         for (row, name) in enumerate(platforms)
     ]
-    lines += [table([""] + platforms, labelled_matrix)]
+    lines += [
+        tabulate(
+            labelled_matrix,
+            headers=platforms,
+            tablefmt="simple_grid",
+            floatfmt=".2f",
+        ),
+    ]
 
     # Hierarchical clustering using average inter-cluster distance
     clusters = hierarchy.linkage(squareform(matrix), method="average")
