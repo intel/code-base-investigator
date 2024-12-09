@@ -57,7 +57,7 @@ pairwise distances:
 
 .. math::
     CD(a, p, H) = \binom{|H|}{2}^{-1}
-                  \sum_{\{i, j\} \in H \times H} {d_{i, j}(a, p)}
+                  \sum_{\{i, j\} \in \binom{H}{2}} {d_{i, j}(a, p)}
 
 where :math:`d_{i, j}(a, p)` represents the distance between the source
 code required by platforms :math:`i` and :math:`j` for application
