@@ -77,7 +77,7 @@ def divergence(setmap):
         npairs += 1
 
     if npairs == 0:
-        return 0
+        return float("nan")
     return d / float(npairs)
 
 
