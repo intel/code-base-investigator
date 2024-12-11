@@ -96,6 +96,7 @@ def utilization(setmap: defaultdict[frozenset[str], int]) -> float:
     -------
     float
         The average code utilization, in the range [0, NumPlatforms].
+        If the number of total SLOC is 0, returns NaN.
     """
     reused_sloc = 0
     total_sloc = 0
