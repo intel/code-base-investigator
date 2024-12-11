@@ -134,6 +134,20 @@ class TestDuplicates(unittest.TestCase):
 
         tmp.cleanup()
 
+    def test_find_duplicates_symlinks(self):
+        """Check that we ignore symlinks when identifying duplicates."""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        with open(path / "foo.cpp", mode="w") as f:
+            f.write("void foo();")
+        os.symlink(path / "foo.cpp", path / "bar.cpp")
+        codebase = CodeBase(path)
+
+        duplicates = find_duplicates(codebase)
+        self.assertEqual(duplicates, [])
+
+        tmp.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()
