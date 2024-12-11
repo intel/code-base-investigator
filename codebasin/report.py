@@ -4,14 +4,17 @@
 Contains functions for generating command-line reports.
 """
 
+import filecmp
+import hashlib
 import itertools as it
 import logging
 import warnings
 from collections import defaultdict
+from pathlib import Path
 
 from tabulate import tabulate
 
-from codebasin import util
+from codebasin import CodeBase, util
 
 log = logging.getLogger(__name__)
 
@@ -232,3 +235,45 @@ def clustering(output_name, setmap):
         fig.savefig(fp)
 
     return "\n".join(lines)
+
+
+def find_duplicates(codebase: CodeBase) -> list[set[Path]]:
+    """
+    Search for duplicate files in the code base.
+
+    Returns
+    -------
+    list[set[Path]]
+        A list of all sets of Paths with identical contents.
+    """
+    # Search for possible matches using a hash, ignoring symlinks.
+    possible_matches = defaultdict(set)
+    for path in codebase:
+        path = Path(path)
+        if path.is_symlink():
+            continue
+        with open(path, "rb") as f:
+            digest = hashlib.file_digest(f, "sha512").hexdigest()
+        possible_matches[digest].add(path)
+
+    # Confirm equality for files with the same hash.
+    confirmed_matches = []
+    for digest, paths in possible_matches.items():
+        # Skip files with no hash conflicts.
+        if len(paths) == 1:
+            continue
+
+        # Check for equality amongst all files in the set.
+        # Iterate until we have identified all conflicting hashes.
+        remaining = paths.copy()
+        while len(remaining) > 1:
+            first = remaining.pop()
+            matches = {first}
+            for path in remaining:
+                if filecmp.cmp(first, path, shallow=False):
+                    matches.add(path)
+            remaining.difference_update(matches)
+            if len(matches) > 1:
+                confirmed_matches.append(matches)
+
+    return confirmed_matches
