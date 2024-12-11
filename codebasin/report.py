@@ -8,9 +8,11 @@ import filecmp
 import hashlib
 import itertools as it
 import logging
+import sys
 import warnings
 from collections import defaultdict
 from pathlib import Path
+from typing import TextIO
 
 from tabulate import tabulate
 
@@ -277,3 +279,30 @@ def find_duplicates(codebase: CodeBase) -> list[set[Path]]:
                 confirmed_matches.append(matches)
 
     return confirmed_matches
+
+
+def duplicates(codebase: CodeBase, stream: TextIO = sys.stdout):
+    """
+    Produce a report identifying sets of duplicate files.
+
+    Parameters
+    ----------
+    codebase: CodeBase
+        The code base to search for duplicates.
+
+    stream: TextIO, default: sys.stdout
+        The stream to write the report to.
+    """
+    confirmed_matches = find_duplicates(codebase)
+
+    print("Duplicates", file=stream)
+    print("----------", file=stream)
+
+    if len(confirmed_matches) == 0:
+        print("No duplicates found.", file=stream)
+        return
+
+    for i, matches in enumerate(confirmed_matches):
+        print(f"Match {i}:", file=stream)
+        for path in matches:
+            print(f"- {path}")

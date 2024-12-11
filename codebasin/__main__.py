@@ -190,7 +190,7 @@ def _main():
         metavar="<report>",
         action="append",
         default=[],
-        choices=["all", "summary", "clustering"],
+        choices=["all", "summary", "clustering", "duplicates"],
         help=_help_string(
             "Generate a report of the specified type.",
             "May be specified multiple times.",
@@ -349,6 +349,10 @@ def _main():
         clustering = report.clustering(clustering_output_name, setmap)
         if clustering is not None:
             print(clustering)
+
+    # Print duplicates report
+    if report_enabled("duplicates"):
+        report.duplicates(codebase)
 
     sys.exit(0)
 
