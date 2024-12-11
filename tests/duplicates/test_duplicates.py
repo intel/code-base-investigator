@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from codebasin import CodeBase, finder
+from codebasin.report import find_duplicates
 
 
 class TestDuplicates(unittest.TestCase):
@@ -116,6 +117,20 @@ class TestDuplicates(unittest.TestCase):
         state = finder.find(self.rootdir, codebase, configuration)
         setmap = state.get_setmap(codebase)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
+
+    def test_find_duplicates(self):
+        """Check that we can correctly identify duplicate files."""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        with open(path / "foo.cpp", mode="w") as f:
+            f.write("void foo();")
+        with open(path / "bar.cpp", mode="w") as f:
+            f.write("void foo();")
+        codebase = CodeBase(path)
+
+        duplicates = find_duplicates(codebase)
+        expected_duplicates = [{path / "foo.cpp", path / "bar.cpp"}]
+        self.assertCountEqual(duplicates, expected_duplicates)
 
         tmp.cleanup()
 
