@@ -30,7 +30,8 @@ Command Line Interface
 
     - ``summary``: output only code divergence information.
     - ``clustering``: output only distance matrix and dendrogram.
-    - ``all``: generate both summary and clustering reports.
+    - ``duplicates``: output only detected duplicate files.
+    - ``all``: generate all available reports.
 
 ``-x <pattern>, --exclude <pattern>``
     Exclude files matching this pattern from the code base.
