@@ -7,6 +7,7 @@ Contains functions for generating command-line reports.
 import itertools as it
 import logging
 import warnings
+from collections import defaultdict
 
 from codebasin import util
 
@@ -81,6 +82,74 @@ def divergence(setmap):
     return d / float(npairs)
 
 
+def utilization(setmap: defaultdict[frozenset[str], int]) -> float:
+    """
+    Compute the average code utilization for all lines in the setmap.
+    i.e., (reused SLOC / total SLOC)
+
+    Parameters
+    ----------
+    setmap: defaultdict[frozenset[str], int]
+        The mapping from platform sets to SLOC.
+
+    Returns
+    -------
+    float
+        The average code utilization, in the range [0, NumPlatforms].
+        If the number of total SLOC is 0, returns NaN.
+    """
+    reused_sloc = 0
+    total_sloc = 0
+    for k, v in setmap.items():
+        reused_sloc += len(k) * v
+        total_sloc += v
+    if total_sloc == 0:
+        return float("nan")
+
+    return reused_sloc / total_sloc
+
+
+def normalized_utilization(
+    setmap: defaultdict[frozenset[str], int],
+    total_platforms: int | None = None,
+) -> float:
+    """
+    Compute the average code utilization, normalized for a specific number of
+    platforms.
+
+    Parameters
+    ----------
+    setmap: defaultdict[frozenset[str,int]
+        The mapping from platform sets to SLOC.
+
+    total_platforms: int, optional
+        The total number of platforms to use as the denominator.
+        By default, the denominator will be derived from the setmap.
+
+    Returns
+    -------
+    float
+        The average code utilization, in the range [0, 1].
+
+    Raises
+    ------
+    ValueError
+        If `total_platforms` < the number of platforms in `setmap`.
+    """
+    original_platforms = len(extract_platforms(setmap))
+    if total_platforms is None:
+        total_platforms = original_platforms
+    if total_platforms < original_platforms:
+        raise ValueError(
+            "Cannot normalize to fewer platforms than the setmap contains.",
+        )
+
+    if total_platforms == 0:
+        return float("nan")
+    else:
+        return utilization(setmap) / total_platforms
+
+
 def summary(setmap):
     """
     Produce a summary report for the platform set
@@ -99,8 +168,10 @@ def summary(setmap):
     lines += [table(["Platform Set", "LOC", "% LOC"], data)]
 
     cd = divergence(setmap)
+    nu = normalized_utilization(setmap)
     unused = (setmap[frozenset()] / total_count) * 100.0
     lines += [f"Code Divergence: {cd:.2f}"]
+    lines += [f"Code Utilization: {nu:.2f}"]
     lines += [f"Unused Code (%): {unused:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
