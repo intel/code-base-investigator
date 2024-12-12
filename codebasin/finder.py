@@ -117,7 +117,7 @@ class ParserState:
             association[node].add(platform.name)
             active = node.evaluate_for_platform(
                 platform=platform,
-                filename=filename,
+                filename=self._get_realpath(filename),
                 state=self,
             )
 
