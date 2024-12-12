@@ -122,9 +122,9 @@ def normalized_utilization(
     setmap: defaultdict[frozenset[str,int]
         The mapping from platform sets to SLOC.
 
-    total_platforms: int | None, default: None
+    total_platforms: int, optional
         The total number of platforms to use as the denominator.
-        If None, the denominator will be derived from the setmap.
+        By default, the denominator will be derived from the setmap.
 
     Returns
     -------
