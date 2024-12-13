@@ -283,10 +283,7 @@ def _main():
                 raise RuntimeError(f"Analysis file {path} must end in .toml.")
 
         with open(path, "rb") as f:
-            try:
-                analysis_toml = util._load_toml(f, "analysis")
-            except BaseException:
-                raise ValueError("Analysis file failed validation")
+            analysis_toml = util._load_toml(f, "analysis")
 
         if "codebase" in analysis_toml:
             if "exclude" in analysis_toml["codebase"]:
