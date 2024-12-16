@@ -14,20 +14,49 @@ import pkgutil
 import tomllib
 import typing
 from collections.abc import Iterable
-from os.path import splitext
+from pathlib import Path
 
 import jsonschema
 
 log = logging.getLogger(__name__)
 
 
-def ensure_ext(fname, extensions):
-    """Return true if the path passed in has specified extension"""
-    if not isinstance(extensions, Iterable):
-        extensions = [extensions]
+def ensure_ext(path: os.PathLike[str], extensions: Iterable[str]):
+    """
+    Ensure that a path has one of the specified extensions.
 
-    split = splitext(fname)
-    return len(split) == 2 and split[1].lower() in extensions
+    Parameters
+    ----------
+    path: os.PathLike[str]
+        The path to test.
+
+    extensions: Iterable[str]
+        The valid extensions to test against.
+
+    Returns
+    -------
+    bool
+        True if `path` is a file with one of the specified extensions.
+
+    Raises
+    ------
+    TypeError
+        If `path` is not a string or PathLike.
+        If `extensions` is not a string or an Iterable of strings.
+
+    ValueError
+        If `path` does not have one of the specified extensions.
+    """
+    path = Path(path)
+    if isinstance(extensions, str):
+        extensions = [extensions]
+    if not all(isinstance(ext, str) for ext in extensions):
+        raise TypeError("'extensions' must be 'str' or 'Iterable[str]'")
+
+    extension = "".join(path.suffixes)
+    if extension not in extensions:
+        exts = ", ".join([f"'{ext}'" for ext in extensions])
+        raise ValueError(f"{path} does not have a valid extension: f{exts}")
 
 
 def safe_open_write_binary(fname):
