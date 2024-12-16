@@ -30,11 +30,6 @@ def ensure_ext(fname, extensions):
     return len(split) == 2 and split[1].lower() in extensions
 
 
-def ensure_png(fname):
-    """Return true if the path passed in specifies a png"""
-    return ensure_ext(fname, ".png")
-
-
 def safe_open_write_binary(fname):
     """Open fname for (binary) writing. Truncate if not a symlink."""
     fpid = os.open(

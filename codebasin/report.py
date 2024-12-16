@@ -190,7 +190,7 @@ def clustering(output_name, setmap):
         log.error("clustering is not supported for a single platform.")
         return None
 
-    if not util.ensure_png(output_name):
+    if not util.ensure_ext(output_name, ".png"):
         log.error("clustering output file name must end in '.png'.")
         return None
 
