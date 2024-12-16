@@ -231,7 +231,7 @@ def _main():
     # Generate meta-warnings and statistics.
     # Temporarily override log_level to ensure they are visible.
     stdout_handler.setLevel(logging.WARNING)
-    aggregator.warn()
+    aggregator.warn(log)
     stdout_handler.setLevel(log_level)
 
     # Count lines for platforms

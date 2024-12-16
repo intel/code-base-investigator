@@ -5,8 +5,6 @@
 import logging
 import re
 
-log = logging.getLogger(__name__)
-
 
 class Formatter(logging.Formatter):
     """
@@ -89,7 +87,7 @@ class MetaWarning:
         self.msg = msg
         self._count = 0
 
-    def inspect(self, record: logging.LogRecord):
+    def inspect(self, record: logging.LogRecord) -> bool:
         """
         Inspect a LogRecord to determine if it matches this MetaWarning.
 
@@ -97,17 +95,29 @@ class MetaWarning:
         ----------
         record: logging.LogRecord
             The LogRecord to inspect.
+
+        Returns
+        -------
+        bool
+            True if `record` matches this MetaWarning and False otherwise.
         """
         if self.regex.search(record.msg):
             self._count += 1
+            return True
+        return False
 
-    def warn(self):
+    def warn(self, logger: logging.Logger):
         """
         Produce the warning associated with this MetaWarning.
+
+        Parameters
+        ----------
+        log: logging.Logger
+            The Logger that should be used to generate the MetaWarning.
         """
         if self._count == 0:
             return
-        log.warning(self.msg.format(self._count))
+        logger.warning(self.msg.format(self._count))
 
 
 class WarningAggregator(logging.Filter):
@@ -161,10 +171,15 @@ class WarningAggregator(logging.Filter):
                 meta_warning.inspect(record)
         return True
 
-    def warn(self):
+    def warn(self, logger: logging.Logger):
         """
         Produce the warning associated with any MetaWarning(s) that were
         matched by this WarningAggregator.
+
+        Parameters
+        ----------
+        logger: logging.Logger
+            The Logger that should be used to generate the MetaWarning(s).
         """
         for meta_warning in self.meta_warnings:
-            meta_warning.warn()
+            meta_warning.warn(logger)
