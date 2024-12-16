@@ -8,10 +8,10 @@ This script is the main executable of Code Base Investigator.
 import argparse
 import logging
 import os
-import re
 import sys
 
 from codebasin import CodeBase, config, finder, report, util
+from codebasin.cli import Formatter, WarningAggregator
 
 log = logging.getLogger("codebasin")
 version = "1.2.0"
@@ -52,100 +52,6 @@ def _help_string(*lines: str, is_long=False, is_last=False):
         result += "\n "
 
     return result
-
-
-class Formatter(logging.Formatter):
-    def __init__(self, *, colors: bool = False):
-        self.colors = colors
-
-    def format(self, record: logging.LogRecord) -> str:
-        msg = record.msg
-        level = record.levelname.lower()
-
-        # Display info messages with no special formatting.
-        if level == "info":
-            return f"{msg}"
-
-        # Drop colors if requested.
-        if not self.colors:
-            return f"{level}: {msg}"
-
-        # Otherwise, use ASCII codes to improve readability.
-        BOLD = "\033[1m"
-        DEFAULT = "\033[39m"
-        YELLOW = "\033[93m"
-        RED = "\033[91m"
-        RESET = "\033[0m"
-
-        if level == "warning":
-            color = YELLOW
-        elif level == "error":
-            color = RED
-        else:
-            color = DEFAULT
-        return f"{BOLD}{color}{level}{RESET}: {msg}"
-
-
-class MetaWarning:
-    """
-    A MetaWarning is used to represent multiple warnings, and provide suggested
-    actions to the user.
-    """
-
-    def __init__(self, regex: str, msg: str):
-        self.regex = re.compile(regex)
-        self.msg = msg
-        self._count = 0
-
-    def inspect(self, record: logging.LogRecord):
-        if self.regex.search(record.msg):
-            self._count += 1
-
-    def warn(self):
-        if self._count == 0:
-            return
-        log.warning(self.msg.format(self._count))
-
-
-class WarningAggregator(logging.Filter):
-    """
-    Inspect warnings to generate meta-warnings and statistics.
-    """
-
-    def __init__(self):
-        self.meta_warnings = [
-            MetaWarning(".", "{} warnings generated during preprocessing."),
-            MetaWarning(
-                "user include",
-                "{} user include files could not be found.\n"
-                + "  These could contain important macros and includes.\n"
-                + "  Suggested solutions:\n"
-                + "  - Check that the file(s) exist in the code base.\n"
-                + "  - Check the include paths in the compilation database.\n"
-                + "  - Check if the include(s) should have used '<>'.",
-            ),
-            MetaWarning(
-                "system include",
-                "{} system include files could not be found.\n"
-                + "  These could define important feature macros.\n"
-                + "  Suggested solutions:\n"
-                + "  - Check that the file(s) exist on your system.\n"
-                + "  - Use .cbi/config to define system include paths.\n"
-                + "  - Use .cbi/config to define important macros.",
-            ),
-        ]
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        if record.levelno == logging.WARNING:
-            for meta_warning in self.meta_warnings:
-                meta_warning.inspect(record)
-
-        # Do not filter anything.
-        return True
-
-    def warn(self):
-        for meta_warning in self.meta_warnings:
-            meta_warning.warn()
 
 
 def _main():
