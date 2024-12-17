@@ -23,20 +23,6 @@ from codebasin import util
 log = logging.getLogger(__name__)
 
 
-def toklist_print(toklist):
-    """
-    Helper function to print token lists with proper whitespace.
-    """
-    out = []
-    for tok in toklist:
-        if not tok:
-            continue
-        if tok.prev_white:
-            out.append(" ")
-        out.append(str(tok))
-    return "".join(out)
-
-
 def _representation_string(obj, *, name=None, attrs=None):
     """
     Helper function to build representation strings of the form:
@@ -720,6 +706,25 @@ class DirectiveNode(CodeNode):
         super().__init__()
         self.tokens = tokens
 
+    def spelling(self) -> list[str]:
+        """
+        Recover the original spelling of this directive in the input code.
+        Useful primarily for debugging and generating error messages.
+
+        Returns
+        -------
+        list[str]
+            The string representation of this directive in the input code.
+        """
+        out = []
+        for token in self.tokens:
+            if not token:
+                continue
+            if token.prev_white:
+                out.append(" ")
+            out.append(str(token))
+        return ["".join(out)]
+
 
 class UnrecognizedDirectiveNode(DirectiveNode):
     """
@@ -732,13 +737,6 @@ class UnrecognizedDirectiveNode(DirectiveNode):
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this directive in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return [" ".join([str(t) for t in self.tokens])]
 
 
 class PragmaNode(DirectiveNode):
@@ -753,14 +751,6 @@ class PragmaNode(DirectiveNode):
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this pragma in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        rest = " ".join([str(t) for t in self.tokens])
-        return [f"#pragma {rest}"]
 
     def evaluate_for_platform(self, **kwargs):
         if self.expr and str(self.expr[0]) == "once":
@@ -781,21 +771,6 @@ class DefineNode(DirectiveNode):
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this define in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        value_str = "".join([str(v) for v in self.value])
-
-        if self.args is None:
-            return [f"#define {self.identifier!s} {value_str!s}"]
-        elif self.args == []:
-            return [f"#define {self.identifier!s}() {value_str!s}"]
-        else:
-            arg_str = ", ".join([str(arg) for arg in self.args])
-            return [f"#define {self.identifier!s}({arg_str!s}) {value_str!s}"]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -818,13 +793,6 @@ class UndefNode(DirectiveNode):
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this undef in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return [f"#undef {self.identifier!s}"]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -875,18 +843,6 @@ class IncludeNode(DirectiveNode):
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this include in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        if isinstance(self.value, list):
-            str_rep = " ".join([str(t) for t in self.value])
-        else:
-            str_rep = " ".join(self.value.spelling())
-
-        return [f"#include {str_rep!s}"]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -949,14 +905,6 @@ class IfNode(DirectiveNode):
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
 
-    def spelling(self):
-        """
-        Return the string representation of this if in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        rest = " ".join([str(t) for t in self.tokens])
-        return [f"#if {rest}"]
-
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
         expanded_tokens = MacroExpander(kwargs["platform"]).expand(self.expr)
@@ -999,13 +947,6 @@ class ElseNode(DirectiveNode):
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
 
-    def spelling(self):
-        """
-        Return the string representation of this else in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return ["#else"]
-
     def evaluate_for_platform(self, **kwargs):
         return True
 
@@ -1025,13 +966,6 @@ class EndIfNode(DirectiveNode):
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this endif in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return ["#endif"]
 
 
 class Parser:
