@@ -750,6 +750,15 @@ def files(
         label = string.ascii_uppercase[i]
         legend += [f"\033[33m{label}\033[0m: {platform}"]
     legend += [""]
+    legend += ["\033[1mColumns\033[0m:"]
+    header = [
+        "Platform Set",
+        "Used SLOC / Total SLOC",
+        "Code Divergence",
+        "Code Utilization",
+    ]
+    legend += ["[" + " | ".join(header) + "]"]
+    legend += [""]
     legend = "\n".join(legend)
     if not stream.isatty():
         legend = _strip_colors(legend)
