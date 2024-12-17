@@ -96,34 +96,38 @@ class TestDirectiveParser(unittest.TestCase):
         tokens = preprocessor.Lexer("#if FOO == BAR").tokenize()
         node = preprocessor.DirectiveParser(tokens).parse()
         self.assertTrue(isinstance(node, preprocessor.IfNode))
-        self.assertTrue(len(node.tokens) == 3)
+        self.assertTrue(len(node.tokens) == 5)
+        self.assertTrue(len(node.expr) == 3)
 
     def test_ifdef(self):
         """ifdef"""
         tokens = preprocessor.Lexer("#ifdef FOO").tokenize()
         node = preprocessor.DirectiveParser(tokens).parse()
         self.assertTrue(isinstance(node, preprocessor.IfNode))
-        self.assertTrue(len(node.tokens) == 4)
-        self.assertTrue(isinstance(node.tokens[0], preprocessor.Identifier))
-        self.assertTrue(node.tokens[0].token == "defined")
+        self.assertTrue(len(node.tokens) == 3)
+        self.assertTrue(len(node.expr) == 4)
+        self.assertTrue(isinstance(node.expr[0], preprocessor.Identifier))
+        self.assertTrue(node.expr[0].token == "defined")
 
     def test_ifndef(self):
         """ifndef"""
         tokens = preprocessor.Lexer("#ifndef FOO").tokenize()
         node = preprocessor.DirectiveParser(tokens).parse()
         self.assertTrue(isinstance(node, preprocessor.IfNode))
-        self.assertTrue(len(node.tokens) == 5)
-        self.assertTrue(isinstance(node.tokens[0], preprocessor.Operator))
-        self.assertTrue(node.tokens[0].token == "!")
-        self.assertTrue(isinstance(node.tokens[1], preprocessor.Identifier))
-        self.assertTrue(node.tokens[1].token == "defined")
+        self.assertTrue(len(node.tokens) == 3)
+        self.assertTrue(len(node.expr) == 5)
+        self.assertTrue(isinstance(node.expr[0], preprocessor.Operator))
+        self.assertTrue(node.expr[0].token == "!")
+        self.assertTrue(isinstance(node.expr[1], preprocessor.Identifier))
+        self.assertTrue(node.expr[1].token == "defined")
 
     def test_elif(self):
         """elif"""
         tokens = preprocessor.Lexer("#elif FOO == BAR").tokenize()
         node = preprocessor.DirectiveParser(tokens).parse()
         self.assertTrue(isinstance(node, preprocessor.ElIfNode))
-        self.assertTrue(len(node.tokens) == 3)
+        self.assertTrue(len(node.tokens) == 5)
+        self.assertTrue(len(node.expr) == 3)
 
     def test_else(self):
         """else"""
