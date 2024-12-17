@@ -716,8 +716,9 @@ class DirectiveNode(CodeNode):
     countable lines and extent.
     """
 
-    def __init__(self):
+    def __init__(self, tokens):
         super().__init__()
+        self.tokens = tokens
 
 
 class UnrecognizedDirectiveNode(DirectiveNode):
@@ -726,9 +727,8 @@ class UnrecognizedDirectiveNode(DirectiveNode):
     """
 
     def __init__(self, tokens):
-        super().__init__()
+        super().__init__(tokens)
         self.kind = "unrecognized"
-        self.tokens = tokens
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
@@ -746,10 +746,10 @@ class PragmaNode(DirectiveNode):
     Represents a #pragma directive
     """
 
-    def __init__(self, tokens):
-        super().__init__()
+    def __init__(self, tokens, expr):
+        super().__init__(tokens)
+        self.expr = expr
         self.kind = "pragma"
-        self.tokens = tokens
 
     def __repr__(self):
         return _representation_string(self, name="DirectiveNode")
@@ -763,7 +763,7 @@ class PragmaNode(DirectiveNode):
         return [f"#pragma {rest}"]
 
     def evaluate_for_platform(self, **kwargs):
-        if self.tokens and str(self.tokens[0]) == "once":
+        if self.expr and str(self.expr[0]) == "once":
             kwargs["platform"].add_include_to_skip(kwargs["filename"])
 
 
@@ -772,8 +772,8 @@ class DefineNode(DirectiveNode):
     A DirectiveNode representing a #define directive.
     """
 
-    def __init__(self, identifier, args=None, value=None):
-        super().__init__()
+    def __init__(self, tokens, identifier, args=None, value=None):
+        super().__init__(tokens)
         self.kind = "define"
         self.identifier = identifier
         self.args = args
@@ -811,8 +811,8 @@ class UndefNode(DirectiveNode):
     A DirectiveNode representing an #undef directive.
     """
 
-    def __init__(self, identifier):
-        super().__init__()
+    def __init__(self, tokens, identifier):
+        super().__init__(tokens)
         self.kind = "undefine"
         self.identifier = identifier
 
@@ -868,8 +868,8 @@ class IncludeNode(DirectiveNode):
     Its value is an IncludePath or a list of tokens.
     """
 
-    def __init__(self, value):
-        super().__init__()
+    def __init__(self, tokens, value):
+        super().__init__(tokens)
         self.kind = "include"
         self.value = value
 
@@ -937,10 +937,10 @@ class IfNode(DirectiveNode):
     Represents an #if, #ifdef or #ifndef directive.
     """
 
-    def __init__(self, tokens):
-        super().__init__()
+    def __init__(self, tokens, expr):
+        super().__init__(tokens)
+        self.expr = expr
         self.kind = "if"
-        self.tokens = tokens
 
     @staticmethod
     def is_start_node():
@@ -959,7 +959,7 @@ class IfNode(DirectiveNode):
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
-        expanded_tokens = MacroExpander(kwargs["platform"]).expand(self.tokens)
+        expanded_tokens = MacroExpander(kwargs["platform"]).expand(self.expr)
 
         # Evaluate the expanded tokens
         return ExpressionEvaluator(expanded_tokens).evaluate()
@@ -970,8 +970,8 @@ class ElIfNode(IfNode):
     Represents an #elif directive.
     """
 
-    def __init__(self, tokens):
-        super().__init__(tokens)
+    def __init__(self, tokens, expr):
+        super().__init__(tokens, expr)
         self.kind = "elif"
 
     @staticmethod
@@ -988,8 +988,8 @@ class ElseNode(DirectiveNode):
     Represents an #else directive.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tokens):
+        super().__init__(tokens)
         self.kind = "else"
 
     @staticmethod
@@ -1015,8 +1015,8 @@ class EndIfNode(DirectiveNode):
     Represents an #endif directive.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tokens):
+        super().__init__(tokens)
         self.kind = "endif"
 
     @staticmethod
@@ -1194,7 +1194,7 @@ class DirectiveParser(Parser):
             else:
                 expansion = []
 
-            return DefineNode(identifier, args, expansion)
+            return DefineNode(self.tokens, identifier, args, expansion)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid define directive.")
@@ -1210,7 +1210,7 @@ class DirectiveParser(Parser):
         try:
             self.match_value(Identifier, "undef")
             identifier = self.match_type(Identifier)
-            return UndefNode(identifier)
+            return UndefNode(self.tokens, identifier)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid undef directive.")
@@ -1236,7 +1236,7 @@ class DirectiveParser(Parser):
                 include_payload = self.tokens[path_pos:]
                 self.pos = len(self.tokens)
 
-            return IncludeNode(include_payload)
+            return IncludeNode(self.tokens, include_payload)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid include directive.")
@@ -1302,7 +1302,7 @@ class DirectiveParser(Parser):
             expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
-            return PragmaNode(expr)
+            return PragmaNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid pragma directive.")
@@ -1320,7 +1320,7 @@ class DirectiveParser(Parser):
             expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
-            return IfNode(expr)
+            return IfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid if directive.")
@@ -1345,7 +1345,7 @@ class DirectiveParser(Parser):
             suffix = [Punctuator("Unknown", -1, False, ")")]
             expr = prefix + [identifier] + suffix
 
-            return IfNode(expr)
+            return IfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid ifdef directive")
@@ -1371,7 +1371,7 @@ class DirectiveParser(Parser):
             suffix = [Punctuator("Unknown", -1, False, ")")]
             expr = prefix + [identifier] + suffix
 
-            return IfNode(expr)
+            return IfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid ifndef directive")
@@ -1389,7 +1389,7 @@ class DirectiveParser(Parser):
             expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
-            return ElIfNode(expr)
+            return ElIfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid elif directive.")
@@ -1404,7 +1404,7 @@ class DirectiveParser(Parser):
         initial_pos = self.pos
         try:
             self.match_value(Identifier, "else")
-            return ElseNode()
+            return ElseNode(self.tokens)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid else directive.")
@@ -1419,7 +1419,7 @@ class DirectiveParser(Parser):
         initial_pos = self.pos
         try:
             self.match_value(Identifier, "endif")
-            return EndIfNode()
+            return EndIfNode(self.tokens)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid endif directive.")
