@@ -85,10 +85,11 @@ def load_importcfg():
         with open(path, "rb") as f:
             try:
                 _importcfg_toml = util._load_toml(f, "cbiconfig")
-                for name, compiler in _importcfg_toml["compiler"].items():
-                    _importcfg[name] = compiler["options"]
-            except BaseException:
-                log.error("Configuration file failed validation")
+            except ValueError as e:
+                log.error(str(e))
+                return
+        for name, compiler in _importcfg_toml["compiler"].items():
+            _importcfg[name] = compiler["options"]
 
 
 class Compiler:
