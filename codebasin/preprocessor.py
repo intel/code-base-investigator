@@ -8,11 +8,11 @@ Contains classes that define:
 """
 
 import collections
-import hashlib
 import logging
 import os
 from collections.abc import Callable, Iterable
 from copy import copy
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Self
 
@@ -21,20 +21,6 @@ import numpy as np
 from codebasin import util
 
 log = logging.getLogger(__name__)
-
-
-def toklist_print(toklist):
-    """
-    Helper function to print token lists with proper whitespace.
-    """
-    out = []
-    for tok in toklist:
-        if not tok:
-            continue
-        if tok.prev_white:
-            out.append(" ")
-        out.append(str(tok))
-    return "".join(out)
 
 
 def _representation_string(obj, *, name=None, attrs=None):
@@ -544,15 +530,15 @@ class Visit(Enum):
     NEXT_SIBLING = 1
 
 
+@dataclass(eq=False)
 class Node:
     """
     Base class for all other Node types.
     Contains a single parent, and an ordered list of children.
     """
 
-    def __init__(self):
-        self.children = []
-        self.parent = None
+    children: list[Self] = field(default_factory=list, init=False)
+    parent: Self | None = field(default=None, init=False)
 
     def add_child(self, child):
         self.children.append(child)
@@ -619,35 +605,19 @@ class Node:
                 child.visit(visitor)
 
 
+@dataclass(eq=False)
 class FileNode(Node):
     """
     Typically the root node of a tree. Simply contains a filename after
     inheriting from the Node class.
     """
 
-    def __init__(self, _filename):
-        super().__init__()
-        self.filename = _filename
-        # The length of the file, counting blank lines and comments
-        self.num_lines = 0
-        # The source lines of code, ignoring blank lines and comments
-        self.total_sloc = 0
-        self.file_hash = self.__compute_file_hash()
-
-    def __compute_file_hash(self):
-        chunk_size = 4096
-        hasher = hashlib.sha512()
-        with open(self.filename, "rb") as in_file:
-            for chunk in iter(lambda: in_file.read(chunk_size), b""):
-                hasher.update(chunk)
-
-        return hasher.hexdigest()
-
-    def __repr__(self):
-        return _representation_string(self, attrs=["filename"])
+    filename: str
+    num_lines: int = field(default=0, init=False)
+    total_sloc: int = field(default=0, init=False)
 
     def __str__(self):
-        return f"{str(self.filename)}; Hash: {str(self.file_hash)}"
+        return str(self.filename)
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -657,6 +627,7 @@ class FileNode(Node):
         return True
 
 
+@dataclass(eq=False, init=False)
 class CodeNode(Node):
     """
     Represents any line of code. Contains a start and end line, and the
@@ -664,18 +635,23 @@ class CodeNode(Node):
     the original source.
     """
 
-    def __init__(self, start_line=-1, end_line=-1, num_lines=0, source=None):
+    start_line: int = field(default=-1, init=False)
+    end_line: int = field(default=-1, init=False)
+    num_lines: int = field(default=0, init=False)
+    source: str | None = field(default=None, init=False, repr=False)
+
+    def __init__(
+        self,
+        start_line: int = -1,
+        end_line: int = -1,
+        num_lines: int = 0,
+        source: str | None = None,
+    ):
         super().__init__()
         self.start_line = start_line
         self.end_line = end_line
         self.num_lines = num_lines
         self.source = source
-
-    def __repr__(self):
-        return _representation_string(
-            self,
-            attrs=["start_line", "end_line", "num_lines"],
-        )
 
     def __str__(self):
         start = self.start_line
@@ -698,6 +674,7 @@ class CodeNode(Node):
             return [f"/* {self.num_lines} SLOC omitted */"]
 
 
+@dataclass(eq=False)
 class DirectiveNode(CodeNode):
     """
     A CodeNode representing a C preprocessor directive.
@@ -705,86 +682,57 @@ class DirectiveNode(CodeNode):
     countable lines and extent.
     """
 
-    def __init__(self):
-        super().__init__()
+    tokens: list[Token]
+
+    def spelling(self) -> list[str]:
+        """
+        Recover the original spelling of this directive in the input code.
+        Useful primarily for debugging and generating error messages.
+
+        Returns
+        -------
+        list[str]
+            The string representation of this directive in the input code.
+        """
+        out = []
+        for token in self.tokens:
+            if not token:
+                continue
+            if token.prev_white:
+                out.append(" ")
+            out.append(str(token))
+        return ["".join(out)]
 
 
+@dataclass(eq=False)
 class UnrecognizedDirectiveNode(DirectiveNode):
     """
     A CodeNode representing an unrecognized preprocessor directive
     """
 
-    def __init__(self, tokens):
-        super().__init__()
-        self.kind = "unrecognized"
-        self.tokens = tokens
 
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this directive in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return [" ".join([str(t) for t in self.tokens])]
-
-
+@dataclass(eq=False)
 class PragmaNode(DirectiveNode):
     """
     Represents a #pragma directive
     """
 
-    def __init__(self, tokens):
-        super().__init__()
-        self.kind = "pragma"
-        self.tokens = tokens
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this pragma in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        rest = " ".join([str(t) for t in self.tokens])
-        return [f"#pragma {rest}"]
+    expr: list[Token]
 
     def evaluate_for_platform(self, **kwargs):
-        if self.tokens and str(self.tokens[0]) == "once":
+        if self.expr and str(self.expr[0]) == "once":
             kwargs["platform"].add_include_to_skip(kwargs["filename"])
 
 
+@dataclass(eq=False)
 class DefineNode(DirectiveNode):
     """
     A DirectiveNode representing a #define directive.
     """
 
-    def __init__(self, identifier, args=None, value=None):
-        super().__init__()
-        self.kind = "define"
-        self.identifier = identifier
-        self.args = args
-        self.value = value
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this define in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        value_str = "".join([str(v) for v in self.value])
-
-        if self.args is None:
-            return [f"#define {self.identifier!s} {value_str!s}"]
-        elif self.args == []:
-            return [f"#define {self.identifier!s}() {value_str!s}"]
-        else:
-            arg_str = ", ".join([str(arg) for arg in self.args])
-            return [f"#define {self.identifier!s}({arg_str!s}) {value_str!s}"]
+    identifier: Identifier
+    args: list[Token] | None = None
+    value: list[Token] | None = None
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -795,25 +743,13 @@ class DefineNode(DirectiveNode):
         return False
 
 
+@dataclass(eq=False)
 class UndefNode(DirectiveNode):
     """
     A DirectiveNode representing an #undef directive.
     """
 
-    def __init__(self, identifier):
-        super().__init__()
-        self.kind = "undefine"
-        self.identifier = identifier
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this undef in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return [f"#undef {self.identifier!s}"]
+    identifier: Identifier
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -851,31 +787,14 @@ class IncludePath:
         return self.system
 
 
+@dataclass(eq=False)
 class IncludeNode(DirectiveNode):
     """
     A DirectiveNode representing an #include directive.
     Its value is an IncludePath or a list of tokens.
     """
 
-    def __init__(self, value):
-        super().__init__()
-        self.kind = "include"
-        self.value = value
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this include in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        if isinstance(self.value, list):
-            str_rep = " ".join([str(t) for t in self.value])
-        else:
-            str_rep = " ".join(self.value.spelling())
-
-        return [f"#include {str_rep!s}"]
+    value: IncludePath | list[Token]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -921,47 +840,31 @@ class IncludeNode(DirectiveNode):
             )
 
 
+@dataclass(eq=False)
 class IfNode(DirectiveNode):
     """
     Represents an #if, #ifdef or #ifndef directive.
     """
 
-    def __init__(self, tokens):
-        super().__init__()
-        self.kind = "if"
-        self.tokens = tokens
+    expr: list[Token]
 
     @staticmethod
     def is_start_node():
         return True
 
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this if in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        rest = " ".join([str(t) for t in self.tokens])
-        return [f"#if {rest}"]
-
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
-        expanded_tokens = MacroExpander(kwargs["platform"]).expand(self.tokens)
+        expanded_tokens = MacroExpander(kwargs["platform"]).expand(self.expr)
 
         # Evaluate the expanded tokens
         return ExpressionEvaluator(expanded_tokens).evaluate()
 
 
+@dataclass(eq=False)
 class ElIfNode(IfNode):
     """
     Represents an #elif directive.
     """
-
-    def __init__(self, tokens):
-        super().__init__(tokens)
-        self.kind = "elif"
 
     @staticmethod
     def is_start_node():
@@ -972,55 +875,29 @@ class ElIfNode(IfNode):
         return True
 
 
+@dataclass(eq=False)
 class ElseNode(DirectiveNode):
     """
     Represents an #else directive.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.kind = "else"
-
     @staticmethod
     def is_cont_node():
         return True
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this else in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return ["#else"]
 
     def evaluate_for_platform(self, **kwargs):
         return True
 
 
+@dataclass(eq=False)
 class EndIfNode(DirectiveNode):
     """
     Represents an #endif directive.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.kind = "endif"
-
     @staticmethod
     def is_end_node():
         return True
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-    def spelling(self):
-        """
-        Return the string representation of this endif in the input code.
-        Useful primarily for debugging and generating error messages.
-        """
-        return ["#endif"]
 
 
 class Parser:
@@ -1183,7 +1060,7 @@ class DirectiveParser(Parser):
             else:
                 expansion = []
 
-            return DefineNode(identifier, args, expansion)
+            return DefineNode(self.tokens, identifier, args, expansion)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid define directive.")
@@ -1199,7 +1076,7 @@ class DirectiveParser(Parser):
         try:
             self.match_value(Identifier, "undef")
             identifier = self.match_type(Identifier)
-            return UndefNode(identifier)
+            return UndefNode(self.tokens, identifier)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid undef directive.")
@@ -1225,7 +1102,7 @@ class DirectiveParser(Parser):
                 include_payload = self.tokens[path_pos:]
                 self.pos = len(self.tokens)
 
-            return IncludeNode(include_payload)
+            return IncludeNode(self.tokens, include_payload)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid include directive.")
@@ -1291,7 +1168,7 @@ class DirectiveParser(Parser):
             expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
-            return PragmaNode(expr)
+            return PragmaNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid pragma directive.")
@@ -1309,7 +1186,7 @@ class DirectiveParser(Parser):
             expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
-            return IfNode(expr)
+            return IfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid if directive.")
@@ -1334,7 +1211,7 @@ class DirectiveParser(Parser):
             suffix = [Punctuator("Unknown", -1, False, ")")]
             expr = prefix + [identifier] + suffix
 
-            return IfNode(expr)
+            return IfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid ifdef directive")
@@ -1360,7 +1237,7 @@ class DirectiveParser(Parser):
             suffix = [Punctuator("Unknown", -1, False, ")")]
             expr = prefix + [identifier] + suffix
 
-            return IfNode(expr)
+            return IfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid ifndef directive")
@@ -1378,7 +1255,7 @@ class DirectiveParser(Parser):
             expr = self.tokens[self.pos :]
             self.pos = len(self.tokens)
 
-            return ElIfNode(expr)
+            return ElIfNode(self.tokens, expr)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid elif directive.")
@@ -1393,7 +1270,7 @@ class DirectiveParser(Parser):
         initial_pos = self.pos
         try:
             self.match_value(Identifier, "else")
-            return ElseNode()
+            return ElseNode(self.tokens)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid else directive.")
@@ -1408,7 +1285,7 @@ class DirectiveParser(Parser):
         initial_pos = self.pos
         try:
             self.match_value(Identifier, "endif")
-            return EndIfNode()
+            return EndIfNode(self.tokens)
         except ParseError:
             self.pos = initial_pos
             raise ParseError("Invalid endif directive.")
