@@ -8,11 +8,11 @@ Contains classes that define:
 """
 
 import collections
-import hashlib
 import logging
 import os
 from collections.abc import Callable, Iterable
 from copy import copy
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Self
 
@@ -530,15 +530,15 @@ class Visit(Enum):
     NEXT_SIBLING = 1
 
 
+@dataclass(eq=False)
 class Node:
     """
     Base class for all other Node types.
     Contains a single parent, and an ordered list of children.
     """
 
-    def __init__(self):
-        self.children = []
-        self.parent = None
+    children: list[Self] = field(default_factory=list, init=False)
+    parent: Self | None = field(default=None, init=False)
 
     def add_child(self, child):
         self.children.append(child)
@@ -605,35 +605,19 @@ class Node:
                 child.visit(visitor)
 
 
+@dataclass(eq=False)
 class FileNode(Node):
     """
     Typically the root node of a tree. Simply contains a filename after
     inheriting from the Node class.
     """
 
-    def __init__(self, _filename):
-        super().__init__()
-        self.filename = _filename
-        # The length of the file, counting blank lines and comments
-        self.num_lines = 0
-        # The source lines of code, ignoring blank lines and comments
-        self.total_sloc = 0
-        self.file_hash = self.__compute_file_hash()
-
-    def __compute_file_hash(self):
-        chunk_size = 4096
-        hasher = hashlib.sha512()
-        with open(self.filename, "rb") as in_file:
-            for chunk in iter(lambda: in_file.read(chunk_size), b""):
-                hasher.update(chunk)
-
-        return hasher.hexdigest()
-
-    def __repr__(self):
-        return _representation_string(self, attrs=["filename"])
+    filename: str
+    num_lines: int = field(default=0, init=False)
+    total_sloc: int = field(default=0, init=False)
 
     def __str__(self):
-        return f"{str(self.filename)}; Hash: {str(self.file_hash)}"
+        return str(self.filename)
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -643,6 +627,7 @@ class FileNode(Node):
         return True
 
 
+@dataclass(eq=False, init=False)
 class CodeNode(Node):
     """
     Represents any line of code. Contains a start and end line, and the
@@ -650,13 +635,23 @@ class CodeNode(Node):
     the original source.
     """
 
+    start_line: int = field(default=-1, init=False)
+    end_line: int = field(default=-1, init=False)
+    num_lines: int = field(default=0, init=False)
+    source: str | None = field(default=None, init=False, repr=False)
+    lines: list[str] | None = field(
+        default_factory=list,
+        init=False,
+        repr=False,
+    )
+
     def __init__(
         self,
-        start_line=-1,
-        end_line=-1,
-        num_lines=0,
-        source=None,
-        lines=None,
+        start_line: int = -1,
+        end_line: int = -1,
+        num_lines: int = 0,
+        source: str | None = None,
+        lines: list[int] | None = None,
     ):
         super().__init__()
         self.start_line = start_line
@@ -667,12 +662,6 @@ class CodeNode(Node):
         else:
             self.lines = lines
         self.source = source
-
-    def __repr__(self):
-        return _representation_string(
-            self,
-            attrs=["start_line", "end_line", "num_lines"],
-        )
 
     def __str__(self):
         start = self.start_line
@@ -695,6 +684,7 @@ class CodeNode(Node):
             return [f"/* {self.num_lines} SLOC omitted */"]
 
 
+@dataclass(eq=False)
 class DirectiveNode(CodeNode):
     """
     A CodeNode representing a C preprocessor directive.
@@ -702,9 +692,7 @@ class DirectiveNode(CodeNode):
     countable lines and extent.
     """
 
-    def __init__(self, tokens):
-        super().__init__()
-        self.tokens = tokens
+    tokens: list[Token]
 
     def spelling(self) -> list[str]:
         """
@@ -726,51 +714,35 @@ class DirectiveNode(CodeNode):
         return ["".join(out)]
 
 
+@dataclass(eq=False)
 class UnrecognizedDirectiveNode(DirectiveNode):
     """
     A CodeNode representing an unrecognized preprocessor directive
     """
 
-    def __init__(self, tokens):
-        super().__init__(tokens)
-        self.kind = "unrecognized"
 
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
-
-
+@dataclass(eq=False)
 class PragmaNode(DirectiveNode):
     """
     Represents a #pragma directive
     """
 
-    def __init__(self, tokens, expr):
-        super().__init__(tokens)
-        self.expr = expr
-        self.kind = "pragma"
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
+    expr: list[Token]
 
     def evaluate_for_platform(self, **kwargs):
         if self.expr and str(self.expr[0]) == "once":
             kwargs["platform"].add_include_to_skip(kwargs["filename"])
 
 
+@dataclass(eq=False)
 class DefineNode(DirectiveNode):
     """
     A DirectiveNode representing a #define directive.
     """
 
-    def __init__(self, tokens, identifier, args=None, value=None):
-        super().__init__(tokens)
-        self.kind = "define"
-        self.identifier = identifier
-        self.args = args
-        self.value = value
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
+    identifier: Identifier
+    args: list[Token] | None = None
+    value: list[Token] | None = None
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -781,18 +753,13 @@ class DefineNode(DirectiveNode):
         return False
 
 
+@dataclass(eq=False)
 class UndefNode(DirectiveNode):
     """
     A DirectiveNode representing an #undef directive.
     """
 
-    def __init__(self, tokens, identifier):
-        super().__init__(tokens)
-        self.kind = "undefine"
-        self.identifier = identifier
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
+    identifier: Identifier
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -830,19 +797,14 @@ class IncludePath:
         return self.system
 
 
+@dataclass(eq=False)
 class IncludeNode(DirectiveNode):
     """
     A DirectiveNode representing an #include directive.
     Its value is an IncludePath or a list of tokens.
     """
 
-    def __init__(self, tokens, value):
-        super().__init__(tokens)
-        self.kind = "include"
-        self.value = value
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
+    value: IncludePath | list[Token]
 
     def evaluate_for_platform(self, **kwargs):
         """
@@ -888,22 +850,17 @@ class IncludeNode(DirectiveNode):
             )
 
 
+@dataclass(eq=False)
 class IfNode(DirectiveNode):
     """
     Represents an #if, #ifdef or #ifndef directive.
     """
 
-    def __init__(self, tokens, expr):
-        super().__init__(tokens)
-        self.expr = expr
-        self.kind = "if"
+    expr: list[Token]
 
     @staticmethod
     def is_start_node():
         return True
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
 
     def evaluate_for_platform(self, **kwargs):
         # Perform macro substitution with tokens
@@ -913,14 +870,11 @@ class IfNode(DirectiveNode):
         return ExpressionEvaluator(expanded_tokens).evaluate()
 
 
+@dataclass(eq=False)
 class ElIfNode(IfNode):
     """
     Represents an #elif directive.
     """
-
-    def __init__(self, tokens, expr):
-        super().__init__(tokens, expr)
-        self.kind = "elif"
 
     @staticmethod
     def is_start_node():
@@ -931,41 +885,29 @@ class ElIfNode(IfNode):
         return True
 
 
+@dataclass(eq=False)
 class ElseNode(DirectiveNode):
     """
     Represents an #else directive.
     """
 
-    def __init__(self, tokens):
-        super().__init__(tokens)
-        self.kind = "else"
-
     @staticmethod
     def is_cont_node():
         return True
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
 
     def evaluate_for_platform(self, **kwargs):
         return True
 
 
+@dataclass(eq=False)
 class EndIfNode(DirectiveNode):
     """
     Represents an #endif directive.
     """
 
-    def __init__(self, tokens):
-        super().__init__(tokens)
-        self.kind = "endif"
-
     @staticmethod
     def is_end_node():
         return True
-
-    def __repr__(self):
-        return _representation_string(self, name="DirectiveNode")
 
 
 class Parser:
