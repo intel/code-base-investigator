@@ -13,6 +13,7 @@ import logging
 import os
 from collections.abc import Callable, Iterable
 from copy import copy
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Self
 
@@ -68,19 +69,16 @@ class MacroExpandOverflow(ValueError):
     """
 
 
+@dataclass
 class Token:
     """
     Represents a token constructed by the parser.
     """
 
-    def __init__(self, line, col, prev_white, token):
-        self.line = line
-        self.col = col
-        self.prev_white = prev_white
-        self.token = token
-
-    def __repr__(self):
-        return _representation_string(self)
+    line: int
+    col: int
+    prev_white: bool
+    token: str
 
     def __str__(self):
         return "\n".join(self.spelling())
@@ -100,15 +98,14 @@ class Token:
         return str(self)
 
 
+@dataclass
 class CharacterConstant(Token):
     """
     Represents a character constant.
     """
 
-    def __repr__(self):
-        return _representation_string(self)
 
-
+@dataclass
 class NumericalConstant(Token):
     """
     Represents a 'preprocessing number'.
@@ -116,17 +113,12 @@ class NumericalConstant(Token):
     not be valid syntax).
     """
 
-    def __repr__(self):
-        return _representation_string(self)
 
-
+@dataclass
 class StringConstant(Token):
     """
     Represents a string constant.
     """
-
-    def __repr__(self):
-        return _representation_string(self)
 
     def spelling(self):
         """
@@ -155,44 +147,34 @@ class StringConstant(Token):
         return "".join(out)
 
 
+@dataclass
 class Identifier(Token):
     """
     Represents a C identifier.
     """
 
-    def __init__(self, line, col, prev_white, token):
-        super().__init__(line, col, prev_white, token)
-        self.expandable = True
-
-    def __repr__(self):
-        return _representation_string(self)
+    expandable: bool = field(default=True, init=True)
 
 
+@dataclass
 class Operator(Token):
     """
     Represents a C operator.
     """
 
-    def __repr__(self):
-        return _representation_string(self)
 
-
+@dataclass
 class Punctuator(Token):
     """
     Represents a punctuator (e.g. parentheses)
     """
 
-    def __repr__(self):
-        return _representation_string(self)
 
-
+@dataclass
 class Unknown(Token):
     """
     Represents an unknown token.
     """
-
-    def __repr__(self):
-        return _representation_string(self)
 
 
 class Lexer:
