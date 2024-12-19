@@ -15,7 +15,7 @@ from codebasin import CompilationDatabase, util
 log = logging.getLogger(__name__)
 
 
-def extract_defines(argv):
+def extract_defines(argv: list[str]) -> list[str]:
     """
     Extract definitions from command-line arguments.
     Recognizes two argument "-D MACRO" and one argument "-DMACRO".
@@ -34,7 +34,7 @@ def extract_defines(argv):
     return defines
 
 
-def extract_include_paths(argv):
+def extract_include_paths(argv: list[str]) -> list[str]:
     """
     Extract include paths from command-line arguments.
     Recognizes two argument "-I path" and one argument "-Ipath".
@@ -54,7 +54,7 @@ def extract_include_paths(argv):
     return include_paths
 
 
-def extract_include_files(argv):
+def extract_include_files(argv: list[str]) -> list[str]:
     """
     Extract include files from command-line arguments.
     Recognizes two argument "-include file".
@@ -98,9 +98,9 @@ class Compiler:
     - Implicitly defined macros, which may be flag-dependent.
     """
 
-    def __init__(self, args):
-        self.name = os.path.basename(args[0])
-        self.args = args
+    def __init__(self, argv: list[str]):
+        self.name = os.path.basename(argv[0])
+        self.argv = argv
         self.passes = {"default"}
 
         # Check for any user-defined compiler behavior.
@@ -152,14 +152,14 @@ class ClangCompiler(Compiler):
         "spir64_fpga",
     ]
 
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, argv: list[str]):
+        super().__init__(argv)
 
         self.sycl = False
         self.omp = False
         sycl_targets = []
 
-        for arg in args:
+        for arg in argv:
             if arg == "-fsycl":
                 self.sycl = True
                 continue
@@ -202,10 +202,10 @@ class GnuCompiler(Compiler):
     Represents the behavior of GNU-based compilers.
     """
 
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, argv: list[str]):
+        super().__init__(argv)
 
-        for arg in args:
+        for arg in argv:
             if arg in ["-fopenmp"]:
                 self.defines.append("_OPENMP")
                 break
@@ -216,8 +216,8 @@ class HipCompiler(Compiler):
     Represents the behavior of the HIP compiler.
     """
 
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, argv: list[str]):
+        super().__init__(argv)
 
 
 class IntelCompiler(ClangCompiler):
@@ -225,8 +225,8 @@ class IntelCompiler(ClangCompiler):
     Represents the behavior of Intel compilers.
     """
 
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, argv: list[str]):
+        super().__init__(argv)
 
 
 class NvccCompiler(Compiler):
@@ -234,11 +234,11 @@ class NvccCompiler(Compiler):
     Represents the behavior of the NVCC compiler.
     """
 
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, argv: list[str]):
+        super().__init__(argv)
         self.omp = False
 
-        for arg in args:
+        for arg in argv:
             archs = re.findall("sm_(\\d+)", arg)
             archs += re.findall("compute_(\\d+)", arg)
             self.passes |= set(archs)
@@ -266,7 +266,7 @@ class NvccCompiler(Compiler):
 _seen_compiler = collections.defaultdict(lambda: False)
 
 
-def recognize_compiler(argv):
+def recognize_compiler(argv: list[str]) -> Compiler:
     """
     Attempt to recognize the compiler, given an argument list.
     Return a Compiler object.
