@@ -16,6 +16,36 @@ class TestCompilers(unittest.TestCase):
     def setUp(self):
         logging.disable()
 
+    def test_common(self):
+        """compilers/common"""
+        argv = [
+            "c++",
+            "-I/path",
+            "-I",
+            "/path/after/space",
+            "-isystem",
+            "/system/path",
+            "-include",
+            "foo.inc",
+            "-include",
+            "bar.inc",
+            "-DMACRO",
+            "-DFUNCTION_MACRO=1",
+            "-D",
+            "MACRO_AFTER_SPACE",
+            "test.cpp",
+        ]
+        args = config._parse_compiler_args(argv)
+        self.assertEqual(
+            args.defines,
+            ["MACRO", "FUNCTION_MACRO=1", "MACRO_AFTER_SPACE"],
+        )
+        self.assertEqual(
+            args.include_paths,
+            ["/path", "/path/after/space", "/system/path"],
+        )
+        self.assertEqual(args.include_files, ["foo.inc", "bar.inc"])
+
     def test_clang(self):
         """compilers/clang"""
         args = ["clang", "-fsycl-is-device", "test.cpp"]
