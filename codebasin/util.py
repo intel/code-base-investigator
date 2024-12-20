@@ -85,7 +85,7 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
         If the JSON fails to validate, or the schema name is unrecognized.
 
     RuntimeError
-        If the schema file cannot be located.
+        If the schema file cannot be located, or the schema is invalid.
     """
     schema_paths = {
         "analysis": "schema/analysis.schema",
@@ -106,8 +106,8 @@ def _validate_json(json_object: object, schema_name: str) -> bool:
 
     try:
         jsonschema.validate(instance=json_object, schema=schema)
-    except jsonschema.exceptions.ValidationError:
-        msg = f"JSON failed schema validation against {schema_path}"
+    except jsonschema.exceptions.ValidationError as e:
+        msg = f"Failed schema validation against {schema_path}: {e.message}"
         raise ValueError(msg)
     except jsonschema.exceptions.SchemaError:
         msg = f"{schema_path} is not a valid schema"
