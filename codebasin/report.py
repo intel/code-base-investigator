@@ -262,14 +262,14 @@ def find_duplicates(codebase: CodeBase) -> list[set[Path]]:
 
     # Confirm equality for files with the same hash.
     confirmed_matches = []
-    for digest, paths in possible_matches.items():
+    for digest, path_set in possible_matches.items():
         # Skip files with no hash conflicts.
-        if len(paths) == 1:
+        if len(path_set) == 1:
             continue
 
         # Check for equality amongst all files in the set.
         # Iterate until we have identified all conflicting hashes.
-        remaining = paths.copy()
+        remaining = path_set.copy()
         while len(remaining) > 1:
             first = remaining.pop()
             matches = {first}
