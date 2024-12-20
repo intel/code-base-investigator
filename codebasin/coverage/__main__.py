@@ -113,8 +113,7 @@ def _compute(args: argparse.Namespace):
     for path in [dbpath, covpath]:
         if not util.valid_path(path):
             raise ValueError(f"{path} is not a valid path.")
-        if not util.ensure_ext(path, [".json"]):
-            raise ValueError(f"{path} is not a JSON file.")
+        util.ensure_ext(path, [".json"])
 
     source_dir = os.path.realpath(args.source_dir)
 
