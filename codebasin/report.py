@@ -249,13 +249,15 @@ def find_duplicates(codebase: CodeBase) -> list[set[Path]]:
         A list of all sets of Paths with identical contents.
     """
     # Search for possible matches using a hash, ignoring symlinks.
-    possible_matches = defaultdict(set)
+    possible_matches = {}
     for path in codebase:
         path = Path(path)
         if path.is_symlink():
             continue
         with open(path, "rb") as f:
             digest = hashlib.file_digest(f, "sha512").hexdigest()
+        if digest not in possible_matches:
+            possible_matches[digest] = set()
         possible_matches[digest].add(path)
 
     # Confirm equality for files with the same hash.
