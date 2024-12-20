@@ -190,7 +190,7 @@ def _main():
         metavar="<report>",
         action="append",
         default=[],
-        choices=["all", "summary", "clustering", "duplicates"],
+        choices=["all", "summary", "clustering", "duplicates", "files"],
         help=_help_string(
             "Generate a report of the specified type.",
             "May be specified multiple times.",
@@ -338,6 +338,10 @@ def _main():
         summary = report.summary(setmap)
         if summary is not None:
             print(summary)
+
+    # Print files report
+    if report_enabled("files"):
+        report.files(codebase, state)
 
     # Print clustering report
     if report_enabled("clustering"):

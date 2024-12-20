@@ -31,6 +31,7 @@ Command Line Interface
     - ``summary``: output only code divergence information.
     - ``clustering``: output only distance matrix and dendrogram.
     - ``duplicates``: output only detected duplicate files.
+    - ``files``: output only information about individual files.
     - ``all``: generate all available reports.
 
 ``-x <pattern>, --exclude <pattern>``
