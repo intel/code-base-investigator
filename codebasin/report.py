@@ -346,7 +346,7 @@ def _human_readable(x: int) -> str:
         return f"{x/10**6:.1f}M"
     elif digits <= 12:
         return f"{x/10**9:.1f}G"
-    return "??????"
+    return "******"
 
 
 def _strip_colors(s: str) -> str:
