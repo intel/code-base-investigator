@@ -28,6 +28,28 @@ from codebasin.preprocessor import CodeNode
 log = logging.getLogger(__name__)
 
 
+def _heading(text: str, stream: TextIO):
+    """
+    Parameters
+    ----------
+    text: str
+        The text to use as the heading.
+
+    stream: TextIO
+        The stream the heading will eventually be written to.
+
+    Returns
+    -------
+    str
+        A heading string appropriately formatted for the output stream.
+    """
+    if stream.isatty():
+        return f"\033[1m\033[4m{text}\033[0m\n"
+    else:
+        underline = "=" * len(text)
+        return f"{text}\n{underline}"
+
+
 def extract_platforms(setmap):
     """
     Extract a list of unique platforms from a set map
@@ -150,7 +172,7 @@ def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
     stream: TextIO, default: sys.stdout
         The stream to write the report to.
     """
-    lines = [""]
+    lines = ["", _heading("Summary", stream)]
 
     total = sum(setmap.values())
     data = []
@@ -202,6 +224,8 @@ def clustering(
     stream: TextIO, default: sys.stdout
         The stream to write the report to.
     """
+    lines = ["", _heading("Clustering", stream)]
+
     # Sort the platform list to ensure that the ordering of platforms in the
     # distance matrix and dendrogram do not change from run to run
     platforms = sorted(extract_platforms(setmap))
@@ -231,8 +255,7 @@ def clustering(
     ]
 
     # Print distance matrix as a table
-    lines = [""]
-    lines += ["Distance Matrix"]
+    lines += ["Distance Matrix:"]
     labelled_matrix = [
         [name] + [f"{column:.2f}" for column in matrix[row]]
         for (row, name) in enumerate(platforms)
@@ -332,8 +355,7 @@ def duplicates(codebase: CodeBase, stream: TextIO = sys.stdout):
     confirmed_matches = find_duplicates(codebase)
 
     print("", file=stream)
-    print("Duplicates", file=stream)
-    print("----------", file=stream)
+    print(_heading("Duplicates", stream), file=stream)
 
     if len(confirmed_matches) == 0:
         print("No duplicates found.", file=stream)
@@ -769,8 +791,7 @@ def files(
         tree.insert(f, setmap)
 
     print("", file=stream)
-    print("Files", file=stream)
-    print("-----", file=stream)
+    print(_heading("Files", stream), file=stream)
 
     # Print a legend.
     legend = []
