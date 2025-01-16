@@ -192,7 +192,11 @@ def _main():
         default=[],
         choices=["all", "summary", "clustering", "duplicates", "files"],
         help=_help_string(
-            "Generate a report of the specified type.",
+            "Generate a report of the specified type:",
+            "- summary: code divergence information",
+            "- clustering: distance matrix and dendrogram",
+            "- duplicates: detected duplicate files",
+            "- files: information about individual files",
             "May be specified multiple times.",
             "If not specified, all reports will be generated.",
             is_long=True,
