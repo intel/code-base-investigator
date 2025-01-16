@@ -356,6 +356,8 @@ def _main():
         clustering = report.clustering(clustering_output_name, setmap)
         if clustering is not None:
             print(clustering)
+            print("")
+            print(f"Dendrogram written to {clustering_output_name}")
 
     # Print duplicates report
     if report_enabled("duplicates"):
