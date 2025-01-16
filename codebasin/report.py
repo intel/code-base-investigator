@@ -797,12 +797,12 @@ def files(
 
     # Print a legend.
     legend = []
-    legend += ["\033[1mLegend\033[0m:"]
+    legend += ["Legend:"]
     for i, platform in enumerate(sorted(tree.root.platforms)):
         label = string.ascii_uppercase[i]
         legend += [f"\033[33m{label}\033[0m: {platform}"]
     legend += [""]
-    legend += ["\033[1mColumns\033[0m:"]
+    legend += ["Columns:"]
     header = [
         "Platform Set",
         "Used SLOC / Total SLOC",
