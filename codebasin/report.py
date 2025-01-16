@@ -365,6 +365,8 @@ def duplicates(codebase: CodeBase, stream: TextIO = sys.stdout):
         print(f"Match {i}:", file=stream)
         for path in matches:
             print(f"- {path}")
+        if i != len(confirmed_matches) - 1:
+            print("")
 
 
 def _human_readable(x: int) -> str:
