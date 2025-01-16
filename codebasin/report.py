@@ -141,7 +141,7 @@ def summary(setmap):
     """
     Produce a summary report for the platform set
     """
-    lines = []
+    lines = [""]
 
     total = sum(setmap.values())
     data = []
@@ -207,8 +207,8 @@ def clustering(output_name, setmap):
     ]
 
     # Print distance matrix as a table
-    lines = []
-    lines += ["", "Distance Matrix"]
+    lines = [""]
+    lines += ["Distance Matrix"]
     labelled_matrix = [
         [name] + [f"{column:.2f}" for column in matrix[row]]
         for (row, name) in enumerate(platforms)
@@ -304,6 +304,7 @@ def duplicates(codebase: CodeBase, stream: TextIO = sys.stdout):
     """
     confirmed_matches = find_duplicates(codebase)
 
+    print("", file=stream)
     print("Duplicates", file=stream)
     print("----------", file=stream)
 
@@ -740,6 +741,7 @@ def files(
                     setmap[frozenset(assoc)] += node.num_lines
         tree.insert(f, setmap)
 
+    print("", file=stream)
     print("Files", file=stream)
     print("-----", file=stream)
 
