@@ -268,10 +268,8 @@ def _main():
     stdout_handler.setFormatter(Formatter(colors=sys.stdout.isatty()))
     log.addHandler(stdout_handler)
 
-    # If no specific report was specified, generate all reports.
-    # Handled here to prevent "all" always being in the list.
-    if len(args.reports) == 0:
-        args.reports = ["all"]
+    if "all" in args.reports:
+        log.warning("Passing 'all' to -R is deprecated. Omit -R instead.")
 
     # Determine the root directory based on where codebasin is run.
     rootdir = os.path.abspath(os.getcwd())
@@ -333,7 +331,7 @@ def _main():
     setmap = state.get_setmap(codebase)
 
     def report_enabled(name):
-        if "all" in args.reports:
+        if "all" in args.reports or len(args.reports) == 0:
             return True
         return name in args.reports
 
