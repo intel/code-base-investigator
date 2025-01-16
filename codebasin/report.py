@@ -137,9 +137,18 @@ def normalized_utilization(
         return utilization(setmap) / total_platforms
 
 
-def summary(setmap):
+def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
     """
-    Produce a summary report for the platform set
+    Produce a summary report for the platform set, including
+    a breakdown of SLOC per platform subset, code divergence, etc.
+
+    Parameters
+    ----------
+    setmap: defaultdict[str, int]
+        The setmap used to compute the summary report.
+
+    stream: TextIO, default: sys.stdout
+        The stream to write the report to.
     """
     lines = [""]
 
@@ -171,12 +180,27 @@ def summary(setmap):
     lines += [f"Unused Code (%): {unused:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
-    return "\n".join(lines)
+    print("\n".join(lines), file=stream)
 
 
-def clustering(output_name, setmap):
+def clustering(
+    output_name: str,
+    setmap: defaultdict[str, int],
+    stream: TextIO = sys.stdout,
+):
     """
-    Produce a clustering report for the platform set
+    Produce a clustering report for the platform set.
+
+    Parameters
+    ----------
+    output_name: str
+        The filename for the dendrogram.
+
+    setmap: defaultdict[str, int]
+        The setmap used to compute the clustering statistics.
+
+    stream: TextIO, default: sys.stdout
+        The stream to write the report to.
     """
     # Sort the platform list to ensure that the ordering of platforms in the
     # distance matrix and dendrogram do not change from run to run
@@ -243,7 +267,10 @@ def clustering(output_name, setmap):
     with util.safe_open_write_binary(output_name) as fp:
         fig.savefig(fp)
 
-    return "\n".join(lines)
+    lines += [""]
+    lines += [f"Dendrogram written to {output_name}"]
+
+    print("\n".join(lines), file=stream)
 
 
 def find_duplicates(codebase: CodeBase) -> list[set[Path]]:

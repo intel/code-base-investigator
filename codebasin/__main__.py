@@ -338,9 +338,7 @@ def _main():
 
     # Print summary report
     if report_enabled("summary"):
-        summary = report.summary(setmap)
-        if summary is not None:
-            print(summary)
+        report.summary(setmap)
 
     # Print files report
     if report_enabled("files"):
@@ -353,11 +351,7 @@ def _main():
         output_prefix = "-".join([filename] + args.platforms)
 
         clustering_output_name = output_prefix + "-dendrogram.png"
-        clustering = report.clustering(clustering_output_name, setmap)
-        if clustering is not None:
-            print(clustering)
-            print("")
-            print(f"Dendrogram written to {clustering_output_name}")
+        report.clustering(clustering_output_name, setmap)
 
     # Print duplicates report
     if report_enabled("duplicates"):
