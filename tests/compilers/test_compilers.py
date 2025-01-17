@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
+import os
+import tempfile
 import unittest
+from pathlib import Path
 
 from codebasin import config
 
@@ -15,6 +18,10 @@ class TestCompilers(unittest.TestCase):
 
     def setUp(self):
         logging.disable()
+        self.cwd = os.getcwd()
+
+    def tearDown(self):
+        os.chdir(self.cwd)
 
     def test_common(self):
         """compilers/common"""
@@ -130,6 +137,28 @@ class TestCompilers(unittest.TestCase):
         self.assertTrue(compiler.has_implicit_behavior("52"))
         defines = compiler.get_defines("52")
         self.assertEqual(defines, defaults + ["__CUDA_ARCH__=520"])
+
+    def test_user_options(self):
+        """Check that we import user-defined options"""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        with open(path / ".cbi" / "config", mode="w") as f:
+            f.write('[compiler."c++"]\n')
+            f.write('options = ["-D", "ASDF"]\n')
+        config.load_importcfg()
+
+        args = [
+            "c++",
+            "test.cpp",
+        ]
+
+        compiler = config.recognize_compiler(args)
+        defines = compiler.get_defines("default")
+        self.assertCountEqual(defines, ["ASDF"])
+
+        tmp.cleanup()
 
 
 if __name__ == "__main__":
