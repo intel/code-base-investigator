@@ -49,7 +49,7 @@ def _parse_compiler_args(argv: list[str]):
         action="append",
         default=[],
     )
-    args, _ = parser.parse_known_args(argv[1:])
+    args, _ = parser.parse_known_args(argv)
     return args
 
 
@@ -294,7 +294,7 @@ def load_database(dbpath, rootdir):
         argv = command.arguments
 
         # Parse common command-line arguments.
-        args = _parse_compiler_args(argv)
+        args = _parse_compiler_args(argv[1:])
         defines = args.defines
         include_paths = args.include_paths
         include_files = args.include_files
