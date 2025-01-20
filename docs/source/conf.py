@@ -19,7 +19,7 @@ release = "1.2.0"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.mathjax"]
+extensions = ["sphinx.ext.mathjax", "sphinx_inline_tabs"]
 
 templates_path = ["_templates"]
 exclude_patterns = []
