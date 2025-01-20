@@ -14,9 +14,9 @@ from pathlib import Path
 from codebasin.coverage.__main__ import cli
 
 
-class TestCbicov(unittest.TestCase):
+class TestCbiCov(unittest.TestCase):
     """
-    Test cbicov command line interface.
+    Test cbi-cov command line interface.
     """
 
     def setUp(self):
@@ -78,7 +78,7 @@ class TestCbicov(unittest.TestCase):
         with open(p / "bar.h", mode="w") as f:
             f.write("unguarded();")
 
-        # cbicov reads compile commands from disk.
+        # cbi-cov reads compile commands from disk.
         compile_commands = [
             {
                 "file": str(p / "foo.cpp"),
