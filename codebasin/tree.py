@@ -140,19 +140,8 @@ def cli(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     # Configure logging such that:
-    # - All messages are written to a log file
     # - Only errors are written to the terminal
     log.setLevel(logging.DEBUG)
-
-    file_handler = logging.FileHandler("cbi.log", mode="w")
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(Formatter())
-    log.addHandler(file_handler)
-
-    # Inform the user that a log file has been created.
-    # 'print' instead of 'log' to ensure the message is visible in the output.
-    log_path = os.path.abspath("cbi.log")
-    print(f"Log file created at {log_path}")
 
     stderr_handler = logging.StreamHandler(sys.stderr)
     stderr_handler.setLevel(logging.ERROR)
