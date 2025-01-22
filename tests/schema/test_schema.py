@@ -178,7 +178,7 @@ class TestSchema(unittest.TestCase):
             include_paths = ["/host/"]
             include_files = ["host.inc"]
 
-            [[compiler.test.modes]]
+            [[compiler.test.passes]]
             name = "device"
             defines = ["DEVICE"]
             include_paths = ["/device/"]
