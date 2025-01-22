@@ -5,7 +5,7 @@ import argparse
 import logging
 import unittest
 
-from codebasin.config import _StoreSplitAction
+from codebasin.config import _ExtendMatchAction, _StoreSplitAction
 
 
 class TestActions(unittest.TestCase):
@@ -59,6 +59,69 @@ class TestActions(unittest.TestCase):
 
         args, _ = parser.parse_known_args(["--qux=one,two"], namespace)
         self.assertEqual(args.passes, {"--qux": ["one", "two"]})
+
+    def test_extend_match_init(self):
+        """Check that extend_match recognizes custom arguments"""
+        action = _ExtendMatchAction(
+            ["--foo"],
+            "foo",
+            pattern="*",
+            format="$value",
+        )
+        self.assertEqual(action.pattern, "*")
+        self.assertEqual(action.format, "$value")
+
+        action = _ExtendMatchAction(["--foo"], "foo")
+        self.assertEqual(action.pattern, None)
+        self.assertEqual(action.format, None)
+
+    def test_extend_match(self):
+        """Check that argparse calls store_split correctly"""
+        namespace = argparse.Namespace()
+        namespace.passes = {}
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--foo",
+            action=_ExtendMatchAction,
+            pattern=r"option_(\d+)",
+            default=[],
+        )
+        parser.add_argument(
+            "--bar",
+            action=_ExtendMatchAction,
+            pattern=r"option_(\d+)",
+            format="prefix-$value-suffix",
+            default=[],
+        )
+        parser.add_argument("--baz", action=_ExtendMatchAction, type=int)
+        parser.add_argument(
+            "--qux",
+            action=_ExtendMatchAction,
+            pattern=r"option_(\d+)",
+            dest="passes",
+        )
+
+        args, _ = parser.parse_known_args(
+            ["--foo=option_1,option_2"],
+            namespace,
+        )
+        self.assertEqual(args.foo, ["1", "2"])
+
+        args, _ = parser.parse_known_args(
+            ["--bar=option_1,option_2"],
+            namespace,
+        )
+        self.assertEqual(args.bar, ["prefix-1-suffix", "prefix-2-suffix"])
+
+        with self.assertRaises(TypeError):
+            args, _ = parser.parse_known_args(["--baz=1"], namespace)
+
+        args, _ = parser.parse_known_args(
+            ["--qux=option_1,option_2"],
+            namespace,
+        )
+        self.assertEqual(args.passes, {"--qux": ["1", "2"]})
 
 
 if __name__ == "__main__":
