@@ -1,0 +1,49 @@
+name: coverage
+
+permissions: read-all
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'codebasin/**'
+
+jobs:
+  check-coverage:
+    name: Ensure modified lines are tested
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install `code-base-investigator`
+        run: |
+          python -m pip install -U pip
+          pip install .
+
+      - name: Install `coverage`
+        run: |
+          pip install coverage
+
+      - name: Run `coverage`
+        run: |
+          python -m coverage run -m unittest
+
+      - name: Generate coverage.json
+        run: |
+          python -m coverage json --include=$(git diff --name-status main codebasin/*.py | grep "^M" | awk '{ print $2 }' | paste -sd,)
+
+      - name: Check coverage against latest commits
+        run: |
+          FROM=${{ github.event.pull_request.base.sha }}
+          TO=${{ github.event.pull_request.head.sha }}
+          COMMITS=$(git rev-list $FROM..$TO)
+          python .github/workflows/check-coverage.py coverage.json --commits $COMMITS
