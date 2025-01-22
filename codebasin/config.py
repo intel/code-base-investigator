@@ -5,10 +5,12 @@ Contains functions to build up a configuration dictionary,
 defining a specific code base configuration.
 """
 
+import argparse
 import collections
 import logging
 import os
 import re
+import string
 
 from codebasin import CompilationDatabase, util
 
@@ -90,6 +92,31 @@ def load_importcfg():
                 return
         for name, compiler in _importcfg_toml["compiler"].items():
             _importcfg[name] = compiler["options"]
+
+
+class _StoreSplitAction(argparse.Action):
+    """
+    A custom argparse.Action that splits the value based on a user-provided
+    separator, then stores the resulting list.
+    """
+
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        self.sep = kwargs.pop("sep", None)
+        self.format = kwargs.pop("format", None)
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string):
+        if not isinstance(values, str):
+            raise TypeError("store_split expects string values")
+        split_values = values.split(self.sep)
+        if self.format:
+            template = string.Template(self.format)
+            split_values = [template.substitute(value=v) for v in split_values]
+        if self.dest == "passes":
+            passes = getattr(namespace, self.dest)
+            passes[option_string] = split_values
+        else:
+            setattr(namespace, self.dest, split_values)
 
 
 class Compiler:
