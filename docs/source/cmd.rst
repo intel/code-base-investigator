@@ -28,11 +28,10 @@ Command Line Interface
 ``-R <report>``
     Generate a report of the specified type.
 
-    - ``summary``: output only code divergence information.
-    - ``clustering``: output only distance matrix and dendrogram.
-    - ``duplicates``: output only detected duplicate files.
-    - ``files``: output only information about individual files.
-    - ``all``: generate all available reports.
+    - ``summary``: code divergence information
+    - ``clustering``: distance matrix and dendrogram
+    - ``duplicates``: detected duplicate files
+    - ``files``: information about individual files
 
 ``-x <pattern>, --exclude <pattern>``
     Exclude files matching this pattern from the code base.

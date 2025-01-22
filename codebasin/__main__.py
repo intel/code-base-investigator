@@ -192,7 +192,11 @@ def _main():
         default=[],
         choices=["all", "summary", "clustering", "duplicates", "files"],
         help=_help_string(
-            "Generate a report of the specified type.",
+            "Generate a report of the specified type:",
+            "- summary: code divergence information",
+            "- clustering: distance matrix and dendrogram",
+            "- duplicates: detected duplicate files",
+            "- files: information about individual files",
             "May be specified multiple times.",
             "If not specified, all reports will be generated.",
             is_long=True,
@@ -264,10 +268,8 @@ def _main():
     stdout_handler.setFormatter(Formatter(colors=sys.stdout.isatty()))
     log.addHandler(stdout_handler)
 
-    # If no specific report was specified, generate all reports.
-    # Handled here to prevent "all" always being in the list.
-    if len(args.reports) == 0:
-        args.reports = ["all"]
+    if "all" in args.reports:
+        log.warning("Passing 'all' to -R is deprecated. Omit -R instead.")
 
     # Determine the root directory based on where codebasin is run.
     rootdir = os.path.abspath(os.getcwd())
@@ -322,6 +324,7 @@ def _main():
     # Generate meta-warnings and statistics.
     # Temporarily override log_level to ensure they are visible.
     stdout_handler.setLevel(logging.WARNING)
+    print("")
     aggregator.warn()
     stdout_handler.setLevel(log_level)
 
@@ -329,15 +332,13 @@ def _main():
     setmap = state.get_setmap(codebase)
 
     def report_enabled(name):
-        if "all" in args.reports:
+        if "all" in args.reports or len(args.reports) == 0:
             return True
         return name in args.reports
 
     # Print summary report
     if report_enabled("summary"):
-        summary = report.summary(setmap)
-        if summary is not None:
-            print(summary)
+        report.summary(setmap)
 
     # Print files report
     if report_enabled("files"):
@@ -350,9 +351,7 @@ def _main():
         output_prefix = "-".join([filename] + args.platforms)
 
         clustering_output_name = output_prefix + "-dendrogram.png"
-        clustering = report.clustering(clustering_output_name, setmap)
-        if clustering is not None:
-            print(clustering)
+        report.clustering(clustering_output_name, setmap)
 
     # Print duplicates report
     if report_enabled("duplicates"):

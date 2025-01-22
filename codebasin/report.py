@@ -28,6 +28,28 @@ from codebasin.preprocessor import CodeNode
 log = logging.getLogger(__name__)
 
 
+def _heading(text: str, stream: TextIO):
+    """
+    Parameters
+    ----------
+    text: str
+        The text to use as the heading.
+
+    stream: TextIO
+        The stream the heading will eventually be written to.
+
+    Returns
+    -------
+    str
+        A heading string appropriately formatted for the output stream.
+    """
+    if stream.isatty():
+        return f"\033[1m\033[4m{text}\033[0m\n"
+    else:
+        underline = "=" * len(text)
+        return f"{text}\n{underline}"
+
+
 def extract_platforms(setmap):
     """
     Extract a list of unique platforms from a set map
@@ -137,11 +159,20 @@ def normalized_utilization(
         return utilization(setmap) / total_platforms
 
 
-def summary(setmap):
+def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
     """
-    Produce a summary report for the platform set
+    Produce a summary report for the platform set, including
+    a breakdown of SLOC per platform subset, code divergence, etc.
+
+    Parameters
+    ----------
+    setmap: defaultdict[str, int]
+        The setmap used to compute the summary report.
+
+    stream: TextIO, default: sys.stdout
+        The stream to write the report to.
     """
-    lines = []
+    lines = ["", _heading("Summary", stream)]
 
     total = sum(setmap.values())
     data = []
@@ -171,13 +202,30 @@ def summary(setmap):
     lines += [f"Unused Code (%): {unused:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
-    return "\n".join(lines)
+    print("\n".join(lines), file=stream)
 
 
-def clustering(output_name, setmap):
+def clustering(
+    output_name: str,
+    setmap: defaultdict[str, int],
+    stream: TextIO = sys.stdout,
+):
     """
-    Produce a clustering report for the platform set
+    Produce a clustering report for the platform set.
+
+    Parameters
+    ----------
+    output_name: str
+        The filename for the dendrogram.
+
+    setmap: defaultdict[str, int]
+        The setmap used to compute the clustering statistics.
+
+    stream: TextIO, default: sys.stdout
+        The stream to write the report to.
     """
+    lines = ["", _heading("Clustering", stream)]
+
     # Sort the platform list to ensure that the ordering of platforms in the
     # distance matrix and dendrogram do not change from run to run
     platforms = sorted(extract_platforms(setmap))
@@ -207,8 +255,7 @@ def clustering(output_name, setmap):
     ]
 
     # Print distance matrix as a table
-    lines = []
-    lines += ["", "Distance Matrix"]
+    lines += ["Distance Matrix:"]
     labelled_matrix = [
         [name] + [f"{column:.2f}" for column in matrix[row]]
         for (row, name) in enumerate(platforms)
@@ -243,7 +290,10 @@ def clustering(output_name, setmap):
     with util.safe_open_write_binary(output_name) as fp:
         fig.savefig(fp)
 
-    return "\n".join(lines)
+    lines += [""]
+    lines += [f"Dendrogram written to {output_name}"]
+
+    print("\n".join(lines), file=stream)
 
 
 def find_duplicates(codebase: CodeBase) -> list[set[Path]]:
@@ -304,8 +354,8 @@ def duplicates(codebase: CodeBase, stream: TextIO = sys.stdout):
     """
     confirmed_matches = find_duplicates(codebase)
 
-    print("Duplicates", file=stream)
-    print("----------", file=stream)
+    print("", file=stream)
+    print(_heading("Duplicates", stream), file=stream)
 
     if len(confirmed_matches) == 0:
         print("No duplicates found.", file=stream)
@@ -315,6 +365,8 @@ def duplicates(codebase: CodeBase, stream: TextIO = sys.stdout):
         print(f"Match {i}:", file=stream)
         for path in matches:
             print(f"- {path}")
+        if i != len(confirmed_matches) - 1:
+            print("")
 
 
 def _human_readable(x: int) -> str:
@@ -740,17 +792,17 @@ def files(
                     setmap[frozenset(assoc)] += node.num_lines
         tree.insert(f, setmap)
 
-    print("Files", file=stream)
-    print("-----", file=stream)
+    print("", file=stream)
+    print(_heading("Files", stream), file=stream)
 
     # Print a legend.
     legend = []
-    legend += ["\033[1mLegend\033[0m:"]
+    legend += ["Legend:"]
     for i, platform in enumerate(sorted(tree.root.platforms)):
         label = string.ascii_uppercase[i]
         legend += [f"\033[33m{label}\033[0m: {platform}"]
     legend += [""]
-    legend += ["\033[1mColumns\033[0m:"]
+    legend += ["Columns:"]
     header = [
         "Platform Set",
         "Used SLOC / Total SLOC",
