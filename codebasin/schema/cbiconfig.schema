@@ -92,6 +92,7 @@
                       }
                     }
                   },
+                  "required": ["name"],
                   "additionalProperties": false
                 }
               },
@@ -122,6 +123,7 @@
                       }
                     }
                   },
+                  "required": ["name"],
                   "additionalProperties": false
                 }
               }

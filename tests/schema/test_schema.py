@@ -150,11 +150,21 @@ class TestSchema(unittest.TestCase):
         """,
         )
 
+        # A compiler mode must have a name.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [[compiler.test.modes]]
+                defines = ["LANGUAGE"]
+            """,
+            )
+
         # A compiler cannot define any other mode keys.
         with self.assertRaises(ValueError):
             _test_toml_string(
                 """
                 [[compiler.test.modes]]
+                name = "required"
                 additional = "True"
             """,
             )
@@ -176,11 +186,21 @@ class TestSchema(unittest.TestCase):
         """,
         )
 
+        # A compiler pass must have a name.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [[compiler.test.passes]]
+                defines = ["LANGUAGE"]
+            """,
+            )
+
         # A compiler cannot define any other pass keys.
         with self.assertRaises(ValueError):
             _test_toml_string(
                 """
                 [[compiler.test.passes]]
+                name = "required"
                 additional = "True"
             """,
             )
