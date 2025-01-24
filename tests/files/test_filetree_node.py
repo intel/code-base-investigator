@@ -8,7 +8,12 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-from codebasin.report import FileTree, divergence, normalized_utilization
+from codebasin.report import (
+    FileTree,
+    coverage,
+    divergence,
+    normalized_utilization,
+)
 
 
 class TestFileTreeNode(unittest.TestCase):
@@ -111,6 +116,37 @@ class TestFileTreeNode(unittest.TestCase):
         )
         s = node._sloc_str(12)
         self.assertEqual(s, "\033[2m 0\033[0m")
+
+    def test_coverage_str(self):
+        """Check coverage string format."""
+        node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
+        cc = coverage(self.setmap)
+        s = node._coverage_str()
+        self.assertEqual(s, f"\033[32m{cc:6.2f}\033[0m")
+
+        bad_setmap = {
+            frozenset(["X"]): 1,
+            frozenset([]): 6,
+        }
+        node = FileTree.Node(self.path / "file.cpp", setmap=bad_setmap)
+        cc = coverage(bad_setmap)
+        s = node._coverage_str()
+        self.assertEqual(s, f"\033[35m{cc:6.2f}\033[0m")
+
+        node = FileTree.Node(self.path / "file.cpp")
+        cc = float("nan")
+        s = node._coverage_str()
+        self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
+
+        node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
+        cc = coverage(self.setmap)
+        s = node._coverage_str()
+        self.assertEqual(s, f"\033[96m{cc:6.2f}\033[0m")
+
+        node = FileTree.Node(self.path / "symlink.cpp")
+        cc = float("nan")
+        s = node._coverage_str()
+        self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
 
     def test_divergence_str(self):
         """Check divergence string format."""
