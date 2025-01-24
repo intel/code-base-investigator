@@ -42,7 +42,7 @@ Summary
 └────────────────┴───────┴─────────┘
 Code Divergence: 0.50
 Code Utilization: 0.38
-Unused Code (%): 50.00
+Code Coverage (%): 50.00
 Total SLOC: 12
 """
         self.assertEqual(expected, output.getvalue())
