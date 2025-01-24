@@ -7,7 +7,6 @@ import logging
 import sys
 import tempfile
 import unittest
-import warnings
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -21,7 +20,6 @@ class TestCbiCov(unittest.TestCase):
 
     def setUp(self):
         logging.disable()
-        warnings.simplefilter("ignore", ResourceWarning)
 
     def test_help(self):
         """Check help string displays correctly."""
@@ -66,8 +64,8 @@ class TestCbiCov(unittest.TestCase):
         """Check that coverage is computed correctly."""
         sys.stdout = io.StringIO()
         # Create a temporary codebase to work on.
-        self.tmp = tempfile.TemporaryDirectory()
-        p = Path(self.tmp.name)
+        tmp = tempfile.TemporaryDirectory()
+        p = Path(tmp.name)
         with open(p / "foo.cpp", mode="w") as f:
             f.write(
                 r"""#ifdef MACRO
@@ -109,6 +107,8 @@ class TestCbiCov(unittest.TestCase):
         ]
         self.assertEqual(coverage, expected_coverage)
         sys.stdout = sys.__stdout__
+
+        tmp.cleanup()
 
 
 if __name__ == "__main__":
