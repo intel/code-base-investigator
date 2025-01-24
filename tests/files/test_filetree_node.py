@@ -91,26 +91,26 @@ class TestFileTreeNode(unittest.TestCase):
     def test_sloc_str(self):
         """Check SLOC string format."""
         node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "6 / 12\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "12\033[0m")
 
-        s = node._sloc_str(100, 1000)
-        self.assertEqual(s, "  6 /   12\033[0m")
+        s = node._sloc_str(1000)
+        self.assertEqual(s, "  12\033[0m")
 
         node = FileTree.Node(self.path / "file.cpp")
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "\033[2m0 /  0\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "\033[2m 0\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "\033[96m6 / 12\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "\033[96m12\033[0m")
 
         node = FileTree.Node(
             self.path / "symlink.cpp",
             setmap=defaultdict(int),
         )
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "\033[2m0 /  0\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "\033[2m 0\033[0m")
 
     def test_divergence_str(self):
         """Check divergence string format."""
