@@ -63,8 +63,14 @@ def coverage(setmap) -> float:
     Compute the percentage of lines in `setmap` required by at least one
     platform.
     """
-    unused = setmap[frozenset()]
     total = sum(setmap.values())
+    if total == 0:
+        return float("nan")
+
+    if not frozenset() in setmap:
+        return 100.0
+    unused = setmap[frozenset()]
+
     return (1 - (unused / total)) * 100.0
 
 
