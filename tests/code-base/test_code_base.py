@@ -14,7 +14,8 @@ class TestCodeBase(unittest.TestCase):
     Test CodeBase class.
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         logging.disable()
 
         # Create a temporary codebase spread across two directories
@@ -29,6 +30,11 @@ class TestCodeBase(unittest.TestCase):
         open(p2 / "qux.cpp", mode="w").close()
         open(p2 / "quux.h", mode="w").close()
         open(p2 / "README.md", mode="w").close()
+
+    @classmethod
+    def tearDownClass(self):
+        self.tmp1.cleanup()
+        self.tmp2.cleanup()
 
     def test_constructor(self):
         """Check directories and exclude_patterns are handled correctly"""

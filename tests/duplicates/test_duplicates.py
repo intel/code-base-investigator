@@ -118,6 +118,8 @@ class TestDuplicates(unittest.TestCase):
         setmap = state.get_setmap(codebase)
         self.assertDictEqual(setmap, expected_setmap, "Mismatch in setmap")
 
+        tmp.cleanup()
+
     def test_find_duplicates(self):
         """Check that we can correctly identify duplicate files."""
         tmp = tempfile.TemporaryDirectory()

@@ -15,7 +15,8 @@ class TestFileTree(unittest.TestCase):
     Test FileTree functionality.
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         logging.disable()
 
         self.setmap = {
@@ -30,6 +31,10 @@ class TestFileTree(unittest.TestCase):
         open(self.path / "file.cpp", mode="w").close()
         open(self.path / "other.cpp", mode="w").close()
         os.symlink(self.path / "file.cpp", self.path / "symlink.cpp")
+
+    @classmethod
+    def tearDownClass(self):
+        self.tmp.cleanup()
 
     def test_constructor(self):
         """Check FileTree constructor."""
