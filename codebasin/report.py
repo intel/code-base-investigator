@@ -58,6 +58,16 @@ def extract_platforms(setmap):
     return list(unique_platforms)
 
 
+def coverage(setmap) -> float:
+    """
+    Compute the percentage of lines in `setmap` required by at least one
+    platform.
+    """
+    unused = setmap[frozenset()]
+    total = sum(setmap.values())
+    return (1 - (unused / total)) * 100.0
+
+
 def distance(setmap, p1, p2):
     """
     Compute distance between two platforms
@@ -196,10 +206,10 @@ def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
 
     cd = divergence(setmap)
     nu = normalized_utilization(setmap)
-    unused = (1 - (setmap[frozenset()] / total_count)) * 100.0
+    cc = coverage(setmap)
     lines += [f"Code Divergence: {cd:.2f}"]
     lines += [f"Code Utilization: {nu:.2f}"]
-    lines += [f"Code Coverage (%): {unused:.2f}"]
+    lines += [f"Code Coverage (%): {cc:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
     print("\n".join(lines), file=stream)
