@@ -519,21 +519,18 @@ class FileTree:
                 output += f"{color}{value}\033[0m"
             return output
 
-        def _sloc_str(self, max_used: int, max_total: int) -> str:
+        def _sloc_str(self, max_sloc: int) -> str:
             """
             Parameters
             ----------
-            max_used: int
-                The maximum used SLOC, used to determine formatting width.
-
-            max_total: int
-                The maximum total SLOC, used to determine formatting width.
+            max_sloc: int
+                The maximum SLOC, used to determine formatting width.
 
             Returns
             -------
             str
-                A string representing the SLOC used by this Node, in the form
-                "used / total" with human-readable numbers.
+                A string representing the SLOC associated with this Node, with
+                human-readable numbers.
             """
             color = ""
             if len(self.platforms) == 0:
@@ -541,13 +538,29 @@ class FileTree:
             elif self.is_symlink():
                 color = "\033[96m"
 
-            used_len = len(_human_readable(max_used))
-            total_len = len(_human_readable(max_total))
+            sloc_len = len(_human_readable(max_sloc))
+            sloc = _human_readable(sum(self.setmap.values()))
 
-            used = _human_readable(self.sloc)
-            total = _human_readable(sum(self.setmap.values()))
+            return f"{color}{sloc:>{sloc_len}}\033[0m"
 
-            return f"{color}{used:>{used_len}} / {total:>{total_len}}\033[0m"
+        def _coverage_str(self) -> str:
+            """
+            Returns
+            -------
+            str
+                A string representing code coverage of this Node.
+            """
+            cc = coverage(self.setmap)
+            color = ""
+            if len(self.platforms) == 0:
+                color = "\033[2m"
+            elif self.is_symlink():
+                color = "\033[96m"
+            elif cc >= 50:
+                color = "\033[32m"
+            elif cc < 50:
+                color = "\033[35m"
+            return f"{color}{cc:6.2f}\033[0m"
 
         def _divergence_str(self) -> str:
             """
@@ -606,11 +619,11 @@ class FileTree:
             str
                 A string representing meta-information for this FileTree.Node.
             """
-            max_used = root.sloc
-            max_total = sum(root.setmap.values())
+            max_sloc = sum(root.setmap.values())
             info = [
                 self._platforms_str(root.platforms),
-                self._sloc_str(max_used, max_total),
+                self._sloc_str(max_sloc),
+                self._coverage_str(),
                 self._divergence_str(),
                 self._utilization_str(len(root.platforms)),
             ]
@@ -815,7 +828,8 @@ def files(
     legend += ["Columns:"]
     header = [
         "Platform Set",
-        "Used SLOC / Total SLOC",
+        "SLOC",
+        "Coverage (%)",
         "Code Divergence",
         "Code Utilization",
     ]
