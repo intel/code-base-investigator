@@ -196,10 +196,10 @@ def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
 
     cd = divergence(setmap)
     nu = normalized_utilization(setmap)
-    unused = (setmap[frozenset()] / total_count) * 100.0
+    unused = (1 - (setmap[frozenset()] / total_count)) * 100.0
     lines += [f"Code Divergence: {cd:.2f}"]
     lines += [f"Code Utilization: {nu:.2f}"]
-    lines += [f"Unused Code (%): {unused:.2f}"]
+    lines += [f"Code Coverage (%): {unused:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
     print("\n".join(lines), file=stream)
