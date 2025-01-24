@@ -5,7 +5,6 @@ import logging
 import os
 import tempfile
 import unittest
-import warnings
 from pathlib import Path
 
 from codebasin.report import FileTree
@@ -18,7 +17,6 @@ class TestFileTree(unittest.TestCase):
 
     def setUp(self):
         logging.disable()
-        warnings.simplefilter("ignore", ResourceWarning)
 
         self.setmap = {
             frozenset(["X"]): 1,

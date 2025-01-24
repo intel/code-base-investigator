@@ -5,7 +5,6 @@ import logging
 import os
 import tempfile
 import unittest
-import warnings
 from collections import defaultdict
 from pathlib import Path
 
@@ -19,7 +18,6 @@ class TestFileTreeNode(unittest.TestCase):
 
     def setUp(self):
         logging.disable()
-        warnings.simplefilter("ignore", ResourceWarning)
 
         self.setmap = {
             frozenset(["X"]): 1,

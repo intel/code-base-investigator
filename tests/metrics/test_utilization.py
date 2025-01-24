@@ -4,7 +4,6 @@
 import logging
 import math
 import unittest
-import warnings
 
 from codebasin.report import normalized_utilization, utilization
 
@@ -16,7 +15,6 @@ class TestUtilization(unittest.TestCase):
 
     def setUp(self):
         logging.disable()
-        warnings.simplefilter("ignore", ResourceWarning)
 
     def test_utilization(self):
         """Check utilization computation for simple setmap."""

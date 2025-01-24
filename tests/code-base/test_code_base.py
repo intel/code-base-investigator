@@ -4,7 +4,6 @@
 import logging
 import tempfile
 import unittest
-import warnings
 from pathlib import Path
 
 from codebasin import CodeBase
@@ -17,7 +16,6 @@ class TestCodeBase(unittest.TestCase):
 
     def setUp(self):
         logging.disable()
-        warnings.simplefilter("ignore", ResourceWarning)
 
         # Create a temporary codebase spread across two directories
         self.tmp1 = tempfile.TemporaryDirectory()

@@ -4,7 +4,6 @@
 import logging
 import tempfile
 import unittest
-import warnings
 
 from codebasin.file_parser import FileParser
 from codebasin.preprocessor import CodeNode, DirectiveNode, FileNode, Visit
@@ -17,7 +16,6 @@ class TestSourceTree(unittest.TestCase):
 
     def setUp(self):
         logging.getLogger("codebasin").disabled = False
-        warnings.simplefilter("ignore", ResourceWarning)
 
         # TODO: Revisit this when SourceTree can be built without a file.
         with tempfile.NamedTemporaryFile(
