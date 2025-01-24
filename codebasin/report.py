@@ -833,7 +833,7 @@ def files(
     legend += [""]
     legend += ["Columns:"]
     header = [
-        "Platform Set",
+        "Platforms",
         "SLOC",
         "Coverage (%)",
         "Code Divergence",
