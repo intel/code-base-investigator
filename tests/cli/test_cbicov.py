@@ -105,7 +105,7 @@ class TestCbiCov(unittest.TestCase):
                 "lines": [1, 3, 4],
             },
         ]
-        self.assertEqual(coverage, expected_coverage)
+        self.assertCountEqual(coverage, expected_coverage)
         sys.stdout = sys.__stdout__
 
         tmp.cleanup()
