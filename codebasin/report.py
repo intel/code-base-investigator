@@ -153,74 +153,6 @@ def divergence(setmap):
     return d / float(npairs)
 
 
-def utilization(setmap: defaultdict[frozenset[str], int]) -> float:
-    """
-    Compute the average code utilization for all lines in the setmap.
-    i.e., (reused SLOC / total SLOC)
-
-    Parameters
-    ----------
-    setmap: defaultdict[frozenset[str], int]
-        The mapping from platform sets to SLOC.
-
-    Returns
-    -------
-    float
-        The average code utilization, in the range [0, NumPlatforms].
-        If the number of total SLOC is 0, returns NaN.
-    """
-    reused_sloc = 0
-    total_sloc = 0
-    for k, v in setmap.items():
-        reused_sloc += len(k) * v
-        total_sloc += v
-    if total_sloc == 0:
-        return float("nan")
-
-    return reused_sloc / total_sloc
-
-
-def normalized_utilization(
-    setmap: defaultdict[frozenset[str], int],
-    total_platforms: int | None = None,
-) -> float:
-    """
-    Compute the average code utilization, normalized for a specific number of
-    platforms.
-
-    Parameters
-    ----------
-    setmap: defaultdict[frozenset[str,int]
-        The mapping from platform sets to SLOC.
-
-    total_platforms: int, optional
-        The total number of platforms to use as the denominator.
-        By default, the denominator will be derived from the setmap.
-
-    Returns
-    -------
-    float
-        The average code utilization, in the range [0, 1].
-
-    Raises
-    ------
-    ValueError
-        If `total_platforms` < the number of platforms in `setmap`.
-    """
-    original_platforms = len(extract_platforms(setmap))
-    if total_platforms is None:
-        total_platforms = original_platforms
-    if total_platforms < original_platforms:
-        raise ValueError(
-            "Cannot normalize to fewer platforms than the setmap contains.",
-        )
-
-    if total_platforms == 0:
-        return float("nan")
-    else:
-        return utilization(setmap) / total_platforms
-
-
 def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
     """
     Produce a summary report for the platform set, including
@@ -257,11 +189,11 @@ def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
     ]
 
     cd = divergence(setmap)
-    nu = normalized_utilization(setmap)
     cc = coverage(setmap)
+    ac = average_coverage(setmap)
     lines += [f"Code Divergence: {cd:.2f}"]
-    lines += [f"Code Utilization: {nu:.2f}"]
-    lines += [f"Code Coverage (%): {cc:.2f}"]
+    lines += [f"Coverage (%): {cc:.2f}"]
+    lines += [f"Avg. Coverage (%): {ac:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
     print("\n".join(lines), file=stream)
@@ -652,32 +584,6 @@ class FileTree:
                 color = "\033[35m"
             return f"{color}{cd:4.2f}\033[0m"
 
-        def _utilization_str(self, total_platforms: int) -> str:
-            """
-            Parameters
-            ----------
-            total_platforms: int
-                The number of platforms in the whole FileTree.
-
-            Returns
-            -------
-            str
-                A string representing code utilization in this Node.
-            """
-            nu = normalized_utilization(self.setmap, total_platforms)
-
-            color = ""
-            if len(self.platforms) == 0:
-                color = "\033[2m"
-            elif self.is_symlink():
-                color = "\033[96m"
-            elif nu > 0.5:
-                color = "\033[32m"
-            elif nu <= 0.5:
-                color = "\033[35m"
-
-            return f"{color}{nu:4.2f}\033[0m"
-
         def _meta_str(self, root: Self) -> str:
             """
             Parameters
@@ -697,7 +603,6 @@ class FileTree:
                 self._coverage_str(root.platforms),
                 self._average_coverage_str(root.platforms),
                 self._divergence_str(),
-                self._utilization_str(len(root.platforms)),
             ]
             return "[" + " | ".join(info) + "]"
 
@@ -904,7 +809,6 @@ def files(
         "Coverage (%)",
         "Avg. Coverage (%)",
         "Code Divergence",
-        "Code Utilization",
     ]
     legend += ["[" + " | ".join(header) + "]"]
     legend += [""]
