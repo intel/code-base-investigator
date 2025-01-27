@@ -120,8 +120,8 @@ class TestFileTreeNode(unittest.TestCase):
     def test_coverage_str(self):
         """Check coverage string format."""
         node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
-        cc = coverage(self.setmap)
-        s = node._coverage_str()
+        cc = coverage(self.setmap, ["X", "Y"])
+        s = node._coverage_str(["X", "Y"])
         self.assertEqual(s, f"\033[32m{cc:6.2f}\033[0m")
 
         bad_setmap = {
@@ -129,23 +129,23 @@ class TestFileTreeNode(unittest.TestCase):
             frozenset([]): 6,
         }
         node = FileTree.Node(self.path / "file.cpp", setmap=bad_setmap)
-        cc = coverage(bad_setmap)
-        s = node._coverage_str()
+        cc = coverage(bad_setmap, ["X", "Y"])
+        s = node._coverage_str(["X", "Y"])
         self.assertEqual(s, f"\033[35m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "file.cpp")
         cc = float("nan")
-        s = node._coverage_str()
+        s = node._coverage_str(["X", "Y"])
         self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
-        cc = coverage(self.setmap)
-        s = node._coverage_str()
+        cc = coverage(self.setmap, ["X", "Y"])
+        s = node._coverage_str(["X", "Y"])
         self.assertEqual(s, f"\033[96m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp")
         cc = float("nan")
-        s = node._coverage_str()
+        s = node._coverage_str(["X", "Y"])
         self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
 
     def test_divergence_str(self):
