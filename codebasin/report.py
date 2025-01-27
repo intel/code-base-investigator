@@ -58,20 +58,39 @@ def extract_platforms(setmap):
     return list(unique_platforms)
 
 
-def coverage(setmap) -> float:
+def coverage(
+    setmap: dict[frozenset[str], int],
+    platforms: set[str] | None = None,
+) -> float:
     """
     Compute the percentage of lines in `setmap` required by at least one
-    platform.
+    platform in the supplied `platforms` set.
+
+    Parameters
+    ----------
+    setmap: dict[frozenset[str], int]
+        A mapping from platform set to SLOC count.
+
+    platforms: set[str], optional
+        The set of platforms to use when computing coverage.
+        If not provided, computes coverage for all platforms.
     """
-    total = sum(setmap.values())
+    if not platforms:
+        platforms = set().union(*setmap.keys())
+
+    used = 0
+    total = 0
+    for subset, sloc in setmap.items():
+        total += sloc
+        if subset == frozenset():
+            continue
+        elif any([p in platforms for p in subset]):
+            used += sloc
+
     if total == 0:
         return float("nan")
 
-    if not frozenset() in setmap:
-        return 100.0
-    unused = setmap[frozenset()]
-
-    return (1 - (unused / total)) * 100.0
+    return (used / total) * 100.0
 
 
 def distance(setmap, p1, p2):
@@ -549,14 +568,14 @@ class FileTree:
 
             return f"{color}{sloc:>{sloc_len}}\033[0m"
 
-        def _coverage_str(self) -> str:
+        def _coverage_str(self, platforms: set[str]) -> str:
             """
             Returns
             -------
             str
                 A string representing code coverage of this Node.
             """
-            cc = coverage(self.setmap)
+            cc = coverage(self.setmap, platforms)
             color = ""
             if len(self.platforms) == 0:
                 color = "\033[2m"
@@ -629,7 +648,7 @@ class FileTree:
             info = [
                 self._platforms_str(root.platforms),
                 self._sloc_str(max_sloc),
-                self._coverage_str(),
+                self._coverage_str(root.platforms),
                 self._divergence_str(),
                 self._utilization_str(len(root.platforms)),
             ]
