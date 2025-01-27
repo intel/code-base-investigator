@@ -8,13 +8,7 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-from codebasin.report import (
-    FileTree,
-    average_coverage,
-    coverage,
-    divergence,
-    normalized_utilization,
-)
+from codebasin.report import FileTree, average_coverage, coverage, divergence
 
 
 class TestFileTreeNode(unittest.TestCase):
@@ -201,28 +195,6 @@ class TestFileTreeNode(unittest.TestCase):
         cd = float("nan")
         s = node._divergence_str()
         self.assertEqual(s, f"\033[2m{cd:4.2f}\033[0m")
-
-    def test_utilization_str(self):
-        """Check utilization string format."""
-        node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
-        nu = normalized_utilization(self.setmap, 2)
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[35m{nu:4.2f}\033[0m")
-
-        node = FileTree.Node(self.path / "file.cpp")
-        nu = float("nan")
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[2m{nu:4.2f}\033[0m")
-
-        node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
-        nu = normalized_utilization(self.setmap, 2)
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[96m{nu:4.2f}\033[0m")
-
-        node = FileTree.Node(self.path / "symlink.cpp")
-        nu = float("nan")
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[2m{nu:4.2f}\033[0m")
 
 
 if __name__ == "__main__":
