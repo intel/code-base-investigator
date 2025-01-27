@@ -93,6 +93,33 @@ def coverage(
     return (used / total) * 100.0
 
 
+def average_coverage(
+    setmap: dict[frozenset[str], int],
+    platforms: set[str] | None = None,
+) -> float:
+    """
+    Compute the average percentage of lines in `setmap` required by each
+    platform in the supplied `platforms` set.
+
+    Parameters
+    ----------
+    setmap: dict[frozenset[str], int]
+        A mapping from platform set to SLOC count.
+
+    platforms: set[str], optional
+        The set of platforms to use when computing coverage.
+        If not provided, computes average over all platforms.
+    """
+    if not platforms:
+        platforms = set().union(*setmap.keys())
+
+    if len(platforms) == 0:
+        return float("nan")
+
+    total = sum([coverage(setmap, [p]) for p in platforms])
+    return total / len(platforms)
+
+
 def distance(setmap, p1, p2):
     """
     Compute distance between two platforms
@@ -587,6 +614,25 @@ class FileTree:
                 color = "\033[35m"
             return f"{color}{cc:6.2f}\033[0m"
 
+        def _average_coverage_str(self, platforms: set[str]) -> str:
+            """
+            Returns
+            -------
+            str
+                A string representing average coverage of this Node.
+            """
+            cc = average_coverage(self.setmap, platforms)
+            color = ""
+            if len(self.platforms) == 0:
+                color = "\033[2m"
+            elif self.is_symlink():
+                color = "\033[96m"
+            elif cc >= 50:
+                color = "\033[32m"
+            elif cc < 50:
+                color = "\033[35m"
+            return f"{color}{cc:6.2f}\033[0m"
+
         def _divergence_str(self) -> str:
             """
             Returns
@@ -649,6 +695,7 @@ class FileTree:
                 self._platforms_str(root.platforms),
                 self._sloc_str(max_sloc),
                 self._coverage_str(root.platforms),
+                self._average_coverage_str(root.platforms),
                 self._divergence_str(),
                 self._utilization_str(len(root.platforms)),
             ]
@@ -855,6 +902,7 @@ def files(
         "Platforms",
         "SLOC",
         "Coverage (%)",
+        "Avg. Coverage (%)",
         "Code Divergence",
         "Code Utilization",
     ]
