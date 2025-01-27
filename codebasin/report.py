@@ -565,25 +565,6 @@ class FileTree:
                 color = "\033[35m"
             return f"{color}{cc:6.2f}\033[0m"
 
-        def _divergence_str(self) -> str:
-            """
-            Returns
-            -------
-            str
-                A string representing code divergence in this Node.
-            """
-            cd = divergence(self.setmap)
-            color = ""
-            if len(self.platforms) == 0:
-                color = "\033[2m"
-            elif self.is_symlink():
-                color = "\033[96m"
-            elif cd <= 0.25:
-                color = "\033[32m"
-            elif cd >= 0.75 or len(self.platforms) == 1:
-                color = "\033[35m"
-            return f"{color}{cd:4.2f}\033[0m"
-
         def _meta_str(self, root: Self) -> str:
             """
             Parameters
@@ -602,7 +583,6 @@ class FileTree:
                 self._sloc_str(max_sloc),
                 self._coverage_str(root.platforms),
                 self._average_coverage_str(root.platforms),
-                self._divergence_str(),
             ]
             return "[" + " | ".join(info) + "]"
 
@@ -808,7 +788,6 @@ def files(
         "SLOC",
         "Coverage (%)",
         "Avg. Coverage (%)",
-        "Code Divergence",
     ]
     legend += ["[" + " | ".join(header) + "]"]
     legend += [""]
