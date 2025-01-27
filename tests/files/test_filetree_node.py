@@ -8,7 +8,7 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-from codebasin.report import FileTree, average_coverage, coverage, divergence
+from codebasin.report import FileTree, average_coverage, coverage
 
 
 class TestFileTreeNode(unittest.TestCase):
@@ -173,28 +173,6 @@ class TestFileTreeNode(unittest.TestCase):
         cc = float("nan")
         s = node._average_coverage_str(["X", "Y"])
         self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
-
-    def test_divergence_str(self):
-        """Check divergence string format."""
-        node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
-        cd = divergence(self.setmap)
-        s = node._divergence_str()
-        self.assertEqual(s, f"{cd:4.2f}\033[0m")
-
-        node = FileTree.Node(self.path / "file.cpp")
-        cd = float("nan")
-        s = node._divergence_str()
-        self.assertEqual(s, f"\033[2m{cd:4.2f}\033[0m")
-
-        node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
-        cd = divergence(self.setmap)
-        s = node._divergence_str()
-        self.assertEqual(s, f"\033[96m{cd:4.2f}\033[0m")
-
-        node = FileTree.Node(self.path / "symlink.cpp")
-        cd = float("nan")
-        s = node._divergence_str()
-        self.assertEqual(s, f"\033[2m{cd:4.2f}\033[0m")
 
 
 if __name__ == "__main__":
