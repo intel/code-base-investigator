@@ -42,7 +42,8 @@ are shared between different platform sets.
     {FPGA, CPU 1, GPU 2, GPU 1, CPU 2}   9 21.95
     ---------------------------------------------
     Code Divergence: 0.55
-    Unused Code (%): 4.88
+    Coverage (%): 95.12
+    Avg. Coverage (%): 42.44
     Total SLOC: 41
 
 Future releases of CBI will provide additional ways to visualize the results of
