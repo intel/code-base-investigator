@@ -78,8 +78,8 @@ the following output:
       {cpu, gpu}  17 51.52
     -----------------------
     Code Divergence: 0.45
-    Unused Code (%): 6.06
-    Total SLOC: 33
+    Coverage (%): 93.94
+    Avg. Coverage (%): 72.73
 
     Distance Matrix
     --------------
