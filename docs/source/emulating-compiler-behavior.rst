@@ -121,5 +121,6 @@ becomes:
       {cpu, gpu}  11 40.74
     -----------------------
     Code Divergence: 0.59
-    Unused Code (%): 0.00
+    Coverage (%): 100.00
+    Avg. Coverage (%): 70.37
     Total SLOC: 27
