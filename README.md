@@ -6,9 +6,9 @@
 Code Base Investigator (CBI) is an analysis tool that provides insight into the
 portability and maintainability of an application's source code.
 
-- Measure [code divergence](http://doi.org/10.1109/P3HPC.2018.00006) to
-  understand how much code is specialized for different compilers, operating
-  systems, hardware micro-architectures and more.
+- Measure [code divergence](http://doi.org/10.1109/P3HPC.2018.00006) and
+  platform coverage to understand how much code is specialized for different
+  compilers, operating systems, hardware micro-architectures and more.
 
 - Visualize the distance between the code paths used to support different
   compilation targets.
