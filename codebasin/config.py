@@ -126,6 +126,7 @@ class _ExtendMatchAction(argparse.Action):
     ):
         self.pattern = kwargs.pop("pattern", None)
         self.format = kwargs.pop("format", None)
+        self.flag_name = option_strings[0]
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
     def __call__(
@@ -143,9 +144,9 @@ class _ExtendMatchAction(argparse.Action):
             matches = [template.substitute(value=v) for v in matches]
         if self.dest == "passes":
             passes = getattr(namespace, self.dest)
-            if option_string not in passes:
-                passes[option_string] = []
-            passes[option_string].extend(matches)
+            if self.flag_name not in passes:
+                passes[self.flag_name] = []
+            passes[self.flag_name].extend(matches)
         else:
             dest = getattr(namespace, self.dest)
             dest.extend(matches)
