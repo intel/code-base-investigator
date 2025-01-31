@@ -126,6 +126,7 @@ class _ExtendMatchAction(argparse.Action):
     ):
         self.pattern = kwargs.pop("pattern", None)
         self.format = kwargs.pop("format", None)
+        self.override = kwargs.pop("override", False)
         self.flag_name = option_strings[0]
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
@@ -146,10 +147,17 @@ class _ExtendMatchAction(argparse.Action):
             passes = getattr(namespace, self.dest)
             if self.flag_name not in passes:
                 passes[self.flag_name] = []
-            passes[self.flag_name].extend(matches)
+            if self.override:
+                passes[self.flag_name] = matches
+                self.override = False
+            else:
+                passes[self.flag_name].extend(matches)
         else:
-            dest = getattr(namespace, self.dest)
-            dest.extend(matches)
+            if self.override:
+                setattr(namespace, self.dest, matches)
+            else:
+                dest = getattr(namespace, self.dest)
+                dest.extend(matches)
 
 
 @dataclass
