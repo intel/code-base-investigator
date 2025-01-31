@@ -121,6 +121,7 @@ class TestSchema(unittest.TestCase):
             dest = "passes"
             pattern = "*"
             format = "$value"
+            override = true
         """,
         )
 

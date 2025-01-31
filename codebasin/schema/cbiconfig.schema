@@ -60,6 +60,9 @@
                           }
                         }
                       ]
+                    },
+                    "override": {
+                        "type": "boolean"
                     }
                   },
                   "additionalProperties": false
