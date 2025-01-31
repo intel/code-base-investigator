@@ -4,7 +4,6 @@
 import logging
 import tempfile
 import unittest
-import warnings
 from pathlib import Path
 
 from codebasin import CodeBase
@@ -15,9 +14,9 @@ class TestCodeBase(unittest.TestCase):
     Test CodeBase class.
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         logging.disable()
-        warnings.simplefilter("ignore", ResourceWarning)
 
         # Create a temporary codebase spread across two directories
         self.tmp1 = tempfile.TemporaryDirectory()
@@ -31,6 +30,11 @@ class TestCodeBase(unittest.TestCase):
         open(p2 / "qux.cpp", mode="w").close()
         open(p2 / "quux.h", mode="w").close()
         open(p2 / "README.md", mode="w").close()
+
+    @classmethod
+    def tearDownClass(self):
+        self.tmp1.cleanup()
+        self.tmp2.cleanup()
 
     def test_constructor(self):
         """Check directories and exclude_patterns are handled correctly"""

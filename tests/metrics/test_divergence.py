@@ -4,7 +4,6 @@
 import logging
 import math
 import unittest
-import warnings
 
 from codebasin.report import divergence
 
@@ -16,7 +15,6 @@ class TestDivergence(unittest.TestCase):
 
     def setUp(self):
         logging.disable()
-        warnings.simplefilter("ignore", ResourceWarning)
 
     def test_divergence(self):
         """Check divergence computation for simple setmap."""
