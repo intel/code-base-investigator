@@ -44,6 +44,6 @@ jobs:
       - name: Check coverage against latest commits
         run: |
           FROM=${{ github.event.pull_request.base.sha }}
-          TO=${{ github.event.pull_request.head.sha }}
+          TO=${{ github.sha }}
           COMMITS=$(git rev-list $FROM..$TO)
           python .github/workflows/check-coverage.py coverage.json --commits $COMMITS
