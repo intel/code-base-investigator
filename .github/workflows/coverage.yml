@@ -39,7 +39,7 @@ jobs:
 
       - name: Generate coverage.json
         run: |
-          python -m coverage json --include=$(git diff --name-status main codebasin/*.py | grep "^M" | awk '{ print $2 }' | paste -sd,)
+          python -m coverage json --include=$(git diff --name-status ${{ github.event.pull_request.base.sha }} codebasin/*.py | grep "^M" | awk '{ print $2 }' | paste -sd,)
 
       - name: Check coverage against latest commits
         run: |
