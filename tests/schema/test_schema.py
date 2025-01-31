@@ -184,6 +184,7 @@ class TestSchema(unittest.TestCase):
             defines = ["DEVICE"]
             include_paths = ["/device/"]
             include_files = ["device.inc"]
+            modes = ["device-mode"]
         """,
         )
 

@@ -124,6 +124,12 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "modes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": ["name"],
