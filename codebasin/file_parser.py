@@ -157,7 +157,7 @@ class FileParser:
                 filename = tree.root.filename
                 line = tokens[0].line
                 column = tokens[0].col
-                spelling = preprocessor.toklist_print(tokens)
+                spelling = new_node.spelling()
                 message = f"unrecognized directive '{spelling}'"
                 log.warning(f"{filename}:{line}:{column}: {message}")
 
