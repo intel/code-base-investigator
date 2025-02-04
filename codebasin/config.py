@@ -10,6 +10,7 @@ import collections
 import logging
 import os
 import re
+import string
 
 from codebasin import CompilationDatabase, util
 
@@ -70,6 +71,83 @@ def load_importcfg():
                 return
         for name, compiler in _importcfg_toml["compiler"].items():
             _importcfg[name] = compiler["options"]
+
+
+class _StoreSplitAction(argparse.Action):
+    """
+    A custom argparse.Action that splits the value based on a user-provided
+    separator, then stores the resulting list.
+    """
+
+    def __init__(
+        self,
+        option_strings: list[str],
+        dest: str,
+        nargs=None,
+        **kwargs,
+    ):
+        self.sep = kwargs.pop("sep", None)
+        self.format = kwargs.pop("format", None)
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: str,
+        option_string: str,
+    ):
+        if not isinstance(values, str):
+            raise TypeError("store_split expects string values")
+        split_values = values.split(self.sep)
+        if self.format:
+            template = string.Template(self.format)
+            split_values = [template.substitute(value=v) for v in split_values]
+        if self.dest == "passes":
+            passes = getattr(namespace, self.dest)
+            passes[option_string] = split_values
+        else:
+            setattr(namespace, self.dest, split_values)
+
+
+class _ExtendMatchAction(argparse.Action):
+    """
+    A custom argparse.Action that matches the value against a user-provided
+    pattern, then extends the destination list using the result(s).
+    """
+
+    def __init__(
+        self,
+        option_strings: list[str],
+        dest: str,
+        nargs=None,
+        **kwargs,
+    ):
+        self.pattern = kwargs.pop("pattern", None)
+        self.format = kwargs.pop("format", None)
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        value: str,
+        option_string: str,
+    ):
+        if not isinstance(value, str):
+            raise TypeError("extend_match expects string value")
+        matches = re.findall(self.pattern, value)
+        if self.format:
+            template = string.Template(self.format)
+            matches = [template.substitute(value=v) for v in matches]
+        if self.dest == "passes":
+            passes = getattr(namespace, self.dest)
+            if option_string not in passes:
+                passes[option_string] = []
+            passes[option_string].extend(matches)
+        else:
+            dest = getattr(namespace, self.dest)
+            dest.extend(matches)
 
 
 class Compiler:
