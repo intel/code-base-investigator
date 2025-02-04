@@ -100,12 +100,24 @@ class _StoreSplitAction(argparse.Action):
     separator, then stores the resulting list.
     """
 
-    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+    def __init__(
+        self,
+        option_strings: list[str],
+        dest: str,
+        nargs=None,
+        **kwargs,
+    ):
         self.sep = kwargs.pop("sep", None)
         self.format = kwargs.pop("format", None)
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: str,
+        option_string: str,
+    ):
         if not isinstance(values, str):
             raise TypeError("store_split expects string values")
         split_values = values.split(self.sep)
@@ -125,12 +137,24 @@ class _ExtendMatchAction(argparse.Action):
     pattern, then extends the destination list using the result(s).
     """
 
-    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+    def __init__(
+        self,
+        option_strings: list[str],
+        dest: str,
+        nargs=None,
+        **kwargs,
+    ):
         self.pattern = kwargs.pop("pattern", None)
         self.format = kwargs.pop("format", None)
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, value, option_string):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        value: str,
+        option_string: str,
+    ):
         if not isinstance(value, str):
             raise TypeError("extend_match expects string value")
         matches = re.findall(self.pattern, value)
