@@ -2,10 +2,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import logging
+import tempfile
 import unittest
 
 import codebasin.config as config
 import codebasin.util as util
+
+
+def _test_toml_string(contents: str):
+    f = tempfile.NamedTemporaryFile(suffix=".toml")
+    f.write(contents.encode())
+    f.seek(0)
+    _ = util._load_toml(f, "cbiconfig")
+    f.close()
 
 
 class TestSchema(unittest.TestCase):
@@ -44,6 +53,159 @@ class TestSchema(unittest.TestCase):
         with open(path, "rb") as f:
             with self.assertRaises(ValueError):
                 toml = util._load_toml(f, "cbiconfig")
+
+    def test_cbiconfig_compilers(self):
+        """Check validation of compiler customization"""
+
+        # Compilers can be aliases of other compilers.
+        _test_toml_string(
+            """
+            [compiler.test]
+            alias_of = "icc"
+        """,
+        )
+
+        # Compilers can have options.
+        _test_toml_string(
+            """
+            [compiler.test]
+            options = ["-D", "ASDF"]
+        """,
+        )
+
+        # A compiler alias cannot have options.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [compiler.test]
+                alias_of = "icc"
+                options = ["-D", "ASDF"]
+            """,
+            )
+
+        # A compiler cannot define any other keys.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [compiler.test]
+                additional = "True"
+            """,
+            )
+
+        # A compiler can define multiple parser options.
+        _test_toml_string(
+            """
+            [[compiler.test.parser]]
+            action = "store_const"
+            dest = "defines"
+            const = "ASDF"
+
+            [[compiler.test.parser]]
+            action = "store"
+            dest = "defines"
+            default = "one-value"
+
+            [[compiler.test.parser]]
+            action = "append"
+            dest = "defines"
+            default = ["multiple", "values"]
+
+            [[compiler.test.parser]]
+            action = "store_split"
+            dest = "passes"
+            sep = ","
+            format = "$value"
+
+            [[compiler.test.parser]]
+            action = "extend_match"
+            dest = "passes"
+            pattern = "*"
+            format = "$value"
+            override = true
+        """,
+        )
+
+        # A compiler cannot define any other parser keys.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [[compiler.test.parser]]
+                additional = "True"
+            """,
+            )
+
+        # A compiler can define multiple modes.
+        _test_toml_string(
+            """
+            [[compiler.test.modes]]
+            name = "language"
+            defines = ["LANGUAGE"]
+            include_paths = ["/language/"]
+            include_files = ["language.inc"]
+
+            [[compiler.test.modes]]
+            name = "another-language"
+            defines = ["ANOTHER_LANGUAGE"]
+            include_paths = ["/another-language/"]
+            include_files = ["another_language.inc"]
+        """,
+        )
+
+        # A compiler mode must have a name.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [[compiler.test.modes]]
+                defines = ["LANGUAGE"]
+            """,
+            )
+
+        # A compiler cannot define any other mode keys.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [[compiler.test.modes]]
+                name = "required"
+                additional = "True"
+            """,
+            )
+
+        # A compiler can define multiple passes.
+        _test_toml_string(
+            """
+            [[compiler.test.passes]]
+            name = "host"
+            defines = ["HOST"]
+            include_paths = ["/host/"]
+            include_files = ["host.inc"]
+
+            [[compiler.test.passes]]
+            name = "device"
+            defines = ["DEVICE"]
+            include_paths = ["/device/"]
+            include_files = ["device.inc"]
+            modes = ["device-mode"]
+        """,
+        )
+
+        # A compiler pass must have a name.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [[compiler.test.passes]]
+                defines = ["LANGUAGE"]
+            """,
+            )
+
+        # A compiler cannot define any other pass keys.
+        with self.assertRaises(ValueError):
+            _test_toml_string(
+                """
+                [[compiler.test.passes]]
+                name = "required"
+                additional = "True"
+            """,
+            )
 
     def test_analysis_file(self):
         """schema/analysis_file"""
