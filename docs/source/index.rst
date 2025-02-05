@@ -66,10 +66,27 @@ release, run the following::
     $ cd code-base-investigator
     $ pip install .
 
-We strongly recommend installing CBI within a `virtual environment`_.
+We strongly recommend installing CBI within a virtual environment, to simplify
+dependency management and improve security. Some alternative methods of
+creating a virtual environment are shown below.
 
-.. _`virtual environment`: https://docs.python.org/3/library/venv.html
+.. tab:: venv
 
+    .. code-block:: text
+
+        $ git clone --branch 1.2.0 https://github.com/intel/code-base-investigator.git
+        $ python3 -m venv cbi
+        $ source cbi/bin/activate
+        $ cd code-base-investigator
+        $ pip install .
+
+.. tab:: uv
+
+    .. code-block:: text
+
+        $ git clone --branch 1.2.0 https://github.com/intel/code-base-investigator.git
+        $ cd code-base-investigator
+        $ uv tool install .
 
 Getting Started
 ###############
