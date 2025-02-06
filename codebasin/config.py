@@ -408,11 +408,6 @@ def load_database(dbpath, rootdir):
         # (e.g., additional defines, multiple passes for multiple targets)
         compiler = recognize_compiler(argv)
 
-        # Include paths may be specified relative to root
-        include_paths = [
-            os.path.abspath(os.path.join(rootdir, f)) for f in include_paths
-        ]
-
         for pass_ in compiler.get_passes():
             entry = {
                 "file": path,
@@ -441,6 +436,13 @@ def load_database(dbpath, rootdir):
                     f"Extra flags for {path} in pass '{pass_}': "
                     + f"{extra_flag_string}",
                 )
+
+            # Include paths may be specified relative to root
+            entry["include_paths"] = [
+                os.path.abspath(os.path.join(rootdir, f))
+                for f in entry["include_paths"]
+            ]
+
             configuration += [entry]
 
     if len(configuration) == 0:
