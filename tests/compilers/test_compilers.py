@@ -53,6 +53,21 @@ class TestCompilers(unittest.TestCase):
         )
         self.assertEqual(args.include_files, ["foo.inc", "bar.inc"])
 
+    def test_gnu(self):
+        """compilers/gnu"""
+        argv = ["g++", "-fopenmp", "test.cpp"]
+
+        compiler = config.recognize_compiler(argv[0])
+        self.assertTrue(type(compiler) is config.GnuCompiler)
+
+        passes = compiler.parse_args(argv[1:])
+        self.assertEqual(len(passes), 1)
+
+        self.assertEqual(passes[0].pass_name, "default")
+
+        defines = passes[0].defines
+        self.assertEqual(defines, ["_OPENMP"])
+
     def test_clang(self):
         """compilers/clang"""
         argv = ["clang", "-fsycl-is-device", "test.cpp"]
