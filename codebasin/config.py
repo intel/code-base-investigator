@@ -413,42 +413,35 @@ def load_database(dbpath, rootdir):
             os.path.abspath(os.path.join(rootdir, f)) for f in include_paths
         ]
 
-        # Compilation database may contain files that don't
-        # exist without running make
-        if os.path.exists(path):
-            for pass_ in compiler.get_passes():
-                entry = {
-                    "file": path,
-                    "defines": defines.copy(),
-                    "include_paths": include_paths.copy(),
-                    "include_files": include_files.copy(),
-                }
-                if compiler.has_implicit_behavior(pass_):
-                    extra_flags = []
-                    compiler_config = compiler.get_configuration(pass_)
+        for pass_ in compiler.get_passes():
+            entry = {
+                "file": path,
+                "defines": defines.copy(),
+                "include_paths": include_paths.copy(),
+                "include_files": include_files.copy(),
+            }
+            if compiler.has_implicit_behavior(pass_):
+                extra_flags = []
+                compiler_config = compiler.get_configuration(pass_)
 
-                    extra_defines = compiler_config["defines"]
-                    entry["defines"] += extra_defines
-                    extra_flags += [f"-D {x}" for x in extra_defines]
+                extra_defines = compiler_config["defines"]
+                entry["defines"] += extra_defines
+                extra_flags += [f"-D {x}" for x in extra_defines]
 
-                    extra_include_paths = compiler_config["include_paths"]
-                    entry["include_paths"] += extra_include_paths
-                    extra_flags += [f"-I {x}" for x in extra_include_paths]
+                extra_include_paths = compiler_config["include_paths"]
+                entry["include_paths"] += extra_include_paths
+                extra_flags += [f"-I {x}" for x in extra_include_paths]
 
-                    extra_include_files = compiler_config["include_files"]
-                    entry["include_files"] += extra_include_files
-                    extra_flags += [
-                        f"-include {x}" for x in extra_include_files
-                    ]
+                extra_include_files = compiler_config["include_files"]
+                entry["include_files"] += extra_include_files
+                extra_flags += [f"-include {x}" for x in extra_include_files]
 
-                    extra_flag_string = " ".join(extra_flags)
-                    log.info(
-                        f"Extra flags for {path} in pass '{pass_}': "
-                        + f"{extra_flag_string}",
-                    )
-                configuration += [entry]
-        else:
-            log.warning("Couldn't find file %s -- ignoring it.", path)
+                extra_flag_string = " ".join(extra_flags)
+                log.info(
+                    f"Extra flags for {path} in pass '{pass_}': "
+                    + f"{extra_flag_string}",
+                )
+            configuration += [entry]
 
     if len(configuration) == 0:
         log.warning(
