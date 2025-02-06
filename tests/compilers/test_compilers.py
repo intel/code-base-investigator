@@ -133,6 +133,7 @@ class TestCompilers(unittest.TestCase):
         """compilers/nvcc"""
         argv = [
             "nvcc",
+            "-fopenmp",
             "--gpu-architecture=compute_50",
             "--gpu-code=compute_50,sm_50,sm_52",
             "test.cpp",
@@ -149,7 +150,7 @@ class TestCompilers(unittest.TestCase):
         defaults = ["__NVCC__", "__CUDACC__"]
         for p in passes:
             if p.pass_name == "default":
-                expected = defaults
+                expected = defaults + ["_OPENMP"]
             elif p.pass_name == "50":
                 expected = defaults + ["__CUDA_ARCH__=500"]
             elif p.pass_name == "52":
