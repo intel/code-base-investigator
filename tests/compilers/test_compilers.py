@@ -57,10 +57,10 @@ class TestCompilers(unittest.TestCase):
         """compilers/gnu"""
         argv = ["g++", "-fopenmp", "test.cpp"]
 
-        compiler = config.recognize_compiler(argv[0])
-        self.assertTrue(type(compiler) is config.GnuCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.GnuArgumentParser)
 
-        passes = compiler.parse_args(argv[1:])
+        passes = parser.parse_args(argv[1:])
         self.assertEqual(len(passes), 1)
 
         self.assertEqual(passes[0].pass_name, "default")
@@ -72,10 +72,10 @@ class TestCompilers(unittest.TestCase):
         """compilers/clang"""
         argv = ["clang", "-fsycl-is-device", "test.cpp"]
 
-        compiler = config.recognize_compiler(argv[0])
-        self.assertTrue(type(compiler) is config.ClangCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.ClangArgumentParser)
 
-        passes = compiler.parse_args(argv[1:])
+        passes = parser.parse_args(argv[1:])
         self.assertEqual(len(passes), 1)
 
         self.assertEqual(passes[0].pass_name, "default")
@@ -87,10 +87,10 @@ class TestCompilers(unittest.TestCase):
         """compilers/intel_sycl"""
         argv = ["icpx", "-fsycl", "test.cpp"]
 
-        compiler = config.recognize_compiler(argv[0])
-        self.assertTrue(type(compiler) is config.ClangCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.ClangArgumentParser)
 
-        passes = compiler.parse_args(argv[1:])
+        passes = parser.parse_args(argv[1:])
         self.assertEqual(len(passes), 2)
 
         pass_names = {p.pass_name for p in passes}
@@ -113,10 +113,10 @@ class TestCompilers(unittest.TestCase):
             "test.cpp",
         ]
 
-        compiler = config.recognize_compiler(argv[0])
-        self.assertTrue(type(compiler) is config.ClangCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.ClangArgumentParser)
 
-        passes = compiler.parse_args(argv[1:])
+        passes = parser.parse_args(argv[1:])
 
         pass_names = {p.pass_name for p in passes}
         self.assertEqual(pass_names, {"default", "spir64", "x86_64"})
@@ -139,10 +139,10 @@ class TestCompilers(unittest.TestCase):
             "test.cpp",
         ]
 
-        compiler = config.recognize_compiler(argv[0])
-        self.assertTrue(type(compiler) is config.NvccCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.NvccArgumentParser)
 
-        passes = compiler.parse_args(argv[1:])
+        passes = parser.parse_args(argv[1:])
 
         pass_names = {p.pass_name for p in passes}
         self.assertEqual(pass_names, {"default", "50", "52"})
@@ -173,8 +173,8 @@ class TestCompilers(unittest.TestCase):
             "test.cpp",
         ]
 
-        compiler = config.recognize_compiler(argv[0])
-        passes = compiler.parse_args(argv[1:])
+        parser = config.recognize_compiler(argv[0])
+        passes = parser.parse_args(argv[1:])
         self.assertEqual(len(passes), 1)
         self.assertCountEqual(passes[0].defines, ["ASDF"])
 

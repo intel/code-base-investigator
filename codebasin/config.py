@@ -152,7 +152,7 @@ class _ExtendMatchAction(argparse.Action):
 
 
 @dataclass
-class CompilerConfiguration:
+class PreprocessorConfiguration:
     """
     Represents the configuration for a specific file, including:
     - Macro definitions
@@ -167,7 +167,7 @@ class CompilerConfiguration:
     pass_name: str = "default"
 
 
-class Compiler:
+class ArgumentParser:
     """
     Represents the behavior of a specific compiler.
     """
@@ -180,7 +180,7 @@ class Compiler:
         if _importcfg is None:
             load_importcfg()
 
-    def parse_args(self, argv: list[str]) -> list[CompilerConfiguration]:
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
         """
         Parameters
         ----------
@@ -189,13 +189,13 @@ class Compiler:
 
         Returns
         -------
-        list[CompilerConfiguration]
+        list[PreprocessorConfiguration]
             A list of compiler configurations, each representing
             a separate pass, that describe the compiler's behavior
             after parsing `argv`.
         """
         args = _parse_compiler_args(argv + _importcfg[self.name])
-        configuration = CompilerConfiguration(
+        configuration = PreprocessorConfiguration(
             args.defines,
             args.include_paths,
             args.include_files,
@@ -203,7 +203,7 @@ class Compiler:
         return [configuration]
 
 
-class ClangCompiler(Compiler):
+class ClangArgumentParser(ArgumentParser):
     """
     Represents the behavior of Clang-based compilers.
     """
@@ -216,7 +216,7 @@ class ClangCompiler(Compiler):
         "spir64_fpga",
     ]
 
-    def parse_args(self, argv: list[str]) -> list[CompilerConfiguration]:
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
         args = _parse_compiler_args(argv + _importcfg[self.name])
 
         sycl = False
@@ -252,7 +252,7 @@ class ClangCompiler(Compiler):
             include_files = args.include_files.copy()
             include_paths = args.include_paths.copy()
 
-            if pass_ in ClangCompiler.device_passes:
+            if pass_ in ClangArgumentParser.device_passes:
                 defines.append("__SYCL_DEVICE_ONLY__")
 
             if "spir64" in pass_ or pass_ == "x86_64":
@@ -262,7 +262,7 @@ class ClangCompiler(Compiler):
             if pass_ == "default" and omp:
                 defines.append("_OPENMP")
 
-            configuration = CompilerConfiguration(
+            configuration = PreprocessorConfiguration(
                 defines,
                 include_paths,
                 include_files,
@@ -274,17 +274,17 @@ class ClangCompiler(Compiler):
         return configurations
 
 
-class GnuCompiler(Compiler):
+class GnuArgumentParser(ArgumentParser):
     """
     Represents the behavior of GNU-based compilers.
     """
 
-    def parse_args(self, argv: list[str]) -> list[CompilerConfiguration]:
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
         args = _parse_compiler_args(argv + _importcfg[self.name])
         for arg in argv:
             if arg in ["-fopenmp"]:
                 args.defines.append("_OPENMP")
-        configuration = CompilerConfiguration(
+        configuration = PreprocessorConfiguration(
             args.defines,
             args.include_paths,
             args.include_files,
@@ -292,12 +292,12 @@ class GnuCompiler(Compiler):
         return [configuration]
 
 
-class NvccCompiler(Compiler):
+class NvccArgumentParser(ArgumentParser):
     """
     Represents the behavior of the NVCC compiler.
     """
 
-    def parse_args(self, argv: list[str]) -> list[CompilerConfiguration]:
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
         args = _parse_compiler_args(argv + _importcfg[self.name])
 
         omp = False
@@ -328,7 +328,7 @@ class NvccCompiler(Compiler):
             if pass_ == "default" and omp:
                 defines.append("_OPENMP")
 
-            configuration = CompilerConfiguration(
+            configuration = PreprocessorConfiguration(
                 defines,
                 include_paths,
                 include_files,
@@ -343,34 +343,34 @@ class NvccCompiler(Compiler):
 _seen_compiler = collections.defaultdict(lambda: False)
 
 
-def recognize_compiler(path: str) -> Compiler:
+def recognize_compiler(path: str) -> ArgumentParser:
     """
     Attempt to recognize the compiler, given a path.
-    Return a Compiler object.
+    Return a ArgumentParser object.
     """
-    compiler = None
+    parser = None
     compiler_name = os.path.basename(path)
     if compiler_name in ["clang", "clang++"]:
-        compiler = ClangCompiler(path)
+        parser = ClangArgumentParser(path)
     elif compiler_name in ["gcc", "g++"]:
-        compiler = GnuCompiler(path)
+        parser = GnuArgumentParser(path)
     elif compiler_name in ["icx", "icpx", "ifx"]:
-        compiler = ClangCompiler(path)
+        parser = ClangArgumentParser(path)
     elif compiler_name == "nvcc":
-        compiler = NvccCompiler(path)
+        parser = NvccArgumentParser(path)
     else:
-        compiler = Compiler(path)
+        parser = ArgumentParser(path)
 
     if not _seen_compiler[compiler_name]:
-        if compiler:
-            log.info(f"Recognized compiler: {compiler.name}.")
+        if parser:
+            log.info(f"Recognized compiler: {compiler_name}.")
         else:
             log.warning(
                 f"Unrecognized compiler: {compiler_name}. "
                 + "Some implicit behavior may be missed.",
             )
         _seen_compiler[compiler_name] = True
-    return compiler
+    return parser
 
 
 def load_database(dbpath, rootdir):
@@ -414,13 +414,13 @@ def load_database(dbpath, rootdir):
 
         # Parse command-line arguments, emulating compiler-specific behavior.
         compiler_name = os.path.basename(command.arguments[0])
-        compiler = recognize_compiler(compiler_name)
-        compiler_configs = compiler.parse_args(command.arguments[1:])
+        parser = recognize_compiler(compiler_name)
+        preprocessor_configs = parser.parse_args(command.arguments[1:])
 
         # Create a configuration entry for each compiler pass.
         # Each compiler pass may set different defines, etc.
-        for compiler_config in compiler_configs:
-            entry = asdict(compiler_config)
+        for preprocessor_config in preprocessor_configs:
+            entry = asdict(preprocessor_config)
 
             entry["file"] = path
 
