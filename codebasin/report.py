@@ -748,7 +748,9 @@ class FileTree:
 def files(
     codebase: CodeBase,
     state: ParserState | None = None,
+    *,
     stream: TextIO = sys.stdout,
+    prune: bool = False,
 ):
     """
     Produce a file tree representing the code base.
@@ -783,6 +785,12 @@ def files(
             for node, assoc in state.get_map(f).items():
                 if isinstance(node, CodeNode):
                     setmap[frozenset(assoc)] += node.num_lines
+        if prune:
+            # Prune unused files from the tree.
+            platforms = set().union(*setmap.keys())
+            if len(platforms) == 0:
+                continue
+
         tree.insert(f, setmap)
 
     # Print a legend.
