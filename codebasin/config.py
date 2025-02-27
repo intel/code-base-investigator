@@ -282,7 +282,7 @@ class GnuArgumentParser(ArgumentParser):
     def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
         args = _parse_compiler_args(argv + _importcfg[self.name])
         for arg in argv:
-            if arg in ["-fopenmp"]:
+            if arg == "-fopenmp":
                 args.defines.append("_OPENMP")
         configuration = PreprocessorConfiguration(
             args.defines,
