@@ -98,8 +98,9 @@ def average_coverage(
     platforms: set[str] | None = None,
 ) -> float:
     """
-    Compute the average percentage of lines in `setmap` required by each
-    platform in the supplied `platforms` set.
+    Computes the coverage for each platform in the supplied `platforms` set
+    (by calling :py:func:`coverage` for each platform), then returns the
+    average (mean) of these values.
 
     Parameters
     ----------
