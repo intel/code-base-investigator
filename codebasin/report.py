@@ -58,6 +58,81 @@ def extract_platforms(setmap):
     return list(unique_platforms)
 
 
+def coverage(
+    setmap: dict[frozenset[str], int],
+    platforms: set[str] | None = None,
+) -> float:
+    """
+    Compute the percentage of lines in `setmap` required by at least one
+    platform in the supplied `platforms` set.
+
+    Parameters
+    ----------
+    setmap: dict[frozenset[str], int]
+        A mapping from platform set to SLOC count.
+
+    platforms: set[str], optional
+        The set of platforms to use when computing coverage.
+        If not provided, computes coverage for all platforms.
+
+    Returns
+    -------
+    float
+        The amount of code used by at least one platform, as a percentage.
+        If `setmap` contains no lines of code or no platforms, returns NaN.
+    """
+    if not platforms:
+        platforms = set().union(*setmap.keys())
+
+    used = 0
+    total = 0
+    for subset, sloc in setmap.items():
+        total += sloc
+        if subset == frozenset():
+            continue
+        elif any([p in platforms for p in subset]):
+            used += sloc
+
+    if total == 0:
+        return float("nan")
+
+    return (used / total) * 100.0
+
+
+def average_coverage(
+    setmap: dict[frozenset[str], int],
+    platforms: set[str] | None = None,
+) -> float:
+    """
+    Computes the coverage for each platform in the supplied `platforms` set
+    (by calling :py:func:`coverage` for each platform), then returns the
+    average (mean) of these values.
+
+    Parameters
+    ----------
+    setmap: dict[frozenset[str], int]
+        A mapping from platform set to SLOC count.
+
+    platforms: set[str], optional
+        The set of platforms to use when computing coverage.
+        If not provided, computes average over all platforms.
+
+    Returns
+    -------
+    float
+        The average amount of code used by each platform, as a percentage.
+        If `setmap` contains no lines of code or no platforms, returns NaN.
+    """
+    if not platforms:
+        platforms = set().union(*setmap.keys())
+
+    if len(platforms) == 0:
+        return float("nan")
+
+    total = sum([coverage(setmap, [p]) for p in platforms])
+    return total / len(platforms)
+
+
 def distance(setmap, p1, p2):
     """
     Compute distance between two platforms
@@ -89,74 +164,6 @@ def divergence(setmap):
     if npairs == 0:
         return float("nan")
     return d / float(npairs)
-
-
-def utilization(setmap: defaultdict[frozenset[str], int]) -> float:
-    """
-    Compute the average code utilization for all lines in the setmap.
-    i.e., (reused SLOC / total SLOC)
-
-    Parameters
-    ----------
-    setmap: defaultdict[frozenset[str], int]
-        The mapping from platform sets to SLOC.
-
-    Returns
-    -------
-    float
-        The average code utilization, in the range [0, NumPlatforms].
-        If the number of total SLOC is 0, returns NaN.
-    """
-    reused_sloc = 0
-    total_sloc = 0
-    for k, v in setmap.items():
-        reused_sloc += len(k) * v
-        total_sloc += v
-    if total_sloc == 0:
-        return float("nan")
-
-    return reused_sloc / total_sloc
-
-
-def normalized_utilization(
-    setmap: defaultdict[frozenset[str], int],
-    total_platforms: int | None = None,
-) -> float:
-    """
-    Compute the average code utilization, normalized for a specific number of
-    platforms.
-
-    Parameters
-    ----------
-    setmap: defaultdict[frozenset[str,int]
-        The mapping from platform sets to SLOC.
-
-    total_platforms: int, optional
-        The total number of platforms to use as the denominator.
-        By default, the denominator will be derived from the setmap.
-
-    Returns
-    -------
-    float
-        The average code utilization, in the range [0, 1].
-
-    Raises
-    ------
-    ValueError
-        If `total_platforms` < the number of platforms in `setmap`.
-    """
-    original_platforms = len(extract_platforms(setmap))
-    if total_platforms is None:
-        total_platforms = original_platforms
-    if total_platforms < original_platforms:
-        raise ValueError(
-            "Cannot normalize to fewer platforms than the setmap contains.",
-        )
-
-    if total_platforms == 0:
-        return float("nan")
-    else:
-        return utilization(setmap) / total_platforms
 
 
 def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
@@ -195,11 +202,11 @@ def summary(setmap: defaultdict[str, int], stream: TextIO = sys.stdout):
     ]
 
     cd = divergence(setmap)
-    nu = normalized_utilization(setmap)
-    unused = (setmap[frozenset()] / total_count) * 100.0
+    cc = coverage(setmap)
+    ac = average_coverage(setmap)
     lines += [f"Code Divergence: {cd:.2f}"]
-    lines += [f"Code Utilization: {nu:.2f}"]
-    lines += [f"Unused Code (%): {unused:.2f}"]
+    lines += [f"Coverage (%): {cc:.2f}"]
+    lines += [f"Avg. Coverage (%): {ac:.2f}"]
     lines += [f"Total SLOC: {total_count}"]
 
     print("\n".join(lines), file=stream)
@@ -509,21 +516,18 @@ class FileTree:
                 output += f"{color}{value}\033[0m"
             return output
 
-        def _sloc_str(self, max_used: int, max_total: int) -> str:
+        def _sloc_str(self, max_sloc: int) -> str:
             """
             Parameters
             ----------
-            max_used: int
-                The maximum used SLOC, used to determine formatting width.
-
-            max_total: int
-                The maximum total SLOC, used to determine formatting width.
+            max_sloc: int
+                The maximum SLOC, used to determine formatting width.
 
             Returns
             -------
             str
-                A string representing the SLOC used by this Node, in the form
-                "used / total" with human-readable numbers.
+                A string representing the SLOC associated with this Node, with
+                human-readable numbers.
             """
             color = ""
             if len(self.platforms) == 0:
@@ -531,58 +535,48 @@ class FileTree:
             elif self.is_symlink():
                 color = "\033[96m"
 
-            used_len = len(_human_readable(max_used))
-            total_len = len(_human_readable(max_total))
+            sloc_len = len(_human_readable(max_sloc))
+            sloc = _human_readable(sum(self.setmap.values()))
 
-            used = _human_readable(self.sloc)
-            total = _human_readable(sum(self.setmap.values()))
+            return f"{color}{sloc:>{sloc_len}}\033[0m"
 
-            return f"{color}{used:>{used_len}} / {total:>{total_len}}\033[0m"
-
-        def _divergence_str(self) -> str:
+        def _coverage_str(self, platforms: set[str]) -> str:
             """
             Returns
             -------
             str
-                A string representing code divergence in this Node.
+                A string representing code coverage of this Node.
             """
-            cd = divergence(self.setmap)
+            cc = coverage(self.setmap, platforms)
             color = ""
             if len(self.platforms) == 0:
                 color = "\033[2m"
             elif self.is_symlink():
                 color = "\033[96m"
-            elif cd <= 0.25:
+            elif cc >= 50:
                 color = "\033[32m"
-            elif cd >= 0.75 or len(self.platforms) == 1:
+            elif cc < 50:
                 color = "\033[35m"
-            return f"{color}{cd:4.2f}\033[0m"
+            return f"{color}{cc:6.2f}\033[0m"
 
-        def _utilization_str(self, total_platforms: int) -> str:
+        def _average_coverage_str(self, platforms: set[str]) -> str:
             """
-            Parameters
-            ----------
-            total_platforms: int
-                The number of platforms in the whole FileTree.
-
             Returns
             -------
             str
-                A string representing code utilization in this Node.
+                A string representing average coverage of this Node.
             """
-            nu = normalized_utilization(self.setmap, total_platforms)
-
+            cc = average_coverage(self.setmap, platforms)
             color = ""
             if len(self.platforms) == 0:
                 color = "\033[2m"
             elif self.is_symlink():
                 color = "\033[96m"
-            elif nu > 0.5:
+            elif cc >= 50:
                 color = "\033[32m"
-            elif nu <= 0.5:
+            elif cc < 50:
                 color = "\033[35m"
-
-            return f"{color}{nu:4.2f}\033[0m"
+            return f"{color}{cc:6.2f}\033[0m"
 
         def _meta_str(self, root: Self) -> str:
             """
@@ -596,13 +590,12 @@ class FileTree:
             str
                 A string representing meta-information for this FileTree.Node.
             """
-            max_used = root.sloc
-            max_total = sum(root.setmap.values())
+            max_sloc = sum(root.setmap.values())
             info = [
                 self._platforms_str(root.platforms),
-                self._sloc_str(max_used, max_total),
-                self._divergence_str(),
-                self._utilization_str(len(root.platforms)),
+                self._sloc_str(max_sloc),
+                self._coverage_str(root.platforms),
+                self._average_coverage_str(root.platforms),
             ]
             return "[" + " | ".join(info) + "]"
 
@@ -804,10 +797,10 @@ def files(
     legend += [""]
     legend += ["Columns:"]
     header = [
-        "Platform Set",
-        "Used SLOC / Total SLOC",
-        "Code Divergence",
-        "Code Utilization",
+        "Platforms",
+        "SLOC",
+        "Coverage (%)",
+        "Avg. Coverage (%)",
     ]
     legend += ["[" + " | ".join(header) + "]"]
     legend += [""]

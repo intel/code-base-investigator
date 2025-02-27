@@ -8,7 +8,7 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-from codebasin.report import FileTree, divergence, normalized_utilization
+from codebasin.report import FileTree, average_coverage, coverage
 
 
 class TestFileTreeNode(unittest.TestCase):
@@ -91,70 +91,88 @@ class TestFileTreeNode(unittest.TestCase):
     def test_sloc_str(self):
         """Check SLOC string format."""
         node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "6 / 12\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "12\033[0m")
 
-        s = node._sloc_str(100, 1000)
-        self.assertEqual(s, "  6 /   12\033[0m")
+        s = node._sloc_str(1000)
+        self.assertEqual(s, "  12\033[0m")
 
         node = FileTree.Node(self.path / "file.cpp")
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "\033[2m0 /  0\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "\033[2m 0\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "\033[96m6 / 12\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "\033[96m12\033[0m")
 
         node = FileTree.Node(
             self.path / "symlink.cpp",
             setmap=defaultdict(int),
         )
-        s = node._sloc_str(6, 12)
-        self.assertEqual(s, "\033[2m0 /  0\033[0m")
+        s = node._sloc_str(12)
+        self.assertEqual(s, "\033[2m 0\033[0m")
 
-    def test_divergence_str(self):
-        """Check divergence string format."""
+    def test_coverage_str(self):
+        """Check coverage string format."""
         node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
-        cd = divergence(self.setmap)
-        s = node._divergence_str()
-        self.assertEqual(s, f"{cd:4.2f}\033[0m")
+        cc = coverage(self.setmap, ["X", "Y"])
+        s = node._coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[32m{cc:6.2f}\033[0m")
+
+        bad_setmap = {
+            frozenset(["X"]): 1,
+            frozenset([]): 6,
+        }
+        node = FileTree.Node(self.path / "file.cpp", setmap=bad_setmap)
+        cc = coverage(bad_setmap, ["X", "Y"])
+        s = node._coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[35m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "file.cpp")
-        cd = float("nan")
-        s = node._divergence_str()
-        self.assertEqual(s, f"\033[2m{cd:4.2f}\033[0m")
+        cc = float("nan")
+        s = node._coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
-        cd = divergence(self.setmap)
-        s = node._divergence_str()
-        self.assertEqual(s, f"\033[96m{cd:4.2f}\033[0m")
+        cc = coverage(self.setmap, ["X", "Y"])
+        s = node._coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[96m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp")
-        cd = float("nan")
-        s = node._divergence_str()
-        self.assertEqual(s, f"\033[2m{cd:4.2f}\033[0m")
+        cc = float("nan")
+        s = node._coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
 
-    def test_utilization_str(self):
-        """Check utilization string format."""
+    def test_average_coverage_str(self):
+        """Check average_coverage string format."""
         node = FileTree.Node(self.path / "file.cpp", setmap=self.setmap)
-        nu = normalized_utilization(self.setmap, 2)
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[35m{nu:4.2f}\033[0m")
+        cc = average_coverage(self.setmap, ["X", "Y"])
+        s = node._average_coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[35m{cc:6.2f}\033[0m")
+
+        bad_setmap = {
+            frozenset(["X"]): 1,
+            frozenset([]): 6,
+        }
+        node = FileTree.Node(self.path / "file.cpp", setmap=bad_setmap)
+        cc = average_coverage(bad_setmap, ["X", "Y"])
+        s = node._average_coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[35m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "file.cpp")
-        nu = float("nan")
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[2m{nu:4.2f}\033[0m")
+        cc = float("nan")
+        s = node._average_coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp", setmap=self.setmap)
-        nu = normalized_utilization(self.setmap, 2)
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[96m{nu:4.2f}\033[0m")
+        cc = average_coverage(self.setmap, ["X", "Y"])
+        s = node._average_coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[96m{cc:6.2f}\033[0m")
 
         node = FileTree.Node(self.path / "symlink.cpp")
-        nu = float("nan")
-        s = node._utilization_str(2)
-        self.assertEqual(s, f"\033[2m{nu:4.2f}\033[0m")
+        cc = float("nan")
+        s = node._average_coverage_str(["X", "Y"])
+        self.assertEqual(s, f"\033[2m{cc:6.2f}\033[0m")
 
 
 if __name__ == "__main__":
