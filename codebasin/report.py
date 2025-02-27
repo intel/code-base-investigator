@@ -785,9 +785,6 @@ def files(
                     setmap[frozenset(assoc)] += node.num_lines
         tree.insert(f, setmap)
 
-    print("", file=stream)
-    print(_heading("Files", stream), file=stream)
-
     # Print a legend.
     legend = []
     legend += ["Legend:"]
