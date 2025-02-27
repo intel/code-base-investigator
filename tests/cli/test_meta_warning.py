@@ -5,7 +5,7 @@ import logging
 import re
 import unittest
 
-from codebasin.cli import MetaWarning
+from codebasin._detail.logging import MetaWarning
 
 
 class TestMetaWarning(unittest.TestCase):

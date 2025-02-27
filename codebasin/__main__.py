@@ -11,7 +11,7 @@ import os
 import sys
 
 from codebasin import CodeBase, config, finder, report, util
-from codebasin.cli import Formatter, WarningAggregator
+from codebasin._detail.logging import Formatter, WarningAggregator
 
 log = logging.getLogger("codebasin")
 version = "1.2.0"

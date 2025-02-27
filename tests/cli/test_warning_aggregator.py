@@ -4,7 +4,7 @@
 import logging
 import unittest
 
-from codebasin.cli import WarningAggregator
+from codebasin._detail.logging import WarningAggregator
 
 
 class TestWarningAggregator(unittest.TestCase):

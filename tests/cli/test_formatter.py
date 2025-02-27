@@ -4,7 +4,7 @@
 import logging
 import unittest
 
-from codebasin.cli import Formatter
+from codebasin._detail.logging import Formatter
 
 
 class TestFormatter(unittest.TestCase):
