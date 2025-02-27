@@ -322,6 +322,9 @@ class NvccArgumentParser(ArgumentParser):
             defines.append("__CUDACC__")
 
             if pass_ != "default":
+                # The __CUDA_ARCH__ macro always has three digits.
+                # Multiplying the SM version by 10 gives the macro value.
+                # e.g., sm_71 corresponds to __CUDA_ARCH__=710.
                 arch = int(pass_) * 10
                 defines.append(f"__CUDA_ARCH__={arch}")
 
