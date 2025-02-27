@@ -649,9 +649,11 @@ class FileTree:
     def _print(
         self,
         node: Node,
+        depth: int = 0,
         prefix: str = "",
         connector: str = "",
         fancy: bool = True,
+        levels: int = None,
     ):
         """
         Recursive helper function to print all nodes in a FileTree.
@@ -669,7 +671,14 @@ class FileTree:
 
         fancy: bool, default: True
             Whether to use fancy formatting (including colors).
+
+        levels: int, optional
+            The maximum number of levels to print.
         """
+        # Skip this node and its children if we have hit the maximum depth.
+        if levels and depth > levels:
+            return []
+
         if fancy:
             dash = "\u2500"
             cont = "\u251C"
@@ -722,14 +731,16 @@ class FileTree:
                 next_connector = cont
             lines += self._print(
                 node.children[name],
+                depth + 1,
                 next_prefix,
                 next_connector,
                 fancy,
+                levels,
             )
 
         return lines
 
-    def write_to(self, stream: TextIO):
+    def write_to(self, stream: TextIO, levels: int = None):
         """
         Write the FileTree to the specified stream.
 
@@ -737,8 +748,12 @@ class FileTree:
         ----------
         stream: TextIO
             The text stream to write to.
+
+        levels: int, optional
+            The maximum number of levels to print.
+            If 0, print only the top-level summary.
         """
-        lines = self._print(self.root, fancy=stream.isatty())
+        lines = self._print(self.root, fancy=stream.isatty(), levels=levels)
         output = "\n".join(lines)
         if not stream.isatty():
             output = _strip_colors(output)
@@ -751,6 +766,7 @@ def files(
     *,
     stream: TextIO = sys.stdout,
     prune: bool = False,
+    levels: int = None,
 ):
     """
     Produce a file tree representing the code base.
@@ -818,4 +834,4 @@ def files(
     print(legend, file=stream)
 
     # Print the tree.
-    tree.write_to(stream)
+    tree.write_to(stream, levels=levels)

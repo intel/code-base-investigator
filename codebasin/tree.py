@@ -70,6 +70,17 @@ def _build_parser() -> argparse.ArgumentParser:
         help=_help_string(
             "Prune unused files from the tree.",
             is_long=True,
+        ),
+    )
+    parser.add_argument(
+        "-L",
+        "--levels",
+        dest="levels",
+        metavar="<level>",
+        type=int,
+        help=_help_string(
+            "Print only the specified number of levels.",
+            is_long=True,
             is_last=True,
         ),
     )
@@ -88,6 +99,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _tree(args: argparse.Namespace):
+    # Refuse to print a tree with no levels, consistent with tree utility.
+    if args.levels is not None and args.levels <= 0:
+        raise ValueError("Number of levels must be greater than 0.")
+
     # TODO: Refactor this to avoid duplication in __main__
     # Determine the root directory based on where codebasin is run.
     rootdir = os.path.abspath(os.getcwd())
@@ -140,7 +155,7 @@ def _tree(args: argparse.Namespace):
     )
 
     # Print the file tree.
-    report.files(codebase, state, prune=args.prune)
+    report.files(codebase, state, prune=args.prune, levels=args.levels)
     sys.exit(0)
 
 
