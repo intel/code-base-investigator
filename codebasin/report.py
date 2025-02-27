@@ -74,6 +74,12 @@ def coverage(
     platforms: set[str], optional
         The set of platforms to use when computing coverage.
         If not provided, computes coverage for all platforms.
+
+    Returns
+    -------
+    float
+        The amount of code used by at least one platform, as a percentage.
+        If `setmap` contains no lines of code or no platforms, returns NaN.
     """
     if not platforms:
         platforms = set().union(*setmap.keys())
@@ -110,6 +116,12 @@ def average_coverage(
     platforms: set[str], optional
         The set of platforms to use when computing coverage.
         If not provided, computes average over all platforms.
+
+    Returns
+    -------
+    float
+        The average amount of code used by each platform, as a percentage.
+        If `setmap` contains no lines of code or no platforms, returns NaN.
     """
     if not platforms:
         platforms = set().union(*setmap.keys())
