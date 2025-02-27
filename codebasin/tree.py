@@ -61,6 +61,15 @@ def _build_parser() -> argparse.ArgumentParser:
             "May be specified multiple times.",
             "If not specified, all platforms will be included.",
             is_long=True,
+        ),
+    )
+    parser.add_argument(
+        "--prune",
+        dest="prune",
+        action="store_true",
+        help=_help_string(
+            "Prune unused files from the tree.",
+            is_long=True,
             is_last=True,
         ),
     )
@@ -131,7 +140,7 @@ def _tree(args: argparse.Namespace):
     )
 
     # Print the file tree.
-    report.files(codebase, state)
+    report.files(codebase, state, prune=args.prune)
     sys.exit(0)
 
 
