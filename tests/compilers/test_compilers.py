@@ -53,38 +53,59 @@ class TestCompilers(unittest.TestCase):
         )
         self.assertEqual(args.include_files, ["foo.inc", "bar.inc"])
 
+    def test_gnu(self):
+        """compilers/gnu"""
+        argv = ["g++", "-fopenmp", "test.cpp"]
+
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.GnuArgumentParser)
+
+        passes = parser.parse_args(argv[1:])
+        self.assertEqual(len(passes), 1)
+
+        self.assertEqual(passes[0].pass_name, "default")
+
+        defines = passes[0].defines
+        self.assertEqual(defines, ["_OPENMP"])
+
     def test_clang(self):
         """compilers/clang"""
-        args = ["clang", "-fsycl-is-device", "test.cpp"]
+        argv = ["clang", "-fsycl-is-device", "test.cpp"]
 
-        compiler = config.recognize_compiler(args)
-        self.assertTrue(type(compiler) is config.ClangCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.ClangArgumentParser)
 
-        passes = compiler.get_passes()
-        self.assertEqual(passes, {"default"})
+        passes = parser.parse_args(argv[1:])
+        self.assertEqual(len(passes), 1)
 
-        self.assertTrue(compiler.has_implicit_behavior("default"))
-        defines = compiler.get_defines("default")
+        self.assertEqual(passes[0].pass_name, "default")
+
+        defines = passes[0].defines
         self.assertEqual(defines, ["__SYCL_DEVICE_ONLY__"])
 
     def test_intel_sycl(self):
         """compilers/intel_sycl"""
-        args = ["icpx", "-fsycl", "test.cpp"]
+        argv = ["icpx", "-fsycl", "test.cpp"]
 
-        compiler = config.recognize_compiler(args)
-        self.assertTrue(type(compiler) is config.IntelCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.ClangArgumentParser)
 
-        passes = compiler.get_passes()
-        self.assertEqual(passes, {"default", "spir64"})
+        passes = parser.parse_args(argv[1:])
+        self.assertEqual(len(passes), 2)
 
-        expected = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
-        self.assertTrue(compiler.has_implicit_behavior("spir64"))
-        defines = compiler.get_defines("spir64")
-        self.assertEqual(defines, expected)
+        pass_names = {p.pass_name for p in passes}
+        self.assertEqual(pass_names, {"default", "spir64"})
+
+        for p in passes:
+            if p.pass_name == "default":
+                expected = []
+            else:
+                expected = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
+            self.assertEqual(p.defines, expected)
 
     def test_intel_targets(self):
         """compilers/intel_targets"""
-        args = [
+        argv = [
             "icpx",
             "-fsycl",
             "-fsycl-targets=spir64,x86_64",
@@ -92,51 +113,49 @@ class TestCompilers(unittest.TestCase):
             "test.cpp",
         ]
 
-        compiler = config.recognize_compiler(args)
-        self.assertTrue(type(compiler) is config.IntelCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.ClangArgumentParser)
 
-        passes = compiler.get_passes()
-        self.assertEqual(passes, {"default", "spir64", "x86_64"})
+        passes = parser.parse_args(argv[1:])
 
-        self.assertTrue(compiler.has_implicit_behavior("default"))
-        defines = compiler.get_defines("default")
-        self.assertEqual(defines, ["_OPENMP"])
+        pass_names = {p.pass_name for p in passes}
+        self.assertEqual(pass_names, {"default", "spir64", "x86_64"})
 
-        expected = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
-        self.assertTrue(compiler.has_implicit_behavior("spir64"))
-        defines = compiler.get_defines("spir64")
-        self.assertEqual(defines, expected)
-        self.assertTrue(compiler.has_implicit_behavior("x86_64"))
-        defines = compiler.get_defines("x86_64")
-        self.assertEqual(defines, expected)
+        for p in passes:
+            if p.pass_name == "default":
+                expected = ["_OPENMP"]
+                self.assertEqual(p.defines, ["_OPENMP"])
+            elif p.pass_name == "spir64" or p.pass_name == "x86_64":
+                expected = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
+            self.assertEqual(p.defines, expected)
 
     def test_nvcc(self):
         """compilers/nvcc"""
-        args = [
+        argv = [
             "nvcc",
+            "-fopenmp",
             "--gpu-architecture=compute_50",
             "--gpu-code=compute_50,sm_50,sm_52",
             "test.cpp",
         ]
 
-        compiler = config.recognize_compiler(args)
-        self.assertTrue(type(compiler) is config.NvccCompiler)
+        parser = config.recognize_compiler(argv[0])
+        self.assertTrue(type(parser) is config.NvccArgumentParser)
 
-        passes = compiler.get_passes()
-        self.assertEqual(passes, {"default", "50", "52"})
+        passes = parser.parse_args(argv[1:])
+
+        pass_names = {p.pass_name for p in passes}
+        self.assertEqual(pass_names, {"default", "50", "52"})
 
         defaults = ["__NVCC__", "__CUDACC__"]
-        self.assertTrue(compiler.has_implicit_behavior("default"))
-        defines = compiler.get_defines("default")
-        self.assertEqual(defines, defaults)
-
-        self.assertTrue(compiler.has_implicit_behavior("50"))
-        defines = compiler.get_defines("50")
-        self.assertEqual(defines, defaults + ["__CUDA_ARCH__=500"])
-
-        self.assertTrue(compiler.has_implicit_behavior("52"))
-        defines = compiler.get_defines("52")
-        self.assertEqual(defines, defaults + ["__CUDA_ARCH__=520"])
+        for p in passes:
+            if p.pass_name == "default":
+                expected = defaults + ["_OPENMP"]
+            elif p.pass_name == "50":
+                expected = defaults + ["__CUDA_ARCH__=500"]
+            elif p.pass_name == "52":
+                expected = defaults + ["__CUDA_ARCH__=520"]
+            self.assertEqual(p.defines, expected)
 
     def test_user_options(self):
         """Check that we import user-defined options"""
@@ -149,14 +168,15 @@ class TestCompilers(unittest.TestCase):
             f.write('options = ["-D", "ASDF"]\n')
         config.load_importcfg()
 
-        args = [
+        argv = [
             "c++",
             "test.cpp",
         ]
 
-        compiler = config.recognize_compiler(args)
-        defines = compiler.get_defines("default")
-        self.assertCountEqual(defines, ["ASDF"])
+        parser = config.recognize_compiler(argv[0])
+        passes = parser.parse_args(argv[1:])
+        self.assertEqual(len(passes), 1)
+        self.assertCountEqual(passes[0].defines, ["ASDF"])
 
         tmp.cleanup()
 

@@ -11,6 +11,7 @@ import logging
 import os
 import re
 import string
+from dataclasses import asdict, dataclass
 
 from codebasin import CompilationDatabase, util
 
@@ -150,56 +151,59 @@ class _ExtendMatchAction(argparse.Action):
             dest.extend(matches)
 
 
-class Compiler:
+@dataclass
+class PreprocessorConfiguration:
     """
-    Represents the behavior of a specific compiler, including:
-    - The number of passes it performs.
-    - Implicitly defined macros, which may be flag-dependent.
+    Represents the configuration for a specific file, including:
+    - Macro definitions
+    - Include paths
+    - Include files
+    - A meaningful pass name
     """
 
-    def __init__(self, argv: list[str]):
-        self.name = os.path.basename(argv[0])
-        self.argv = argv
-        self.passes = {"default"}
+    defines: list[str]
+    include_paths: list[str]
+    include_files: list[str]
+    pass_name: str = "default"
+
+
+class ArgumentParser:
+    """
+    Represents the behavior of a specific compiler.
+    """
+
+    def __init__(self, path: str):
+        self.name = os.path.basename(path)
 
         # Check for any user-defined compiler behavior.
         # Currently, users can only override default defines.
         if _importcfg is None:
             load_importcfg()
-        args = _parse_compiler_args(_importcfg[self.name])
-        self.defines = args.defines
 
-    def get_passes(self):
-        return self.passes.copy()
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
+        """
+        Parameters
+        ----------
+        argv: list[str]
+            The list of arguments passed to the compiler.
 
-    def get_defines(self, pass_):
-        return self.defines.copy()
-
-    def get_include_paths(self, pass_):
-        return []
-
-    def get_include_files(self, pass_):
-        return []
-
-    def has_implicit_behavior(self, pass_):
-        return (
-            self.get_defines(pass_)
-            or self.get_include_paths(pass_)
-            or self.get_include_files(pass_)
+        Returns
+        -------
+        list[PreprocessorConfiguration]
+            A list of compiler configurations, each representing
+            a separate pass, that describe the compiler's behavior
+            after parsing `argv`.
+        """
+        args = _parse_compiler_args(argv + _importcfg[self.name])
+        configuration = PreprocessorConfiguration(
+            args.defines,
+            args.include_paths,
+            args.include_files,
         )
-
-    def get_configuration(self, pass_):
-        defines = self.get_defines(pass_)
-        include_paths = self.get_include_paths(pass_)
-        include_files = self.get_include_files(pass_)
-        return {
-            "defines": defines,
-            "include_paths": include_paths,
-            "include_files": include_files,
-        }
+        return [configuration]
 
 
-class ClangCompiler(Compiler):
+class ClangArgumentParser(ArgumentParser):
     """
     Represents the behavior of Clang-based compilers.
     """
@@ -212,150 +216,164 @@ class ClangCompiler(Compiler):
         "spir64_fpga",
     ]
 
-    def __init__(self, argv: list[str]):
-        super().__init__(argv)
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
+        args = _parse_compiler_args(argv + _importcfg[self.name])
 
-        self.sycl = False
-        self.omp = False
+        sycl = False
+        omp = False
         sycl_targets = []
+        passes = {"default"}
 
         for arg in argv:
             if arg == "-fsycl":
-                self.sycl = True
+                sycl = True
                 continue
 
             m = re.search("-fsycl-targets=", arg)
             if m:
                 sycl_targets = arg.split("=")[1].split(",")
-                self.passes |= set(sycl_targets)
+                passes |= set(sycl_targets)
                 continue
 
             if arg in ["-fopenmp", "-fiopenmp", "-qopenmp"]:
-                self.omp = True
+                omp = True
                 continue
 
             if arg in ["-fsycl-is-device"]:
-                self.defines.append("__SYCL_DEVICE_ONLY__")
+                args.defines.append("__SYCL_DEVICE_ONLY__")
                 continue
 
-        if self.sycl and sycl_targets == []:
-            self.passes |= {"spir64"}
+        if sycl and sycl_targets == []:
+            passes |= {"spir64"}
 
-    def get_defines(self, pass_):
-        defines = super().get_defines(pass_)
+        configurations = []
+        for pass_ in passes:
+            defines = args.defines.copy()
+            include_files = args.include_files.copy()
+            include_paths = args.include_paths.copy()
 
-        if pass_ in ClangCompiler.device_passes:
-            defines.append("__SYCL_DEVICE_ONLY__")
+            if pass_ in ClangArgumentParser.device_passes:
+                defines.append("__SYCL_DEVICE_ONLY__")
 
-        if "spir64" in pass_ or pass_ == "x86_64":
-            defines.append("__SPIR__")
-            defines.append("__SPIRV__")
+            if "spir64" in pass_ or pass_ == "x86_64":
+                defines.append("__SPIR__")
+                defines.append("__SPIRV__")
 
-        if pass_ == "default" and self.omp:
-            defines.append("_OPENMP")
+            if pass_ == "default" and omp:
+                defines.append("_OPENMP")
 
-        return defines
+            configuration = PreprocessorConfiguration(
+                defines,
+                include_paths,
+                include_files,
+                pass_name=pass_,
+            )
+
+            configurations.append(configuration)
+
+        return configurations
 
 
-class GnuCompiler(Compiler):
+class GnuArgumentParser(ArgumentParser):
     """
     Represents the behavior of GNU-based compilers.
     """
 
-    def __init__(self, argv: list[str]):
-        super().__init__(argv)
-
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
+        args = _parse_compiler_args(argv + _importcfg[self.name])
         for arg in argv:
-            if arg in ["-fopenmp"]:
-                self.defines.append("_OPENMP")
-                break
+            if arg == "-fopenmp":
+                args.defines.append("_OPENMP")
+        configuration = PreprocessorConfiguration(
+            args.defines,
+            args.include_paths,
+            args.include_files,
+        )
+        return [configuration]
 
 
-class HipCompiler(Compiler):
-    """
-    Represents the behavior of the HIP compiler.
-    """
-
-    def __init__(self, argv: list[str]):
-        super().__init__(argv)
-
-
-class IntelCompiler(ClangCompiler):
-    """
-    Represents the behavior of Intel compilers.
-    """
-
-    def __init__(self, argv: list[str]):
-        super().__init__(argv)
-
-
-class NvccCompiler(Compiler):
+class NvccArgumentParser(ArgumentParser):
     """
     Represents the behavior of the NVCC compiler.
     """
 
-    def __init__(self, argv: list[str]):
-        super().__init__(argv)
-        self.omp = False
+    def parse_args(self, argv: list[str]) -> list[PreprocessorConfiguration]:
+        args = _parse_compiler_args(argv + _importcfg[self.name])
+
+        omp = False
+        passes = {"default"}
 
         for arg in argv:
             archs = re.findall("sm_(\\d+)", arg)
             archs += re.findall("compute_(\\d+)", arg)
-            self.passes |= set(archs)
+            passes |= set(archs)
 
             if arg in ["-fopenmp", "-fiopenmp", "-qopenmp"]:
-                self.omp = True
+                omp = True
                 continue
 
-    def get_defines(self, pass_):
-        defines = super().get_defines(pass_)
+        configurations = []
+        for pass_ in passes:
+            defines = args.defines.copy()
+            include_files = args.include_files.copy()
+            include_paths = args.include_paths.copy()
 
-        defines.append("__NVCC__")
-        defines.append("__CUDACC__")
+            defines.append("__NVCC__")
+            defines.append("__CUDACC__")
 
-        if pass_ != "default":
-            arch = int(pass_) * 10
-            defines.append(f"__CUDA_ARCH__={arch}")
+            if pass_ != "default":
+                # The __CUDA_ARCH__ macro always has three digits.
+                # Multiplying the SM version by 10 gives the macro value.
+                # e.g., sm_71 corresponds to __CUDA_ARCH__=710.
+                arch = int(pass_) * 10
+                defines.append(f"__CUDA_ARCH__={arch}")
 
-        if pass_ == "default" and self.omp:
-            defines.append("_OPENMP")
+            if pass_ == "default" and omp:
+                defines.append("_OPENMP")
 
-        return defines
+            configuration = PreprocessorConfiguration(
+                defines,
+                include_paths,
+                include_files,
+                pass_name=pass_,
+            )
+
+            configurations.append(configuration)
+
+        return configurations
 
 
 _seen_compiler = collections.defaultdict(lambda: False)
 
 
-def recognize_compiler(argv: list[str]) -> Compiler:
+def recognize_compiler(path: str) -> ArgumentParser:
     """
-    Attempt to recognize the compiler, given an argument list.
-    Return a Compiler object.
+    Attempt to recognize the compiler, given a path.
+    Return a ArgumentParser object.
     """
-    compiler = None
-    compiler_name = os.path.basename(argv[0])
+    parser = None
+    compiler_name = os.path.basename(path)
     if compiler_name in ["clang", "clang++"]:
-        compiler = ClangCompiler(argv)
+        parser = ClangArgumentParser(path)
     elif compiler_name in ["gcc", "g++"]:
-        compiler = GnuCompiler(argv)
-    elif compiler_name in ["hipcc"]:
-        compiler = HipCompiler(argv)
+        parser = GnuArgumentParser(path)
     elif compiler_name in ["icx", "icpx", "ifx"]:
-        compiler = IntelCompiler(argv)
+        parser = ClangArgumentParser(path)
     elif compiler_name == "nvcc":
-        compiler = NvccCompiler(argv)
+        parser = NvccArgumentParser(path)
     else:
-        compiler = Compiler(argv)
+        parser = ArgumentParser(path)
 
     if not _seen_compiler[compiler_name]:
-        if compiler:
-            log.info(f"Recognized compiler: {compiler.name}.")
+        if parser:
+            log.info(f"Recognized compiler: {compiler_name}.")
         else:
             log.warning(
                 f"Unrecognized compiler: {compiler_name}. "
                 + "Some implicit behavior may be missed.",
             )
         _seen_compiler[compiler_name] = True
-    return compiler
+    return parser
 
 
 def load_database(dbpath, rootdir):
@@ -368,24 +386,9 @@ def load_database(dbpath, rootdir):
 
     configuration = []
     for command in db:
+        # Skip commands that invoke unsupported tools.
         if not command.is_supported():
             continue
-        argv = command.arguments
-
-        # Parse common command-line arguments.
-        args = _parse_compiler_args(argv[1:])
-        defines = args.defines
-        include_paths = args.include_paths
-        include_files = args.include_files
-
-        # Certain tools may have additional, implicit, behaviors
-        # (e.g., additional defines, multiple passes for multiple targets)
-        compiler = recognize_compiler(argv)
-
-        # Include paths may be specified relative to root
-        include_paths = [
-            os.path.abspath(os.path.join(rootdir, f)) for f in include_paths
-        ]
 
         # Files may be specified:
         # - relative to root
@@ -406,42 +409,40 @@ def load_database(dbpath, rootdir):
         else:
             path = os.path.abspath(os.path.join(filedir, command.filename))
 
-        # Compilation database may contain files that don't
-        # exist without running make
-        if os.path.exists(path):
-            for pass_ in compiler.get_passes():
-                entry = {
-                    "file": path,
-                    "defines": defines.copy(),
-                    "include_paths": include_paths.copy(),
-                    "include_files": include_files.copy(),
-                }
-                if compiler.has_implicit_behavior(pass_):
-                    extra_flags = []
-                    compiler_config = compiler.get_configuration(pass_)
+        # Skip files that don't exist.
+        # (e.g., because they're generated by running make)
+        if not os.path.exists(path):
+            log.warning("Ignoring non-existent file: %s", path)
+            continue
 
-                    extra_defines = compiler_config["defines"]
-                    entry["defines"] += extra_defines
-                    extra_flags += [f"-D {x}" for x in extra_defines]
+        # Parse command-line arguments, emulating compiler-specific behavior.
+        compiler_name = os.path.basename(command.arguments[0])
+        parser = recognize_compiler(compiler_name)
+        preprocessor_configs = parser.parse_args(command.arguments[1:])
 
-                    extra_include_paths = compiler_config["include_paths"]
-                    entry["include_paths"] += extra_include_paths
-                    extra_flags += [f"-I {x}" for x in extra_include_paths]
+        # Create a configuration entry for each compiler pass.
+        # Each compiler pass may set different defines, etc.
+        for preprocessor_config in preprocessor_configs:
+            entry = asdict(preprocessor_config)
 
-                    extra_include_files = compiler_config["include_files"]
-                    entry["include_files"] += extra_include_files
-                    extra_flags += [
-                        f"-include {x}" for x in extra_include_files
-                    ]
+            entry["file"] = path
 
-                    extra_flag_string = " ".join(extra_flags)
-                    log.info(
-                        f"Extra flags for {path} in pass '{pass_}': "
-                        + f"{extra_flag_string}",
-                    )
-                configuration += [entry]
-        else:
-            log.warning("Couldn't find file %s -- ignoring it.", path)
+            # Include paths may be specified relative to root
+            entry["include_paths"] = [
+                os.path.abspath(os.path.join(rootdir, f))
+                for f in entry["include_paths"]
+            ]
+
+            configuration += [entry]
+
+            # Print variables for debugging purposes.
+            if not log.isEnabledFor(logging.DEBUG):
+                continue
+            pass_name = entry["pass_name"]
+            for v in ["defines", "include_paths", "include_files"]:
+                if entry[v]:
+                    value = " ".join(entry[v])
+                    log.debug(f"{v} for {path} in pass '{pass_name}': {value}")
 
     if len(configuration) == 0:
         log.warning(
