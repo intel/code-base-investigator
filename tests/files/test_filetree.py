@@ -1,12 +1,14 @@
 # Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
+import io
 import logging
 import os
 import tempfile
 import unittest
 from pathlib import Path
 
+from codebasin import CodeBase, finder, report
 from codebasin.report import FileTree
 
 
@@ -96,6 +98,72 @@ class TestFileTree(unittest.TestCase):
             lines,
             [f"{meta} \u2500\u2500 {expected_name} -> {expected_link}"],
         )
+
+    def test_levels(self):
+        """Check report --levels flag works correctly"""
+        # Set up subdirectories for this test
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.makedirs(path / "first" / "second" / "third")
+        open(path / "first" / "one.cpp", mode="w").close()
+        open(path / "first" / "second" / "two.cpp", mode="w").close()
+
+        codebase = CodeBase(path)
+        configuration = {
+            "X": [
+                {
+                    "file": str(path / "first" / "one.cpp"),
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+            "Y": [
+                {
+                    "file": str(path / "first" / "second" / "two.cpp"),
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+        }
+        state = finder.find(
+            path,
+            codebase,
+            configuration,
+            show_progress=False,
+        )
+
+        # By default, we should see all levels of the tree.
+        stream = io.StringIO()
+        report.files(codebase, state, stream=stream)
+        output = stream.getvalue()
+        self.assertTrue(str(path) in output)
+        self.assertTrue("first/" in output)
+        self.assertTrue("one.cpp" in output)
+        self.assertTrue("two.cpp" in output)
+
+        # With two levels, the "second" directory should be collapsed.
+        # This will hide "two.cpp" from the output.
+        stream = io.StringIO()
+        report.files(codebase, state, stream=stream, levels=2)
+        output = stream.getvalue()
+        self.assertTrue(str(path) in output)
+        self.assertTrue("first/" in output)
+        self.assertTrue("one.cpp" in output)
+        self.assertFalse("two.cpp" in output)
+
+        # With just one level, the "first" directory should be collapsed.
+        # This will hide "one.cpp" and "two.cpp" from the output.
+        stream = io.StringIO()
+        report.files(codebase, state, stream=stream, levels=1)
+        output = stream.getvalue()
+        self.assertTrue(str(path) in output)
+        self.assertTrue("first/" in output)
+        self.assertFalse("one.cpp" in output)
+        self.assertFalse("two.cpp" in output)
+
+        tmp.cleanup()
 
 
 if __name__ == "__main__":
