@@ -780,9 +780,12 @@ def files(
     for f in codebase:
         setmap = defaultdict(int)
         if state:
-            for node, assoc in state.get_map(f).items():
-                if isinstance(node, CodeNode):
-                    setmap[frozenset(assoc)] += node.num_lines
+            association = state.get_map(f)
+            for node in [
+                n for n in state.get_tree(f).walk() if isinstance(n, CodeNode)
+            ]:
+                platform = frozenset(association[node])
+                setmap[platform] += node.num_lines
         tree.insert(f, setmap)
 
     print("", file=stream)
