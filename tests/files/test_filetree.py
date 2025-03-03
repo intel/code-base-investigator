@@ -218,6 +218,49 @@ class TestFileTree(unittest.TestCase):
 
         tmp.cleanup()
 
+    def test_prune(self):
+        """Check report --prune flag works correctly"""
+        # Set up subdirectories for this test
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        with open(path / "foo.cpp", mode="w") as f:
+            f.write("void foo();")
+        open(path / "unused.cpp", mode="w").close()
+
+        codebase = CodeBase(path)
+        configuration = {
+            "X": [
+                {
+                    "file": str(path / "foo.cpp"),
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+        }
+        state = finder.find(
+            path,
+            codebase,
+            configuration,
+            show_progress=False,
+        )
+
+        # By default, we should see both used and unused files.
+        stream = io.StringIO()
+        report.files(codebase, state, stream=stream)
+        output = stream.getvalue()
+        self.assertTrue("foo.cpp" in output)
+        self.assertTrue("unused.cpp" in output)
+
+        # With prune, we should only see the used files.
+        stream = io.StringIO()
+        report.files(codebase, state, stream=stream, prune=True)
+        output = stream.getvalue()
+        self.assertTrue("foo.cpp" in output)
+        self.assertFalse("unused.cpp" in output)
+
+        tmp.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()
