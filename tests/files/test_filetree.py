@@ -1,12 +1,14 @@
 # Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
+import io
 import logging
 import os
 import tempfile
 import unittest
 from pathlib import Path
 
+from codebasin import CodeBase, finder, report
 from codebasin.report import FileTree
 
 
@@ -30,6 +32,7 @@ class TestFileTree(unittest.TestCase):
         self.path = Path(self.tmp.name)
         open(self.path / "file.cpp", mode="w").close()
         open(self.path / "other.cpp", mode="w").close()
+        open(self.path / "unused.cpp", mode="w").close()
         os.symlink(self.path / "file.cpp", self.path / "symlink.cpp")
 
     @classmethod
@@ -96,6 +99,59 @@ class TestFileTree(unittest.TestCase):
             lines,
             [f"{meta} \u2500\u2500 {expected_name} -> {expected_link}"],
         )
+
+    def test_report(self):
+        """Check report output is accurate"""
+        stream = io.StringIO()
+        codebase = CodeBase(self.path)
+        configuration = {
+            "X": [
+                {
+                    "file": str(self.path / "file.cpp"),
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+            "Y": [
+                {
+                    "file": str(self.path / "other.cpp"),
+                    "defines": [],
+                    "include_paths": [],
+                    "include_files": [],
+                },
+            ],
+        }
+        with open(self.path / "file.cpp", mode="w") as f:
+            f.write("void foo();")
+        with open(self.path / "other.cpp", mode="w") as f:
+            f.write("void bar();")
+        with open(self.path / "unused.cpp", mode="w") as f:
+            f.write("void baz();")
+        state = finder.find(
+            self.path,
+            codebase,
+            configuration,
+            show_progress=False,
+        )
+        report.files(codebase, state, stream=stream)
+        output = stream.getvalue()
+
+        # Skip any header and focus on the tree at the end.
+        lines = output.strip().split("\n")[-5:]
+
+        # Output should contain one line for the directory + each file.
+        self.assertTrue(len(lines) == 5)
+
+        # Check the root directory values include the unused file.
+        self.assertTrue("[AB | 3 |  66.67 |  33.33]" in lines[0])
+
+        # Check the other lines reflect the other files.
+        # The order here isn't guaranteed, so don't check specific lines.
+        self.assertTrue("[A- | 1 | 100.00 |  50.00]" in output)
+        self.assertTrue("[-- | 1 |   0.00 |   0.00]" in output)
+        self.assertTrue("[-B | 1 | 100.00 |  50.00]" in output)
+        self.assertTrue("[A- | 1 | 100.00 |  50.00]" in output)
 
 
 if __name__ == "__main__":
