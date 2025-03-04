@@ -1,0 +1,41 @@
+[compiler.nvcc]
+options = ["-D__NVCC__", "-D__CUDACC__"]
+
+[[compiler.nvcc.parser]]
+flags = ["-fopenmp"]
+action = "append_const"
+dest = "modes"
+const = "openmp"
+
+[[compiler.nvcc.parser]]
+flags = ["--gpu-architecture", "--gpu-code", "-gencode"]
+action = "extend_match"
+pattern = '(?:sm_|compute_)(\d+)'
+format = "sm_$value"
+dest = "passes"
+default = ["sm_70"]
+override = true
+
+[[compiler.nvcc.modes]]
+name = "openmp"
+defines = ["_OPENMP"]
+
+[[compiler.nvcc.passes]]
+name = "sm_70"
+defines = ["__CUDA_ARCH__=700"]
+
+[[compiler.nvcc.passes]]
+name = "sm_75"
+defines = ["__CUDA_ARCH__=750"]
+
+[[compiler.nvcc.passes]]
+name = "sm_80"
+defines = ["__CUDA_ARCH__=800"]
+
+[[compiler.nvcc.passes]]
+name = "sm_89"
+defines = ["__CUDA_ARCH__=890"]
+
+[[compiler.nvcc.passes]]
+name = "sm_90"
+defines = ["__CUDA_ARCH__=900"]

@@ -1,3 +1,7 @@
+include codebasin/compilers/clang.toml
+include codebasin/compilers/gnu.toml
+include codebasin/compilers/intel.toml
+include codebasin/compilers/nvidia.toml
 include codebasin/schema/analysis.schema
 include codebasin/schema/compilation-database.schema
 include codebasin/schema/coverage.schema
