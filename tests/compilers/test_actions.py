@@ -30,7 +30,7 @@ class TestActions(unittest.TestCase):
     def test_store_split(self):
         """Check that argparse calls store_split correctly"""
         namespace = argparse.Namespace()
-        namespace.passes = {}
+        namespace._passes = {}
 
         parser = argparse.ArgumentParser()
         parser.add_argument("--foo", action=_StoreSplitAction, sep=",")
@@ -58,7 +58,7 @@ class TestActions(unittest.TestCase):
             args, _ = parser.parse_known_args(["--baz=1"], namespace)
 
         args, _ = parser.parse_known_args(["--qux=one,two"], namespace)
-        self.assertEqual(args.passes, {"--qux": ["one", "two"]})
+        self.assertEqual(args._passes, {"--qux": ["one", "two"]})
 
     def test_extend_match_init(self):
         """Check that extend_match recognizes custom arguments"""
@@ -127,30 +127,30 @@ class TestActions(unittest.TestCase):
 
         # Check that the default pass defined by --qux always exists.
         # Note that the caller must initialize the default.
-        namespace.passes = {"--qux": ["0"]}
+        namespace._passes = {"--qux": ["0"]}
         args, _ = parser.parse_known_args(
             [],
             namespace,
         )
-        self.assertEqual(args.passes, {"--qux": ["0"]})
+        self.assertEqual(args._passes, {"--qux": ["0"]})
 
         # Check that the default pass is overridden by use of --qux.
         # Note that the caller must initialize the default.
-        namespace.passes = {"--qux": ["0"]}
+        namespace._passes = {"--qux": ["0"]}
         args, _ = parser.parse_known_args(
             ["--qux=option_1,option_2"],
             namespace,
         )
-        self.assertEqual(args.passes, {"--qux": ["1", "2"]})
+        self.assertEqual(args._passes, {"--qux": ["1", "2"]})
 
-        namespace.passes = {}
+        namespace._passes = {}
         args, _ = parser.parse_known_args(
             ["--one=option_1", "--two=option_2"],
             namespace,
         )
-        self.assertEqual(args.passes, {"--one": ["1", "2"]})
+        self.assertEqual(args._passes, {"--one": ["1", "2"]})
 
-        namespace.passes = {}
+        namespace._passes = {}
 
 
 if __name__ == "__main__":

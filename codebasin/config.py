@@ -105,7 +105,7 @@ class _StoreSplitAction(argparse.Action):
             template = string.Template(self.format)
             split_values = [template.substitute(value=v) for v in split_values]
         if self.dest == "passes":
-            passes = getattr(namespace, self.dest)
+            passes = getattr(namespace, "_passes")
             passes[option_string] = split_values
         else:
             setattr(namespace, self.dest, split_values)
@@ -144,7 +144,7 @@ class _ExtendMatchAction(argparse.Action):
             template = string.Template(self.format)
             matches = [template.substitute(value=v) for v in matches]
         if self.dest == "passes":
-            passes = getattr(namespace, self.dest)
+            passes = getattr(namespace, "_passes")
             if self.flag_name not in passes:
                 passes[self.flag_name] = []
             if self.override:
