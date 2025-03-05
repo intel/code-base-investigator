@@ -109,6 +109,14 @@ class TestActions(unittest.TestCase):
             pattern=r"option_(\d+)",
             dest="passes",
         )
+        parser.add_argument(
+            "--default-override",
+            action=_ExtendMatchAction,
+            pattern=r"option_(\d+)",
+            default=["0"],
+            dest="override",
+            override=True,
+        )
 
         args, _ = parser.parse_known_args(
             ["--foo=option_1,option_2"],
@@ -125,22 +133,26 @@ class TestActions(unittest.TestCase):
         with self.assertRaises(TypeError):
             args, _ = parser.parse_known_args(["--baz=1"], namespace)
 
-        # Check that the default pass defined by --qux always exists.
+        # Check that the default values defined by flags always exists.
         # Note that the caller must initialize the default.
+        namespace.override = ["0"]
         namespace._passes = {"--qux": ["0"]}
         args, _ = parser.parse_known_args(
             [],
             namespace,
         )
+        self.assertEqual(args.override, ["0"])
         self.assertEqual(args._passes, {"--qux": ["0"]})
 
         # Check that the default pass is overridden by use of --qux.
         # Note that the caller must initialize the default.
+        namespace.override = ["0"]
         namespace._passes = {"--qux": ["0"]}
         args, _ = parser.parse_known_args(
-            ["--qux=option_1,option_2"],
+            ["--qux=option_1,option_2", "--default-override=option_1"],
             namespace,
         )
+        self.assertEqual(args.override, ["1"])
         self.assertEqual(args._passes, {"--qux": ["1", "2"]})
 
         namespace._passes = {}
@@ -149,8 +161,6 @@ class TestActions(unittest.TestCase):
             namespace,
         )
         self.assertEqual(args._passes, {"--one": ["1", "2"]})
-
-        namespace._passes = {}
 
 
 if __name__ == "__main__":
