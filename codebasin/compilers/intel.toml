@@ -1,0 +1,52 @@
+[compiler.icx]
+
+[compiler.icpx]
+alias_of = "icx"
+
+[[compiler.icx.parser]]
+flags = ["-fopenmp"]
+action = "append_const"
+dest = "modes"
+const = "openmp"
+
+[[compiler.icx.parser]]
+flags = ["-fsycl"]
+action = "append_const"
+dest = "modes"
+const = "sycl"
+
+[[compiler.icx.parser]]
+flags = ["-fsycl-targets"]
+action = "store_split"
+sep = ","
+format = "sycl-$value"
+dest = "passes"
+default = ["sycl-spir64"]
+
+[[compiler.icx.modes]]
+name = "sycl"
+defines = ["SYCL_LANGUAGE_VERSION"]
+
+[[compiler.icx.modes]]
+name = "openmp"
+defines = ["_OPENMP"]
+
+[[compiler.icx.passes]]
+name = "sycl-spir64"
+defines = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
+modes = ["sycl"]
+
+[[compiler.icx.passes]]
+name = "sycl-spir64_x86_64"
+defines = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
+modes = ["sycl"]
+
+[[compiler.icx.passes]]
+name = "sycl-spir64_gen"
+defines = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
+modes = ["sycl"]
+
+[[compiler.icx.passes]]
+name = "sycl-spir64_fpga"
+defines = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
+modes = ["sycl"]

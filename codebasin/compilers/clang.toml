@@ -1,0 +1,20 @@
+[compiler.clang]
+
+[compiler."clang++"]
+alias_of = "clang"
+
+[[compiler.clang.parser]]
+flags = ["-fopenmp"]
+action = "append_const"
+dest = "modes"
+const = "openmp"
+
+[[compiler.clang.parser]]
+flags = ["-fsycl-is-device"]
+action = "append_const"
+dest = "defines"
+const = "__SYCL_DEVICE_ONLY__"
+
+[[compiler.clang.modes]]
+name = "openmp"
+defines = ["_OPENMP"]

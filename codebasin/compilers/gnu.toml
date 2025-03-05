@@ -1,0 +1,14 @@
+[compiler.gcc]
+
+[compiler."g++"]
+alias_of = "gcc"
+
+[[compiler.gcc.parser]]
+flags = ["-fopenmp"]
+action = "append_const"
+dest = "modes"
+const = "openmp"
+
+[[compiler.gcc.modes]]
+name = "openmp"
+defines = ["_OPENMP"]
