@@ -781,9 +781,10 @@ def files(
         setmap = defaultdict(int)
         if state:
             association = state.get_map(f)
-            for node in [
-                n for n in state.get_tree(f).walk() if isinstance(n, CodeNode)
-            ]:
+            for node in filter(
+                lambda x: isinstance(x, CodeNode),
+                state.get_tree(f).walk(),
+            ):
                 platform = frozenset(association[node])
                 setmap[platform] += node.num_lines
         tree.insert(f, setmap)
