@@ -99,6 +99,8 @@ class TestActions(unittest.TestCase):
             action=_ExtendMatchAction,
             pattern=r"option_(\d+)",
             dest="passes",
+            default=["0"],
+            override=True,
         )
         parser.add_argument(
             "--one",
@@ -123,7 +125,18 @@ class TestActions(unittest.TestCase):
         with self.assertRaises(TypeError):
             args, _ = parser.parse_known_args(["--baz=1"], namespace)
 
-        namespace.passes = {}
+        # Check that the default pass defined by --qux always exists.
+        # Note that the caller must initialize the default.
+        namespace.passes = {"--qux": ["0"]}
+        args, _ = parser.parse_known_args(
+            [],
+            namespace,
+        )
+        self.assertEqual(args.passes, {"--qux": ["0"]})
+
+        # Check that the default pass is overridden by use of --qux.
+        # Note that the caller must initialize the default.
+        namespace.passes = {"--qux": ["0"]}
         args, _ = parser.parse_known_args(
             ["--qux=option_1,option_2"],
             namespace,
@@ -136,6 +149,8 @@ class TestActions(unittest.TestCase):
             namespace,
         )
         self.assertEqual(args.passes, {"--one": ["1", "2"]})
+
+        namespace.passes = {}
 
 
 if __name__ == "__main__":
