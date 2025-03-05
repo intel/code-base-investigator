@@ -78,7 +78,6 @@ class TestActions(unittest.TestCase):
     def test_extend_match(self):
         """Check that argparse calls store_split correctly"""
         namespace = argparse.Namespace()
-        namespace.passes = {}
 
         parser = argparse.ArgumentParser()
         parser.add_argument(
@@ -101,6 +100,13 @@ class TestActions(unittest.TestCase):
             pattern=r"option_(\d+)",
             dest="passes",
         )
+        parser.add_argument(
+            "--one",
+            "--two",
+            action=_ExtendMatchAction,
+            pattern=r"option_(\d+)",
+            dest="passes",
+        )
 
         args, _ = parser.parse_known_args(
             ["--foo=option_1,option_2"],
@@ -117,11 +123,19 @@ class TestActions(unittest.TestCase):
         with self.assertRaises(TypeError):
             args, _ = parser.parse_known_args(["--baz=1"], namespace)
 
+        namespace.passes = {}
         args, _ = parser.parse_known_args(
             ["--qux=option_1,option_2"],
             namespace,
         )
         self.assertEqual(args.passes, {"--qux": ["1", "2"]})
+
+        namespace.passes = {}
+        args, _ = parser.parse_known_args(
+            ["--one=option_1", "--two=option_2"],
+            namespace,
+        )
+        self.assertEqual(args.passes, {"--one": ["1", "2"]})
 
 
 if __name__ == "__main__":
