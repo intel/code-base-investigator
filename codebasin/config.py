@@ -110,7 +110,7 @@ class _StoreSplitAction(argparse.Action):
             template = string.Template(self.format)
             split_values = [template.substitute(value=v) for v in split_values]
         if self.dest == "passes":
-            passes = getattr(namespace, self.dest)
+            passes = getattr(namespace, "_passes")
             passes[option_string] = split_values
         else:
             setattr(namespace, self.dest, split_values)
@@ -131,6 +131,8 @@ class _ExtendMatchAction(argparse.Action):
     ):
         self.pattern = kwargs.pop("pattern", None)
         self.format = kwargs.pop("format", None)
+        self.override = kwargs.pop("override", False)
+        self.flag_name = option_strings[0]
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
     def __call__(
@@ -147,13 +149,20 @@ class _ExtendMatchAction(argparse.Action):
             template = string.Template(self.format)
             matches = [template.substitute(value=v) for v in matches]
         if self.dest == "passes":
-            passes = getattr(namespace, self.dest)
-            if option_string not in passes:
-                passes[option_string] = []
-            passes[option_string].extend(matches)
+            passes = getattr(namespace, "_passes")
+            if self.flag_name not in passes:
+                passes[self.flag_name] = []
+            if self.override:
+                passes[self.flag_name] = matches
+                self.override = False
+            else:
+                passes[self.flag_name].extend(matches)
         else:
-            dest = getattr(namespace, self.dest)
-            dest.extend(matches)
+            if self.override:
+                setattr(namespace, self.dest, matches)
+            else:
+                dest = getattr(namespace, self.dest)
+                dest.extend(matches)
 
 
 @dataclass
