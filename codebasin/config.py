@@ -9,9 +9,13 @@ import argparse
 import collections
 import logging
 import os
+import pkgutil
 import re
 import string
-from dataclasses import asdict, dataclass
+import tomllib
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Self
 
 from codebasin import CompilationDatabase, util
 
@@ -19,6 +23,7 @@ log = logging.getLogger(__name__)
 
 
 _importcfg = None
+_compilers = None
 
 
 def _parse_compiler_args(argv: list[str]):
@@ -149,6 +154,88 @@ class _ExtendMatchAction(argparse.Action):
         else:
             dest = getattr(namespace, self.dest)
             dest.extend(matches)
+
+
+@dataclass
+class _CompilerMode:
+    name: str
+    defines: list[str] = field(default_factory=list)
+    include_paths: list[str] = field(default_factory=list)
+    include_files: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_toml(cls, toml: object) -> Self:
+        return _CompilerMode(**toml)
+
+
+@dataclass
+class _CompilerPass:
+    name: str
+    defines: list[str] = field(default_factory=list)
+    include_paths: list[str] = field(default_factory=list)
+    include_files: list[str] = field(default_factory=list)
+    modes: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_toml(cls, toml: object) -> Self:
+        return _CompilerPass(**toml)
+
+
+@dataclass
+class _Compiler:
+    alias_of: str | None = None
+    options: list[str] = field(default_factory=list)
+    parser: list[dict] = field(default_factory=list)
+    modes: dict[str, _CompilerMode] = field(default_factory=dict)
+    passes: dict[str, _CompilerPass] = field(default_factory=dict)
+
+    @classmethod
+    def from_toml(cls, toml: object) -> Self:
+        kwargs = toml.copy()
+        if "parser" in kwargs:
+            for option in kwargs["parser"]:
+                if option["action"] == "store_split":
+                    option["action"] = _StoreSplitAction
+                if option["action"] == "extend_match":
+                    option["action"] = _ExtendMatchAction
+        if "modes" in toml:
+            kwargs["modes"] = {
+                m["name"]: _CompilerMode.from_toml(m) for m in kwargs["modes"]
+            }
+        if "passes" in toml:
+            kwargs["passes"] = {
+                p["name"]: _CompilerPass.from_toml(p) for p in kwargs["passes"]
+            }
+        return _Compiler(**kwargs)
+
+
+def _load_compilers():
+    """
+    Load the configuration from the following files:
+    - ${PACKAGE}/compilers/*.toml
+    """
+    global _compilers
+    _compilers = {}
+
+    # Load the package-provided configuration files.
+    for compiler in ["clang", "gnu", "intel", "nvidia"]:
+        filename = str((Path("compilers") / compiler).with_suffix(".toml"))
+        toml = tomllib.loads(
+            pkgutil.get_data("codebasin", filename).decode(),
+        )
+        try:
+            util._validate_toml(toml, "cbiconfig")
+        except ValueError as e:
+            log.error(str(e))
+            return
+
+        for name, definition in toml["compiler"].items():
+            _compilers[name] = _Compiler.from_toml(definition)
+
+
+# Load the compiler configuration when this module is imported.
+if not _compilers:
+    _load_compilers()
 
 
 @dataclass
