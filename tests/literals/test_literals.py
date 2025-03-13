@@ -5,6 +5,8 @@ import logging
 import unittest
 from pathlib import Path
 
+import numpy as np
+
 from codebasin import CodeBase, finder, preprocessor
 
 
@@ -59,6 +61,11 @@ class TestLiterals(unittest.TestCase):
             r"L + 2-2 \"\\\" \\n\"",
         )
         self.assertEqual(tokens[0].token, expected.token)
+
+    def test_long_constants(self):
+        tokens = preprocessor.Lexer("0xFFFFFFFFFFFFFFFFULL").tokenize()
+        term = preprocessor.ExpressionEvaluator(tokens).term()
+        self.assertEqual(term, np.uint64(int("0xFFFFFFFFFFFFFFFF", 16)))
 
 
 if __name__ == "__main__":
