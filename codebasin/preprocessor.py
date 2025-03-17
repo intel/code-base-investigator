@@ -2002,7 +2002,7 @@ class ExpressionEvaluator(Parser):
             # Convert to decimal and then to integer with correct sign
             # Preprocessor always uses 64-bit arithmetic!
             int_value = int(value, base)
-            if suffix and "u" in suffix:
+            if suffix and "u" in suffix.lower():
                 return np.uint64(int_value)
             else:
                 return np.int64(int_value)
