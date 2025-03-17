@@ -54,10 +54,16 @@ obtain a compilation database for the CPU:
 .. code :: sh
 
     $ mkdir build-cpu
-    $ cmake ../
+    $ cmake -G Ninja ../
     $ ls
 
     CMakeCache.txt  CMakeFiles  Makefile  cmake_install.cmake  compile_commands.json
+
+.. tip::
+    Using the "Ninja" generator is not required, but is often faster and can
+    improve the quality of CBI's results. Other generators (such as "Unix
+    Makefiles") may use response (:code:`.rsp`) files to pass command-line
+    options, and any options passed this way will not be respected by CBI.
 
 This :code:`compile_commands.json` file includes all the commands required to
 build the code, corresponding to the commands that would be executed if we were
