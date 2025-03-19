@@ -64,6 +64,8 @@ obtain a compilation database for the CPU:
     improve the quality of CBI's results. Other generators (such as "Unix
     Makefiles") may use response (:code:`.rsp`) files to pass command-line
     options, and any options passed this way will not be respected by CBI.
+    You may need to install Ninja on your system (e.g., with :code:`pip install
+    ninja` or similar).
 
 This :code:`compile_commands.json` file includes all the commands required to
 build the code, corresponding to the commands that would be executed if we were
