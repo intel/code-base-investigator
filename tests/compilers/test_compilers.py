@@ -348,10 +348,10 @@ class TestCompilers(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                "WARNING:codebasin.config:definition of g++ in .cbi/config overrides alias.",
-                "WARNING:codebasin.config:compiler mode 'openmp' redefined",
-                "WARNING:codebasin.config:compiler pass 'sycl-spir64' redefined",
-                "WARNING:codebasin.config:nvcc redefined as alias of unknown.",
+                "WARNING:codebasin.config:definition of g++ in .cbi/config overrides alias.",  # noqa: E501
+                "WARNING:codebasin.config:compiler mode 'openmp' redefined",  # noqa: E501
+                "WARNING:codebasin.config:compiler pass 'sycl-spir64' redefined",  # noqa: E501
+                "WARNING:codebasin.config:nvcc redefined as alias of unknown.",  # noqa: E501
             ],
         )
 
@@ -379,7 +379,7 @@ class TestCompilers(unittest.TestCase):
         self.assertEqual(
             cm.output,
             [
-                "ERROR:codebasin.config:Compiler 'nvcc' aliases unrecognized 'unknown'.",
+                "ERROR:codebasin.config:Compiler 'nvcc' aliases unrecognized 'unknown'.",  # noqa: E501
             ],
         )
 
@@ -414,9 +414,9 @@ class TestCompilers(unittest.TestCase):
         self.assertCountEqual(
             cm.output,
             [
-                "WARNING:codebasin.config:Unrecognized arguments: '-unrecognized'",
-                "ERROR:codebasin.config:Unrecognized compiler pass: unrecognized-pass",
-                "ERROR:codebasin.config:Unrecognized compiler mode: unrecognized-mode",
+                "WARNING:codebasin.config:Unrecognized arguments: '-unrecognized'",  # noqa: E501
+                "ERROR:codebasin.config:Unrecognized compiler pass: unrecognized-pass",  # noqa: E501
+                "ERROR:codebasin.config:Unrecognized compiler mode: unrecognized-mode",  # noqa: E501
             ],
         )
 
