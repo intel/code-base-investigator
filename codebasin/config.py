@@ -6,7 +6,6 @@ defining a specific code base configuration.
 """
 
 import argparse
-import collections
 import logging
 import os
 import pkgutil
@@ -22,28 +21,7 @@ from codebasin import CompilationDatabase, util
 
 log = logging.getLogger(__name__)
 
-
-_importcfg = None
 _compilers = None
-
-
-def load_importcfg():
-    """
-    Load the import configuration file, if it exists.
-    """
-    global _importcfg
-    _importcfg = collections.defaultdict(list)
-    path = ".cbi/config"
-    if os.path.exists(path):
-        log.info(f"Found configuration file at {path}")
-        with open(path, "rb") as f:
-            try:
-                _importcfg_toml = util._load_toml(f, "cbiconfig")
-            except ValueError as e:
-                log.error(str(e))
-                return
-        for name, compiler in _importcfg_toml["compiler"].items():
-            _importcfg[name] = compiler["options"]
 
 
 class _StoreSplitAction(argparse.Action):
@@ -210,13 +188,65 @@ def _load_compilers():
             _compilers[name] = _Compiler.from_toml(definition)
 
     # Check for any user-defined compiler behavior.
-    # Currently, users can only override default defines.
-    if _importcfg is None:
-        load_importcfg()
-    for name in _importcfg.keys():
-        if name not in _compilers:
-            _compilers[name] = _Compiler()
-        _compilers[name].options.extend(_importcfg[name])
+    path = ".cbi/config"
+    if os.path.exists(path):
+        log.info(f"Found configuration file at {path}.")
+        with open(path, "rb") as f:
+            try:
+                toml = util._load_toml(f, "cbiconfig")
+            except ValueError as e:
+                log.error(str(e))
+                return
+
+        for name, definition in toml["compiler"].items():
+            # Check if the user is defining a new compiler.
+            if name not in _compilers:
+                _compilers[name] = _Compiler.from_toml(definition)
+                continue
+
+            compiler = _compilers[name]
+
+            # Check if the user is redefining a compiler as an alias.
+            # Warn because options may be lost.
+            if "alias_of" in definition:
+                log.warning(
+                    f'{name} redefined as alias of {definition["alias_of"]}.',
+                )
+                _compilers[name] = _Compiler.from_toml(definition)
+                continue
+
+            # Check if the user is redefining an alias as a compiler.
+            # Warn because options may be lost.
+            if compiler.alias_of:
+                log.warning(
+                    f"definition of {name} in .cbi/config overrides alias.",
+                )
+                compiler.alias_of = None
+
+            # Append options, parser options, modes and passes.
+            # Warn if modes/passes are redefined because options may be lost.
+            if "options" in definition:
+                compiler.options.extend(definition["options"])
+            if "parser" in definition:
+                for option in definition["parser"]:
+                    option = option.copy()
+                    if option["action"] == "store_split":
+                        option["action"] = _StoreSplitAction
+                    if option["action"] == "extend_match":
+                        option["action"] = _ExtendMatchAction
+                    compiler.parser.append(option)
+            if "modes" in definition:
+                for m in definition["modes"]:
+                    name = m["name"]
+                    if name in compiler.modes:
+                        log.warning(f"compiler mode '{name}' redefined")
+                    compiler.modes[name] = _CompilerMode.from_toml(m)
+            if "passes" in definition:
+                for p in definition["passes"]:
+                    name = p["name"]
+                    if name in compiler.passes:
+                        log.warning(f"compiler pass '{name}' redefined")
+                    compiler.passes[name] = _CompilerPass.from_toml(p)
 
 
 # Load the compiler configuration when this module is imported.

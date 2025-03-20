@@ -183,7 +183,6 @@ class TestCompilers(unittest.TestCase):
         with open(path / ".cbi" / "config", mode="w") as f:
             f.write('[compiler."c++"]\n')
             f.write('options = ["-D", "ASDF"]\n')
-        config._importcfg = None
         config._load_compilers()
 
         argv = [
