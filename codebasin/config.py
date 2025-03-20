@@ -269,6 +269,21 @@ class PreprocessorConfiguration:
     include_files: list[str]
     pass_name: str = "default"
 
+    def _update(self, pass_or_mode: _CompilerPass | _CompilerMode):
+        """
+        Update this PreprocessorConfiguration by extending the
+        defines, include paths and include files using the values
+        contained in the provided _CompilerPass or _CompilerMode.
+
+        Parameters
+        ----------
+        pass_or_mode: _CompilerPass | _CompilerMode
+            The pass or mode to enable.
+        """
+        self.defines.extend(pass_or_mode.defines)
+        self.include_paths.extend(pass_or_mode.include_paths)
+        self.include_files.extend(pass_or_mode.include_files)
+
 
 class ArgumentParser:
     """
@@ -397,42 +412,29 @@ class ArgumentParser:
         # Convert the arguments into a list of preprocessor configurations.
         configurations = []
         for pass_name in args.passes:
-            defines = args.defines.copy()
-            include_files = args.include_files.copy()
-            include_paths = args.include_paths.copy()
-
-            if pass_name == "default":
-                for mode_name in args.modes:
-                    if mode_name not in self.compiler.modes:
-                        log.warning(f"Unrecognized compiler mode: {mode_name}")
-                        continue
-                    mode = self.compiler.modes[mode_name]
-                    defines.extend(mode.defines)
-                    include_paths.extend(mode.include_paths)
-                    include_files.extend(mode.include_files)
-
-            else:
-                pass_ = self.compiler.passes[pass_name]
-                defines.extend(pass_.defines)
-                include_paths.extend(pass_.include_paths)
-                include_files.extend(pass_.include_files)
-                for mode_name in pass_.modes:
-                    if mode_name not in self.compiler.modes:
-                        log.warning(f"Unrecognized compiler mode: {mode_name}")
-                        continue
-                    mode = self.compiler.modes[mode_name]
-                    defines.extend(mode.defines)
-                    include_paths.extend(mode.include_paths)
-                    include_files.extend(mode.include_files)
-
-            configuration = PreprocessorConfiguration(
-                defines,
-                include_paths,
-                include_files,
-                pass_name=pass_name,
+            config = PreprocessorConfiguration(
+                args.defines.copy(),
+                args.include_paths.copy(),
+                args.include_files.copy(),
+                pass_name,
             )
 
-            configurations.append(configuration)
+            if pass_name == "default":
+                modes = args.modes
+            else:
+                if pass_name not in self.compiler.passes:
+                    log.error(f"Unrecognized compiler pass: {pass_name}")
+                    continue
+                config._update(self.compiler.passes[pass_name])
+                modes = self.compiler.passes[pass_name].modes
+
+            for mode_name in modes:
+                if mode_name not in self.compiler.modes:
+                    log.error(f"Unrecognized compiler mode: {mode_name}")
+                    continue
+                config._update(self.compiler.modes[mode_name])
+
+            configurations.append(config)
 
         return configurations
 
