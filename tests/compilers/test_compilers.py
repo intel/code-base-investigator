@@ -197,6 +197,182 @@ class TestCompilers(unittest.TestCase):
 
         tmp.cleanup()
 
+    def test_user_alias(self):
+        """Check that we import user-defined aliases"""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        with open(path / ".cbi" / "config", mode="w") as f:
+            f.write('[compiler."c++"]\n')
+            f.write('alias_of = "clang"\n')
+        config._load_compilers()
+
+        parser = ArgumentParser("c++")
+        passes = parser.parse_args(["-fopenmp", "test.cpp"])
+
+        self.assertEqual(len(passes), 1)
+        self.assertCountEqual(passes[0].defines, ["_OPENMP"])
+
+        tmp.cleanup()
+
+    def test_nested_aliases(self):
+        """Check that we handle user-defined aliases to aliases"""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        with open(path / ".cbi" / "config", mode="w") as f:
+            f.write('[compiler."c++"]\n')
+            f.write('alias_of = "g++"\n')
+        config._load_compilers()
+
+        parser = ArgumentParser("c++")
+        passes = parser.parse_args(["-fopenmp", "test.cpp"])
+
+        self.assertEqual(len(passes), 1)
+        self.assertCountEqual(passes[0].defines, ["_OPENMP"])
+
+        tmp.cleanup()
+
+    def test_alias_loops(self):
+        """Check that we identify and complain about alias loops"""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        with open(path / ".cbi" / "config", mode="w") as f:
+            f.write("[compiler.foo]\n")
+            f.write('alias_of = "bar"\n')
+            f.write("[compiler.bar]\n")
+            f.write('alias_of = "foo"\n')
+        config._load_compilers()
+
+        logging.disable(logging.NOTSET)
+        with self.assertLogs("codebasin", level=logging.ERROR):
+            _ = ArgumentParser("foo")
+        logging.disable()
+
+        tmp.cleanup()
+
+    def test_user_parser(self):
+        """Check that we import user-defined parser"""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        with open(path / ".cbi" / "config", mode="w") as f:
+            f.write('[[compiler."c++".parser]]\n')
+            f.write('flags = ["-fasdf"]\n')
+            f.write('action = "append_const"\n')
+            f.write('dest = "passes"\n')
+            f.write('const = "asdf-pass"\n')
+            f.write('[[compiler."c++".modes]]\n')
+            f.write('name = "asdf-mode"\n')
+            f.write('defines = ["ASDF"]\n')
+            f.write('[[compiler."c++".passes]]\n')
+            f.write('name = "asdf-pass"\n')
+            f.write('modes = ["asdf-mode"]\n')
+
+        config._load_compilers()
+
+        parser = ArgumentParser("c++")
+        passes = parser.parse_args(["-fasdf", "test.cpp"])
+
+        self.assertEqual(len(passes), 2)
+        pass_names = {p.pass_name for p in passes}
+        self.assertCountEqual(pass_names, {"default", "asdf-pass"})
+
+        for p in passes:
+            if p.pass_name == "default":
+                expected = []
+            elif p.pass_name == "asdf-pass":
+                expected = ["ASDF"]
+            self.assertCountEqual(p.defines, expected)
+
+        tmp.cleanup()
+
+    def test_user_overrides(self):
+        """Check that we can merge user-defined overrides"""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        with open(path / ".cbi" / "config", mode="w") as f:
+            f.write('[[compiler."g++".parser]]\n')
+            f.write('flags = ["-fopenmp"]\n')
+            f.write('action = "append_const"\n')
+            f.write('dest = "passes"\n')
+            f.write('const = "new-openmp-pass"\n')
+            f.write("\n")
+            f.write('[[compiler."g++".passes]]\n')
+            f.write('name = "new-openmp-pass"\n')
+            f.write('modes = ["new-openmp-mode"]\n')
+            f.write("\n")
+            f.write('[[compiler."g++".modes]]\n')
+            f.write('name = "new-openmp-mode"\n')
+            f.write('defines = ["_NEW_OPENMP"]\n')
+            f.write("\n")
+            f.write('[compiler."g++"]\n')
+            f.write('options = ["-D", "EXTRA_DEFINE"]\n')
+            f.write("\n")
+            f.write("[[compiler.clang.modes]]\n")
+            f.write('name = "openmp"\n')
+            f.write("defines = []\n")
+            f.write("\n")
+            f.write("[[compiler.icx.passes]]\n")
+            f.write('name = "sycl-spir64"\n')
+            f.write("defines = []\n")
+            f.write("\n")
+            f.write("[compiler.nvcc]\n")
+            f.write('alias_of = "unknown"\n')
+
+        # Verify that the correct warnings are generated when loading the file.
+        logging.disable(logging.NOTSET)
+        with self.assertLogs("codebasin", level=logging.WARNING) as cm:
+            config._load_compilers()
+        logging.disable()
+
+        self.assertEqual(
+            cm.output,
+            [
+                "WARNING:codebasin.config:definition of g++ in .cbi/config overrides alias.",
+                "WARNING:codebasin.config:compiler mode 'openmp' redefined",
+                "WARNING:codebasin.config:compiler pass 'sycl-spir64' redefined",
+                "WARNING:codebasin.config:nvcc redefined as alias of unknown.",
+            ],
+        )
+
+        # Verify that user-defined overrides affect passes, etc.
+        parser = ArgumentParser("g++")
+        argv = ["-fopenmp"]
+        passes = parser.parse_args(argv)
+
+        pass_names = {p.pass_name for p in passes}
+        self.assertCountEqual(pass_names, {"default", "new-openmp-pass"})
+
+        for p in passes:
+            if p.pass_name == "default":
+                expected = ["EXTRA_DEFINE"]
+            else:
+                expected = ["EXTRA_DEFINE", "_NEW_OPENMP"]
+            self.assertCountEqual(p.defines, expected)
+
+        # Verify that invalid aliases are identified.
+        logging.disable(logging.NOTSET)
+        with self.assertLogs("codebasin", level=logging.ERROR) as cm:
+            _ = ArgumentParser("nvcc")
+        logging.disable()
+
+        self.assertEqual(
+            cm.output,
+            [
+                "ERROR:codebasin.config:Compiler 'nvcc' aliases unrecognized 'unknown'.",
+            ],
+        )
+
+        tmp.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()
