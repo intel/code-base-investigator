@@ -373,6 +373,43 @@ class TestCompilers(unittest.TestCase):
 
         tmp.cleanup()
 
+    def test_unrecognized(self):
+        """Check that we report unrecognized compilers, modes and passes."""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        with open(path / ".cbi" / "config", mode="w") as f:
+            f.write("[[compiler.foo.parser]]\n")
+            f.write('flags = ["-pass"]\n')
+            f.write('action = "append_const"\n')
+            f.write('dest = "passes"\n')
+            f.write('const = "unrecognized-pass"\n')
+            f.write("[[compiler.foo.parser]]\n")
+            f.write('flags = ["-mode"]\n')
+            f.write('action = "append_const"\n')
+            f.write('dest = "modes"\n')
+            f.write('const = "unrecognized-mode"\n')
+        config._load_compilers()
+
+        logging.disable(logging.NOTSET)
+        with self.assertLogs("codebasin", level=logging.WARNING) as cm:
+            _ = ArgumentParser("foo").parse_args(
+                ["-pass", "-mode", "-unrecognized"],
+            )
+        logging.disable()
+
+        self.assertCountEqual(
+            cm.output,
+            [
+                "WARNING:codebasin.config:Unrecognized arguments: '-unrecognized'",
+                "ERROR:codebasin.config:Unrecognized compiler pass: unrecognized-pass",
+                "ERROR:codebasin.config:Unrecognized compiler mode: unrecognized-mode",
+            ],
+        )
+
+        tmp.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()
