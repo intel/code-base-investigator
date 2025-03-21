@@ -16,6 +16,8 @@ from codebasin._detail.logging import Formatter, WarningAggregator
 log = logging.getLogger("codebasin")
 version = "1.2.0"
 
+_traceback = False
+
 
 def _help_string(*lines: str, is_long=False, is_last=False):
     """
@@ -166,6 +168,8 @@ def _main():
     log.setLevel(logging.DEBUG)
     if args.debug:
         min_log_level = logging.DEBUG
+        global _traceback
+        _traceback = True
     else:
         min_log_level = logging.INFO
 
@@ -285,7 +289,7 @@ def main():
     try:
         _main()
     except Exception as e:
-        log.error(str(e))
+        log.error(str(e), exc_info=_traceback)
         sys.exit(1)
 
 
