@@ -133,19 +133,22 @@ def _compute(args: argparse.Namespace):
         with open(filename, "rb") as f:
             digest = hashlib.file_digest(f, "sha512")
 
-        lines = []
+        used_lines = []
+        unused_lines = []
         tree = state.get_tree(filename)
         association = state.get_map(filename)
         for node in [n for n in tree.walk() if isinstance(n, CodeNode)]:
             if association[node] == frozenset([]):
-                continue
-            lines.extend(node.lines)
+                unused_lines.extend(node.lines)
+            else:
+                used_lines.extend(node.lines)
 
         covarray.append(
             {
                 "file": relative_path,
                 "id": digest.hexdigest(),
-                "lines": lines,
+                "used_lines": used_lines,
+                "unused_lines": unused_lines,
             },
         )
 

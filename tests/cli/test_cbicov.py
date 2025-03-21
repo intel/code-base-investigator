@@ -97,12 +97,14 @@ class TestCbiCov(unittest.TestCase):
             {
                 "file": "bar.h",
                 "id": "3ba8372282f8f1bafc59bb3d0472dcd7ecd5f13a54f17585c6012bfc40bfba7b9afb905f24ccea087546f4c90363bba97d988e4067ec880f619d0ab623c3a7a1",  # noqa: E501
-                "lines": [],
+                "used_lines": [],
+                "unused_lines": [1],
             },
             {
                 "file": "foo.cpp",
                 "id": "1359957a144db36091624c1091ac6a47c47945a3ff63a47ace3dc5c1b13159929adac14c21733ec1054f7f1f8809ac416e643483191aab6687d7849ee17edaa0",  # noqa: E501
-                "lines": [1, 3, 4],
+                "used_lines": [1, 3, 4],
+                "unused_lines": [2],
             },
         ]
         self.assertCountEqual(coverage, expected_coverage)
