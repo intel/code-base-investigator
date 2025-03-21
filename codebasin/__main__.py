@@ -168,7 +168,10 @@ def _main():
     log_path = os.path.abspath("cbi.log")
     print(f"Log file created at {log_path}")
 
-    log_level = max(1, logging.ERROR - 10 * (args.verbose - args.quiet))
+    log_level = max(
+        logging.INFO,
+        logging.ERROR - 10 * (args.verbose - args.quiet),
+    )
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setLevel(log_level)
     stdout_handler.setFormatter(Formatter(colors=sys.stdout.isatty()))
