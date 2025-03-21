@@ -61,6 +61,11 @@ class Formatter(logging.Formatter):
             color = RED
         else:
             color = DEFAULT
+
+        # Print a stack trace if explicitly requested.
+        if record.exc_info:
+            return self.formatException(record.exc_info)
+
         return f"{BOLD}{color}{level}{RESET}: {msg}"
 
 
