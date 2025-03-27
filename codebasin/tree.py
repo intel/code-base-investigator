@@ -69,7 +69,6 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=_help_string(
             "Prune unused files from the tree.",
-            is_long=True,
         ),
     )
     parser.add_argument(
