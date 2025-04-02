@@ -38,7 +38,6 @@ portability and maintainability of an application's source code.
 - NumPy
 - pathspec
 - Python 3
-- PyYAML
 - SciPy
 - tabulate
 - tqdm
