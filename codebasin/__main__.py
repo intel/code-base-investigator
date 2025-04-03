@@ -96,7 +96,7 @@ def _main():
         metavar="<report>",
         action="append",
         default=[],
-        choices=["all", "summary", "clustering", "duplicates", "files"],
+        choices=["all", "summary", "clustering", "duplicates"],
         help=_help_string(
             "Generate a report of the specified type:",
             "- summary: code divergence information",
@@ -245,10 +245,6 @@ def _main():
     # Print summary report
     if report_enabled("summary"):
         report.summary(setmap)
-
-    # Print files report
-    if report_enabled("files"):
-        report.files(codebase, state)
 
     # Print clustering report
     if report_enabled("clustering"):

@@ -38,6 +38,7 @@ dependencies = [
 [project.scripts]
 codebasin = "codebasin:__main__.main"
 cbi-cov = "codebasin.coverage:__main__.main"
+cbi-tree = "codebasin:tree.main"
 
 [project.urls]
 "Github" = "https://www.github.com/intel/code-base-investigator"
