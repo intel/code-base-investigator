@@ -179,6 +179,9 @@ def _main():
     file_handler.addFilter(aggregator)
     log.addHandler(file_handler)
 
+    if args.debug:
+        log.debug(f"Code Base Investigator {version}; Python {sys.version}")
+
     # Inform the user that a log file has been created.
     # 'print' instead of 'log' to ensure the message is visible in the output.
     log_path = os.path.abspath("cbi.log")
