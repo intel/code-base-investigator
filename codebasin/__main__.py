@@ -6,6 +6,7 @@ This script is the main executable of Code Base Investigator.
 """
 
 import argparse
+import importlib.metadata
 import logging
 import os
 import sys
@@ -14,7 +15,7 @@ from codebasin import CodeBase, config, finder, report, util
 from codebasin._detail.logging import Formatter, WarningAggregator
 
 log = logging.getLogger("codebasin")
-version = "1.2.0"
+version = importlib.metadata.version("codebasin")
 
 _traceback = False
 
