@@ -33,7 +33,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version=f"CBI Coverage Tool {__version__}",
+        version=f"CBI Tree Tool {__version__}",
         help=_help_string("Display version information and exit."),
     )
     parser.add_argument(
