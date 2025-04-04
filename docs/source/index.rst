@@ -59,10 +59,10 @@ portability and maintainability of an application's source code.
 Installation
 ############
 
-The latest release of CBI is version 1.2.0. To download and install this
+The latest release of CBI is version 2.0.0. To download and install this
 release, run the following::
 
-    $ git clone --branch 1.2.0 https://github.com/intel/code-base-investigator.git
+    $ git clone --branch 2.0.0 https://github.com/intel/code-base-investigator.git
     $ cd code-base-investigator
     $ pip install .
 
@@ -74,7 +74,7 @@ creating a virtual environment are shown below.
 
     .. code-block:: text
 
-        $ git clone --branch 1.2.0 https://github.com/intel/code-base-investigator.git
+        $ git clone --branch 2.0.0 https://github.com/intel/code-base-investigator.git
         $ python3 -m venv cbi
         $ source cbi/bin/activate
         $ cd code-base-investigator
@@ -84,7 +84,7 @@ creating a virtual environment are shown below.
 
     .. code-block:: text
 
-        $ git clone --branch 1.2.0 https://github.com/intel/code-base-investigator.git
+        $ git clone --branch 2.0.0 https://github.com/intel/code-base-investigator.git
         $ cd code-base-investigator
         $ uv tool install .
 
