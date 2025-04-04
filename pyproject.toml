@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools >= 61.0"]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
 
 [project]
 authors = [
   {"name" = "S. John Pennycook", "email" = "john.pennycook@intel.com"},
 ]
 description = "Code Base Investigator"
-version = "1.2.0"
-dynamic = ["readme"]
+dynamic = ["version", "readme"]
 keywords = ["performance", "portability", "productivity"]
 name = "codebasin"
 requires-python = ">=3.9"
@@ -60,6 +59,9 @@ include = ["codebasin*"]
 
 [tool.setuptools.dynamic]
 readme = {file = ["README.md"]}
+
+[tool.setuptools_scm]
+# Deliberately empty to enable setuptools-scm
 
 [tool.coverage.run]
 command_line = "-m unittest"
