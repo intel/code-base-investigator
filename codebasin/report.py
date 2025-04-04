@@ -633,7 +633,7 @@ class FileTree:
                     parent.setmap[ps] += setmap[ps]
 
             # If this name exists, find the node.
-            if parent is not None and path.name in parent.children:
+            if path.name in parent.children:
                 node = parent.children[path.name]
 
             # Otherwise, create the node.
