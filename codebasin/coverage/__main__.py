@@ -9,15 +9,10 @@ import logging
 import os
 import sys
 
-from codebasin import CodeBase, config, finder, util
+from codebasin import CodeBase, __version__, config, finder, util
 
 # TODO: Refactor to avoid imports from __main__
-from codebasin.__main__ import (
-    Formatter,
-    WarningAggregator,
-    _help_string,
-    version,
-)
+from codebasin.__main__ import Formatter, WarningAggregator, _help_string
 from codebasin.preprocessor import CodeNode
 
 log = logging.getLogger("codebasin")
@@ -28,7 +23,7 @@ def _build_parser() -> argparse.ArgumentParser:
     Build argument parser.
     """
     parser = argparse.ArgumentParser(
-        description="CBI Coverage Tool " + version,
+        description="CBI Coverage Tool " + __version__,
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False,
     )
@@ -42,7 +37,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version=f"CBI Coverage Tool {version}",
+        version=f"CBI Coverage Tool {__version__}",
         help="Display version information and exit.",
     )
 

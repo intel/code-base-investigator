@@ -1,5 +1,6 @@
 # Copyright (C) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
+import importlib.metadata
 import os
 import shlex
 import warnings
@@ -18,6 +19,8 @@ warnings.warn(
     + "a future release of Code Base Investigator.",
     DeprecationWarning,
 )
+
+__version__ = importlib.metadata.version("codebasin")
 
 
 class CompileCommand:
