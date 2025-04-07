@@ -422,6 +422,16 @@ class TestCompilers(unittest.TestCase):
 
         tmp.cleanup()
 
+    def test_empty_config(self):
+        """Check that we ignore empty configuration files."""
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name)
+        os.chdir(tmp.name)
+        os.mkdir(".cbi")
+        open(path / ".cbi" / "config", mode="w").close()
+        config._load_compilers()
+        tmp.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()
