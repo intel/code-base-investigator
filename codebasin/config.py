@@ -198,6 +198,10 @@ def _load_compilers():
                 log.error(str(e))
                 return
 
+        # Ignore empty configuration files.
+        if "compiler" not in toml:
+            return
+
         for name, definition in toml["compiler"].items():
             # Check if the user is defining a new compiler.
             if name not in _compilers:
