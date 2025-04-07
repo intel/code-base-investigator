@@ -25,13 +25,15 @@ Command Line Interface
 ``-q, --quiet``
     Decrease verbosity level.
 
+``--debug``
+    Enable debug mode.
+
 ``-R <report>``
     Generate a report of the specified type.
 
     - ``summary``: code divergence information
     - ``clustering``: distance matrix and dendrogram
     - ``duplicates``: detected duplicate files
-    - ``files``: information about individual files
 
 ``-x <pattern>, --exclude <pattern>``
     Exclude files matching this pattern from the code base.
