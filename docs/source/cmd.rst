@@ -81,3 +81,34 @@ directory is annotated with information about platform usage and coverage.
 
 ``-L <level>, --levels <level>``
     Print only the specified number of levels.
+
+Coverage Tool
+-------------
+
+The coverage tool reads a JSON compilation database and generates a JSON
+coverage file that is suitable to be read by other tools.
+
+.. code-block:: text
+
+    cbi-cov compute [-h] [-S <path>] [-x <pattern>] [-o <output path>] <input path>
+
+**positional arguments:**
+
+``input path``
+    Path to compilation database JSON file.
+
+**options:**
+
+``-h, --help``
+    Display help message and exit.
+
+``-S <path>, --source-dir <path>``
+    Path to source directory.
+
+``-x <pattern>, --exclude <pattern>``
+    Exclude files matching this pattern from the code base.
+    May be specified multiple times.
+
+``-o <output path>, --output <output path>``
+    Path to coverage JSON file.
+    If not specified, defaults to 'coverage.json'.
