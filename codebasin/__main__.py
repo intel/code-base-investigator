@@ -10,11 +10,10 @@ import logging
 import os
 import sys
 
-from codebasin import CodeBase, config, finder, report, util
+from codebasin import CodeBase, __version__, config, finder, report, util
 from codebasin._detail.logging import Formatter, WarningAggregator
 
 log = logging.getLogger("codebasin")
-version = "1.2.0"
 
 _traceback = False
 
@@ -59,7 +58,7 @@ def _help_string(*lines: str, is_long=False, is_last=False):
 def _main():
     # Read command-line arguments
     parser = argparse.ArgumentParser(
-        description="Code Base Investigator " + str(version),
+        description="Code Base Investigator " + str(__version__),
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False,
     )
@@ -72,7 +71,7 @@ def _main():
     parser.add_argument(
         "--version",
         action="version",
-        version=f"Code Base Investigator {version}",
+        version=f"Code Base Investigator {__version__}",
         help=_help_string("Display version information and exit."),
     )
     parser.add_argument(
@@ -180,7 +179,9 @@ def _main():
     log.addHandler(file_handler)
 
     if args.debug:
-        log.debug(f"Code Base Investigator {version}; Python {sys.version}")
+        log.debug(
+            f"Code Base Investigator {__version__}; Python {sys.version}",
+        )
 
     # Inform the user that a log file has been created.
     # 'print' instead of 'log' to ensure the message is visible in the output.
