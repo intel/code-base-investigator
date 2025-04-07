@@ -13,18 +13,18 @@ Although limited, this functionality is sufficient to support analysis of many
 HPC codes, and CBI has been tested on C, C++, CUDA and some Fortran code bases.
 
 
-Computing Code Divergence
-#########################
+Computing Specialization Metrics
+################################
 
-CBI computes code divergence by building a *specialization tree*, like the one
-shown below:
+CBI computes code divergence and platform coverage by building a
+*specialization tree*, like the one shown below:
 
 .. image:: specialization-tree.png
    :alt: An example of a specialization tree.
 
 CBI can then walk and evaluate this tree for different platform definitions, to
-produce a divergence report providing a breakdown of how many lines of code
-are shared between different platform sets.
+produce a report providing a breakdown of how many lines of code are shared
+between different platform sets.
 
 .. code:: text
 
@@ -46,9 +46,7 @@ are shared between different platform sets.
     Avg. Coverage (%): 42.44
     Total SLOC: 41
 
-Future releases of CBI will provide additional ways to visualize the results of
-this analysis, in order to highlight exactly *which* lines of code correspond
-to different platform sets.
+For more information about these metrics, see :doc:`here <specialization>`.
 
 
 Hierarchical Clustering
@@ -76,3 +74,28 @@ hierarchical clustering by platform similarity.
 
 .. image:: example-dendrogram.png
    :alt: A dendrogram representing the distance between platforms.
+
+
+Visualizing Platform Coverage
+#############################
+
+To assist developers in identifying exactly which parts of their code are
+specialized and for which platforms, CBI can produce an annotated tree showing
+the amount of specialization within each file.
+
+.. code:: text
+
+    Legend:
+    A: cpu
+    B: gpu
+
+    Columns:
+    [Platforms | SLOC | Coverage (%) | Avg. Coverage (%)]
+
+    [AB | 1.0k |   2.59 |   1.83] o /path/to/sample-code-base/src/
+    [-- | 1.0k |   0.00 |   0.00] |-- unused.cpp
+    [AB |   13 | 100.00 |  92.31] |-- main.cpp
+    [A- |    7 | 100.00 |  50.00] |-o cpu/
+    [A- |    7 | 100.00 |  50.00] | \-- foo.cpp
+    [-B |    7 | 100.00 |  50.00] \-o gpu/
+    [-B |    7 | 100.00 |  50.00]   \-- foo.cpp
