@@ -253,11 +253,6 @@ def _load_compilers():
                     compiler.passes[name] = _CompilerPass.from_toml(p)
 
 
-# Load the compiler configuration when this module is imported.
-if not _compilers:
-    _load_compilers()
-
-
 @dataclass
 class PreprocessorConfiguration:
     """
@@ -296,6 +291,10 @@ class ArgumentParser:
 
     def __init__(self, path: str):
         self.name = os.path.basename(path)
+
+        # Load the global compiler configuration if necessary.
+        if not _compilers:
+            _load_compilers()
 
         self.compiler = _Compiler()
         if self.name not in _compilers:
