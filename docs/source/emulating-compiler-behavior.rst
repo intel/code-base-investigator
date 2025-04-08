@@ -7,8 +7,8 @@ that are not reflected on the command line (such as their default include
 paths, or compiler version macros).
 
 If we believe (or already know!) that these behaviors will impact the
-divergence calculation for a code base, we can use a configuration file to
-instruct CBI to append additional options when emulating certain compilers.
+CBI's analysis of a code base, we can use a configuration file to append
+additional options when emulating certain compilers.
 
 .. attention::
 
@@ -76,12 +76,12 @@ but there is not enough information to decide what the value of
 :code:`__GNUC__` should be.
 
 
-Defining Behaviors
-------------------
+Defining Implicit Options
+-------------------------
 
-``codebasin`` searches for a file called ``.cbi/config``, and uses the
-information found in that file to determine implicit compiler behavior. Each
-compiler definition is a TOML `table`_, of the form shown below:
+CBI searches for a file called ``.cbi/config``, and uses the information found
+in that file to determine implicit compiler options. Each compiler definition
+is a TOML `table`_, of the form shown below:
 
 .. _`table`: https://toml.io/en/v1.0.0#table
 
@@ -124,3 +124,50 @@ becomes:
     Coverage (%): 100.00
     Avg. Coverage (%): 70.37
     Total SLOC: 27
+
+
+Parsing Compiler Options
+------------------------
+
+In more complex cases, emulating a compiler's implicit behavior requires CBI to
+parse the command-line arguments passed to the compiler. Such emulation
+requires CBI to understand which options are important and how they impact
+compilation.
+
+CBI ships with a number of compiler definitions included (see `here`_), and the
+same syntax can be used to define custom compiler behaviors within the
+``.cbi/config`` file.
+
+.. _`here`: https://github.com/intel/code-base-investigator/tree/main/codebasin/compilers
+
+For example, the TOML file below defines behavior for the ``gcc`` and ``g++`` compilers:
+
+.. code-block:: toml
+
+    [compiler.gcc]
+    # This example does not define any implicit options.
+
+    # g++ inherits all options of gcc.
+    [compiler."g++"]
+    alias_of = "gcc"
+
+    # The -fopenmp flag enables a dedicated OpenMP compiler "mode".
+    [[compiler.gcc.parser]]
+    flags = ["-fopenmp"]
+    action = "append_const"
+    dest = "modes"
+    const = "openmp"
+
+    # In OpenMP mode, the _OPENMP macro is defined.
+    [[compiler.gcc.modes]]
+    name = "openmp"
+    defines = ["_OPENMP"]
+
+This functionality is intended for expert users. In most cases, we expect that
+defining implicit options or relying on CBI's built-in compiler emulation
+support will be sufficient.
+
+.. attention::
+
+    If you encounter a common case where a custom compiler definition is
+    required, please `open an issue`_.
