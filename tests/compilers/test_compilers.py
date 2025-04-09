@@ -117,7 +117,7 @@ class TestCompilers(unittest.TestCase):
         argv = [
             "icpx",
             "-fsycl",
-            "-fsycl-targets=spir64,spir64_x86_64",
+            "-fsycl-targets=spir64,spir64_x86_64,nvptx64-nvidia-cuda",
             "-fopenmp",
             "test.cpp",
         ]
@@ -129,7 +129,12 @@ class TestCompilers(unittest.TestCase):
         pass_names = {p.pass_name for p in passes}
         self.assertCountEqual(
             pass_names,
-            {"default", "sycl-spir64", "sycl-spir64_x86_64"},
+            {
+                "default",
+                "sycl-spir64",
+                "sycl-spir64_x86_64",
+                "sycl-nvptx64-nvidia-cuda",
+            },
         )
 
         for p in passes:
@@ -144,6 +149,12 @@ class TestCompilers(unittest.TestCase):
                     "__SYCL_DEVICE_ONLY__",
                     "__SPIR__",
                     "__SPIRV__",
+                ]
+            elif p.pass_name == "sycl-nvptx64-nvidia-cuda":
+                expected = [
+                    "SYCL_LANGUAGE_VERSION",
+                    "__SYCL_DEVICE_ONLY__",
+                    "__NVPTX__",
                 ]
             self.assertCountEqual(p.defines, expected)
 
