@@ -50,3 +50,8 @@ modes = ["sycl"]
 name = "sycl-spir64_fpga"
 defines = ["__SYCL_DEVICE_ONLY__", "__SPIR__", "__SPIRV__"]
 modes = ["sycl"]
+
+[[compiler.icx.passes]]
+name = "sycl-nvptx64-nvidia-cuda"
+defines = ["__SYCL_DEVICE_ONLY__", "__NVPTX__"]
+modes = ["sycl"]
