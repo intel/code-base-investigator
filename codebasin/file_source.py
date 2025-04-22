@@ -460,13 +460,11 @@ class line_info:
         )
 
 
-def c_file_source(fp, relaxed=False, directives_only=False):
+def c_file_source(fp, directives_only=False):
     """
     Process file fp in terms of logical (sloc) and physical lines of C code.
     Yield blocks of logical lines of code with physical extents.
     Return total lines at exit.
-    Relaxed allows for inconsistent state at the end of parsing, usefule for
-    special composition cases.
     directives_only sets up parser to only process directive lines such that
     the output can be fed to another file source (i.e. Fortran).
     """
@@ -513,22 +511,21 @@ def c_file_source(fp, relaxed=False, directives_only=False):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not relaxed and not cleaner.state == ["TOPLEVEL"]:
+    if not cleaner.state == ["TOPLEVEL"]:
         raise RuntimeError(
-            "Parser must end at top level without 'relaxed' mode.",
+            "Parsing failed. Please open a bug report at: "
+            "https://github.com/intel/code-base-investigator/issues/new?template=bug_report.yml.",  # noqa: E501
         )
 
     return (total_sloc, total_physical_lines)
 
 
-def fortran_file_source(fp, relaxed=False):
+def fortran_file_source(fp):
     """
     Process file fp in terms of logical (sloc) and physical lines of
     fixed-form  Fortran code.
     Yield blocks of logical lines of code with physical extents.
     Return total lines at exit.
-    Relaxed allows for inconsistent state at the end of parsing, usefule for
-    special composition cases.
     """
 
     current_physical_line = one_space_line()
@@ -593,9 +590,10 @@ def fortran_file_source(fp, relaxed=False):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not relaxed and not cleaner.state == ["TOPLEVEL"]:
+    if not cleaner.state == ["TOPLEVEL"]:
         raise RuntimeError(
-            "Parser must end at top level without 'relaxed' mode.",
+            "Parsing failed. Please open a bug report at: "
+            "https://github.com/intel/code-base-investigator/issues/new?template=bug_report.yml.",  # noqa: E501
         )
 
     return (total_sloc, total_physical_lines)
@@ -642,7 +640,7 @@ class asm_cleaner:
             pass
 
 
-def asm_file_source(fp, relaxed=False):
+def asm_file_source(fp):
     """
     Process file fp in terms of logical (sloc) and physical lines of ASM code.
     Yield blocks of logical lines of code with physical extents.
