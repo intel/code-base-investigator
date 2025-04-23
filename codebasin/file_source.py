@@ -468,7 +468,6 @@ def c_file_source(fp, directives_only=False):
     directives_only sets up parser to only process directive lines such that
     the output can be fed to another file source (i.e. Fortran).
     """
-
     current_physical_line = one_space_line()
     cleaner = c_cleaner(current_physical_line, directives_only)
 
@@ -477,6 +476,7 @@ def c_file_source(fp, directives_only=False):
     total_sloc = 0
 
     physical_line_num = 0
+    continued = False
     for physical_line_num, line in enumerate(fp, start=1):
         current_physical_line.__init__()
         end = len(line)
@@ -511,7 +511,14 @@ def c_file_source(fp, directives_only=False):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not cleaner.state == ["TOPLEVEL"]:
+
+    # Even if code is technically wrong, we should only fail when necessary.
+    parsing_failed = not cleaner.state == ["TOPLEVEL"]
+    if continued:
+        log.warning("backslash-newline at end of file")
+        parsing_failed = False
+
+    if parsing_failed:
         raise RuntimeError(
             "Parsing failed. Please open a bug report at: "
             "https://github.com/intel/code-base-investigator/issues/new?template=bug_report.yml.",  # noqa: E501
@@ -590,7 +597,9 @@ def fortran_file_source(fp):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not cleaner.state == ["TOPLEVEL"]:
+
+    parsing_failed = not cleaner.state == ["TOPLEVEL"]
+    if parsing_failed:
         raise RuntimeError(
             "Parsing failed. Please open a bug report at: "
             "https://github.com/intel/code-base-investigator/issues/new?template=bug_report.yml.",  # noqa: E501
