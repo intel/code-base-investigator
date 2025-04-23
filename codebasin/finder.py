@@ -176,6 +176,7 @@ def find(
         leave=False,
         disable=not show_progress,
     ):
+        log.debug(f"Parsing {f}")
         state.insert_file(f)
 
     # Process each tree, by associating nodes with platforms

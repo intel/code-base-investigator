@@ -460,17 +460,14 @@ class line_info:
         )
 
 
-def c_file_source(fp, relaxed=False, directives_only=False):
+def c_file_source(fp, directives_only=False):
     """
     Process file fp in terms of logical (sloc) and physical lines of C code.
     Yield blocks of logical lines of code with physical extents.
     Return total lines at exit.
-    Relaxed allows for inconsistent state at the end of parsing, usefule for
-    special composition cases.
     directives_only sets up parser to only process directive lines such that
     the output can be fed to another file source (i.e. Fortran).
     """
-
     current_physical_line = one_space_line()
     cleaner = c_cleaner(current_physical_line, directives_only)
 
@@ -479,6 +476,7 @@ def c_file_source(fp, relaxed=False, directives_only=False):
     total_sloc = 0
 
     physical_line_num = 0
+    continued = False
     for physical_line_num, line in enumerate(fp, start=1):
         current_physical_line.__init__()
         end = len(line)
@@ -513,22 +511,28 @@ def c_file_source(fp, relaxed=False, directives_only=False):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not relaxed and not cleaner.state == ["TOPLEVEL"]:
+
+    # Even if code is technically wrong, we should only fail when necessary.
+    parsing_failed = not cleaner.state == ["TOPLEVEL"]
+    if continued:
+        log.warning("backslash-newline at end of file")
+        parsing_failed = False
+
+    if parsing_failed:
         raise RuntimeError(
-            "Parser must end at top level without 'relaxed' mode.",
+            "Parsing failed. Please open a bug report at: "
+            "https://github.com/intel/code-base-investigator/issues/new?template=bug_report.yml",  # noqa: E501
         )
 
     return (total_sloc, total_physical_lines)
 
 
-def fortran_file_source(fp, relaxed=False):
+def fortran_file_source(fp):
     """
     Process file fp in terms of logical (sloc) and physical lines of
     fixed-form  Fortran code.
     Yield blocks of logical lines of code with physical extents.
     Return total lines at exit.
-    Relaxed allows for inconsistent state at the end of parsing, usefule for
-    special composition cases.
     """
 
     current_physical_line = one_space_line()
@@ -593,9 +597,12 @@ def fortran_file_source(fp, relaxed=False):
         yield curr_line
 
     total_sloc += curr_line.physical_reset()
-    if not relaxed and not cleaner.state == ["TOPLEVEL"]:
+
+    parsing_failed = not cleaner.state == ["TOPLEVEL"]
+    if parsing_failed:
         raise RuntimeError(
-            "Parser must end at top level without 'relaxed' mode.",
+            "Parsing failed. Please open a bug report at: "
+            "https://github.com/intel/code-base-investigator/issues/new?template=bug_report.yml",  # noqa: E501
         )
 
     return (total_sloc, total_physical_lines)
@@ -642,7 +649,7 @@ class asm_cleaner:
             pass
 
 
-def asm_file_source(fp, relaxed=False):
+def asm_file_source(fp):
     """
     Process file fp in terms of logical (sloc) and physical lines of ASM code.
     Yield blocks of logical lines of code with physical extents.
