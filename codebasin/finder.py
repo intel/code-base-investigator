@@ -163,12 +163,22 @@ def find(
     if isinstance(rootdir, Path):
         rootdir = str(rootdir)
 
-    # Build a tree for each unique file for all platforms.
-    state = ParserState(summarize_only)
-    filenames = set(codebase)
+    # Identify all of the files in the codebase.
+    filenames = set()
+    for f in tqdm(
+        codebase,
+        desc="Identifying source files",
+        unit=" files",
+        leave=False,
+        disable=not show_progress,
+    ):
+        filenames.add(f)
     for p in configuration:
         for e in configuration[p]:
             filenames.add(e["file"])
+
+    # Build a tree for each unique file for all platforms.
+    state = ParserState(summarize_only)
     for f in tqdm(
         filenames,
         desc="Parsing",
