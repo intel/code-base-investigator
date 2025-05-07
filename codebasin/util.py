@@ -65,8 +65,40 @@ def safe_open_write_binary(fname: os.PathLike[str]) -> TextIOWrapper:
     return os.fdopen(fpid, "wb")
 
 
-def valid_path(path):
-    """Return true if the path passed in is valid"""
+def valid_path(path: os.PathLike[str]) -> bool:
+    """
+    Check if a given file path is valid.
+
+    This function ensures that the file path does not contain 
+    potentially dangerous characters such as null bytes (`\x00`)
+    or carriage returns/line feeds (`\n`, `\r`). These characters
+    can pose security risks, particularly in file handling operations.
+
+    Parameters
+    ----------
+    path : os.PathLike[str]
+        The file path to be validated.
+
+    Returns
+    -------
+    bool
+        A boolean value indicating whether the path is valid 
+        (`True`) or invalid (`False`).
+
+    Notes
+    -----
+    - This function is useful for validating file paths before performing 
+      file I/O operations to prevent security vulnerabilities.
+
+    Examples
+    --------
+    >>> valid_path("/home/user/file.txt")
+    True
+    >>> valid_path("/home/user/\x00file.txt")
+    False
+    >>> valid_path("/home/user/file\n.txt")
+    False
+    """
     valid = True
 
     # Check for null byte character(s)
