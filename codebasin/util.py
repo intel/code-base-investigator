@@ -21,7 +21,7 @@ import jsonschema
 log = logging.getLogger(__name__)
 
 
-def ensure_ext(path: os.PathLike[str], extensions: Iterable[str]):
+def ensure_ext(path: os.PathLike[str], extensions: Iterable[str]) -> None:
     """
     Ensure that a path has one of the specified extensions.
 
@@ -32,11 +32,6 @@ def ensure_ext(path: os.PathLike[str], extensions: Iterable[str]):
 
     extensions: Iterable[str]
         The valid extensions to test against.
-
-    Returns
-    -------
-    bool
-        True if `path` is a file with one of the specified extensions.
 
     Raises
     ------
