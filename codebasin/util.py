@@ -229,7 +229,7 @@ def _load_json(file_object: typing.TextIO, schema_name: str) -> object:
     return json_object
 
 
-def _load_toml(file_object: typing.TextIO, schema_name: str) -> object:
+def _load_toml(file_object: typing.TextIO, schema_name: str) -> dict[str, typing.Any]:
     """
     Load TOML from file and validate it against a schema.
 
@@ -243,8 +243,9 @@ def _load_toml(file_object: typing.TextIO, schema_name: str) -> object:
 
     Returns
     -------
-    Object
-        The loaded TOML.
+    dict[str, Any]
+        The loaded TOML object, represented as a Python
+        dict with str key/value mappings.
 
     Raises
     ------
