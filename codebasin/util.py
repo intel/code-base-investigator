@@ -7,7 +7,6 @@ Contains utility functions for common operations, including:
 - Checking paths
 """
 
-from io import TextIOWrapper
 import json
 import logging
 import os
@@ -15,6 +14,7 @@ import pkgutil
 import tomllib
 import typing
 from collections.abc import Iterable
+from io import TextIOWrapper
 from pathlib import Path
 
 import jsonschema
@@ -69,7 +69,7 @@ def valid_path(path: os.PathLike[str]) -> bool:
     """
     Check if a given file path is valid.
 
-    This function ensures that the file path does not contain 
+    This function ensures that the file path does not contain
     potentially dangerous characters such as null bytes (`\x00`)
     or carriage returns/line feeds (`\n`, `\r`). These characters
     can pose security risks, particularly in file handling operations.
@@ -82,12 +82,12 @@ def valid_path(path: os.PathLike[str]) -> bool:
     Returns
     -------
     bool
-        A boolean value indicating whether the path is valid 
+        A boolean value indicating whether the path is valid
         (`True`) or invalid (`False`).
 
     Notes
     -----
-    - This function is useful for validating file paths before performing 
+    - This function is useful for validating file paths before performing
       file I/O operations to prevent security vulnerabilities.
 
     Examples
@@ -229,7 +229,10 @@ def _load_json(file_object: typing.TextIO, schema_name: str) -> object:
     return json_object
 
 
-def _load_toml(file_object: typing.TextIO, schema_name: str) -> dict[str, typing.Any]:
+def _load_toml(
+    file_object: typing.TextIO,
+    schema_name: str,
+) -> dict[str, typing.Any]:
     """
     Load TOML from file and validate it against a schema.
 
