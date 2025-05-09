@@ -14,7 +14,6 @@ import pkgutil
 import tomllib
 import typing
 from collections.abc import Iterable
-from io import TextIOWrapper
 from pathlib import Path
 
 import jsonschema
@@ -55,7 +54,7 @@ def ensure_ext(path: os.PathLike[str], extensions: Iterable[str]) -> None:
         raise ValueError(f"{path} does not have a valid extension: f{exts}")
 
 
-def safe_open_write_binary(fname: os.PathLike[str]) -> TextIOWrapper:
+def safe_open_write_binary(fname: os.PathLike[str]) -> typing.BinaryIO:
     """Open fname for (binary) writing. Truncate if not a symlink."""
     fpid = os.open(
         fname,
