@@ -51,7 +51,7 @@ def ensure_ext(path: os.PathLike[str], extensions: Iterable[str]) -> None:
     extension = "".join(path.suffixes)
     if extension not in extensions:
         exts = ", ".join([f"'{ext}'" for ext in extensions])
-        raise ValueError(f"{path} does not have a valid extension: f{exts}")
+        raise ValueError(f"{path} does not have a valid extension: {exts}")
 
 
 def safe_open_write_binary(fname: os.PathLike[str]) -> typing.BinaryIO:
