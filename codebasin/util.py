@@ -70,8 +70,7 @@ def valid_path(path: os.PathLike[str]) -> bool:
 
     This function ensures that the file path does not contain
     potentially dangerous characters such as null bytes (`\x00`)
-    or carriage returns/line feeds (`\n`, `\r`). These characters
-    can pose security risks, particularly in file handling operations.
+    or carriage returns/line feeds (`\n`, `\r`).
 
     Parameters
     ----------
@@ -83,11 +82,6 @@ def valid_path(path: os.PathLike[str]) -> bool:
     bool
         A boolean value indicating whether the path is valid
         (`True`) or invalid (`False`).
-
-    Notes
-    -----
-    - This function is useful for validating file paths before performing
-      file I/O operations to prevent security vulnerabilities.
 
     Examples
     --------
