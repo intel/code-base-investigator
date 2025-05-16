@@ -58,7 +58,8 @@ shared between the cpu and gpu platforms:
       {cpu, gpu}  11 40.74
     -----------------------
     Code Divergence: 0.56
-    Unused Code (%): 7.41
+    Coverage (%): 92.59
+    Avg. Coverage (%): 66.67
     Total SLOC: 27
 
 

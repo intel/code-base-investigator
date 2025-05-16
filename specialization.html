@@ -5,11 +5,12 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Key Features" href="features.html" /><link rel="prev" title="Code Base Investigator" href="index.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+    <!-- Generated with Sphinx 8.0.2 and Furo 2024.08.06 -->
         <title>Understanding Specialization - Code Base Investigator</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
     
     
 
@@ -68,7 +69,7 @@
   <symbol id="svg-sun" viewBox="0 0 24 24">
     <title>Light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
       <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -83,22 +84,63 @@
   <symbol id="svg-moon" viewBox="0 0 24 24">
     <title>Dark mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
     </svg>
   </symbol>
-  <symbol id="svg-sun-half" viewBox="0 0 24 24">
-    <title>Auto light/dark mode</title>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M13 12h5" />
-      <path d="M13 15h4" />
-      <path d="M13 18h1" />
-      <path d="M13 9h4" />
-      <path d="M13 6h1" />
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
     </svg>
   </symbol>
 </svg>
@@ -111,6 +153,8 @@
 <label class="overlay toc-overlay" for="__toc">
   <div class="visually-hidden">Hide table of contents sidebar</div>
 </label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
 
 
 
@@ -129,7 +173,8 @@
       <div class="theme-toggle-container theme-toggle-header">
         <button class="theme-toggle">
           <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
           <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
@@ -196,11 +241,17 @@
           <span>Back to top</span>
         </a>
         <div class="content-icon-container">
-          
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/specialization.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
 <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
               <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
               <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
@@ -210,15 +261,15 @@
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
-        <article role="main">
+        <article role="main" id="furo-main-content">
           <section id="understanding-specialization">
-<h1>Understanding Specialization<a class="headerlink" href="#understanding-specialization" title="Link to this heading">#</a></h1>
+<h1>Understanding Specialization<a class="headerlink" href="#understanding-specialization" title="Link to this heading">¶</a></h1>
 <p>The goal of CBI is to help developers to reason about how a code base
 uses <em>specialization</em> to adapt to the capabilities and requirements of the
 different platforms it supports. By measuring specialization, we can reason
 about its impact upon maintenance effort.</p>
 <section id="platforms">
-<h2>Platforms<a class="headerlink" href="#platforms" title="Link to this heading">#</a></h2>
+<h2>Platforms<a class="headerlink" href="#platforms" title="Link to this heading">¶</a></h2>
 <p>The definition of <em>platform</em> used by CBI was first introduced in
 “<a class="reference external" href="https://doi.org/10.1016/j.future.2017.08.007">Implications of a Metric for Performance Portability</a>”, and is shared
 with the <a class="reference external" href="https://intel.github.io/p3-analysis-library/">P3 Analysis Library</a>:</p>
@@ -232,7 +283,7 @@ could be a compiler, an operating system, a micro-architecture or some
 combination of these options.</p>
 </section>
 <section id="specialization">
-<h2>Specialization<a class="headerlink" href="#specialization" title="Link to this heading">#</a></h2>
+<h2>Specialization<a class="headerlink" href="#specialization" title="Link to this heading">¶</a></h2>
 <p>There are many forms of specialization. What they all have in common is that
 these <em>specialization points</em> act as branches: different code is executed
 on different platforms based on some set of conditions. These conditions
@@ -244,7 +295,7 @@ specialization is performed using preprocessor tools or with some kind of
 metaprogramming.</p>
 </section>
 <section id="code-divergence">
-<h2>Code Divergence<a class="headerlink" href="#code-divergence" title="Link to this heading">#</a></h2>
+<h2>Code Divergence<a class="headerlink" href="#code-divergence" title="Link to this heading">¶</a></h2>
 <p>Code divergence is a metric proposed by Harrell and Kitson in “<a class="reference external" href="https://doi.org/10.1109/P3HPC.2018.00006">Effective
 Performance Portability</a>”, which uses the Jaccard distance to measure the
 distance between two source codes.</p>
@@ -254,7 +305,7 @@ pairwise distances:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[CD(a, p, H) = \binom{|H|}{2}^{-1}
-              \sum_{\{i, j\} \in H \times H} {d_{i, j}(a, p)}\]</div>
+              \sum_{\{i, j\} \in \binom{H}{2}} {d_{i, j}(a, p)}\]</div>
 </div>
 <p>where <span class="math notranslate nohighlight">\(d_{i, j}(a, p)\)</span> represents the distance between the source
 code required by platforms <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span> for application
@@ -274,6 +325,56 @@ two platforms, whereas a distance of 1 means that no code is shared.</p>
 <p>It is sometimes useful to talk about code <em>convergence</em> instead, which is
 simply the code divergence subtracted from 1.</p>
 </div>
+</section>
+<section id="platform-coverage">
+<h2>Platform Coverage<a class="headerlink" href="#platform-coverage" title="Link to this heading">¶</a></h2>
+<p>Platform coverage builds on the well-established concept of “test coverage”,
+and measures the amount of code in a code base that is utilized by a set of
+platforms. Computing platform coverage is straightforward: it is simply the
+number of lines of code used by one or more platforms expressed as a percentage
+of the number of lines of code in the code base.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>CBI often uses “coverage” as a shorthand for “platform coverage”!</p>
+</div>
+<p>Formally, for a given set of platforms, <span class="math notranslate nohighlight">\(H\)</span>, the coverage for an
+application <span class="math notranslate nohighlight">\(a\)</span> solving problem <span class="math notranslate nohighlight">\(p\)</span> is:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\textrm{Coverage}(a, p, H) = \frac{\left|\bigcup_{i \in H} c_i(a,p)\right|}
+                                  {\left|\bigcup_{i \in H} c_i(a,p)\right| + \left|\bigcap_{i \in H} c_i'(a,p)\right|} \times 100\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(c_i\)</span> is the set of lines of code required to compile application
+<span class="math notranslate nohighlight">\(a\)</span> and solve problem <span class="math notranslate nohighlight">\(p\)</span> using platform <span class="math notranslate nohighlight">\(i\)</span>, and
+<span class="math notranslate nohighlight">\(c_i'\)</span> is the complement of that set (i.e., the set of lines of code
+<em>not</em> required). A coverage of 0% means that none of the code is used by any
+platform, whereas a coverage of 100% means that all of the code is used by at
+least one platform.</p>
+<p>Measuring coverage can also help us to reason about differences between
+platforms. The <em>average</em> coverage (over platforms) allows us to reason about
+the amount of code covered by <em>all</em> platforms.</p>
+<p>Formally, the average coverage is:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\textrm{Average Coverage}(a, p, H) = \frac{\sum_{h \in H} \textrm{Coverage}(a, p, h)}
+                                          {\left|H\right|}\]</div>
+</div>
+<p>An average coverage of 0% means that none of the code is used by any platform,
+whereas an average coverage of 100% means that all of the code is used by all
+platforms.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Low average coverage does not always mean the platforms in <span class="math notranslate nohighlight">\(H\)</span> share
+little code; low average coverage can result from a high amount of unused
+code. Presenting coverage alongside average coverage provides the most insight.</p>
+</div>
+<p>The straightforward nature of coverage and average coverage has several
+advantages. First, it is very easy to intuit the impact of a code change upon
+coverage. Second, it is simple to use and understand in hierarchical contexts
+(e.g., the number of used lines for a directory is the sum of the used lines
+over all files in the directory). For these reasons, CBI functionality focused
+on understanding potential improvements to code structure tend to use coverage
+instead of divergence.</p>
 </section>
 </section>
 
@@ -336,6 +437,7 @@ simply the code divergence subtracted from 1.</p>
 <li><a class="reference internal" href="#platforms">Platforms</a></li>
 <li><a class="reference internal" href="#specialization">Specialization</a></li>
 <li><a class="reference internal" href="#code-divergence">Code Divergence</a></li>
+<li><a class="reference internal" href="#platform-coverage">Platform Coverage</a></li>
 </ul>
 </li>
 </ul>
@@ -347,10 +449,11 @@ simply the code divergence subtracted from 1.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=6efca38a"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+</div><script src="_static/documentation_options.js?v=51b770b3"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/scripts/furo.js?v=5fa4622c"></script>
+    <script src="_static/tabs.js?v=3ee01567"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     </body>
 </html>

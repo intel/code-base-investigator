@@ -57,7 +57,7 @@ pairwise distances:
 
 .. math::
     CD(a, p, H) = \binom{|H|}{2}^{-1}
-                  \sum_{\{i, j\} \in H \times H} {d_{i, j}(a, p)}
+                  \sum_{\{i, j\} \in \binom{H}{2}} {d_{i, j}(a, p)}
 
 where :math:`d_{i, j}(a, p)` represents the distance between the source
 code required by platforms :math:`i` and :math:`j` for application
@@ -81,3 +81,56 @@ two platforms, whereas a distance of 1 means that no code is shared.
 
 .. _Effective Performance Portability:
     https://doi.org/10.1109/P3HPC.2018.00006
+
+Platform Coverage
+#################
+
+Platform coverage builds on the well-established concept of "test coverage",
+and measures the amount of code in a code base that is utilized by a set of
+platforms. Computing platform coverage is straightforward: it is simply the
+number of lines of code used by one or more platforms expressed as a percentage
+of the number of lines of code in the code base.
+
+.. important::
+    CBI often uses "coverage" as a shorthand for "platform coverage"!
+
+Formally, for a given set of platforms, :math:`H`, the coverage for an
+application :math:`a` solving problem :math:`p` is:
+
+.. math::
+    \textrm{Coverage}(a, p, H) = \frac{\left|\bigcup_{i \in H} c_i(a,p)\right|}
+                                      {\left|\bigcup_{i \in H} c_i(a,p)\right| + \left|\bigcap_{i \in H} c_i'(a,p)\right|} \times 100
+
+where :math:`c_i` is the set of lines of code required to compile application
+:math:`a` and solve problem :math:`p` using platform :math:`i`, and
+:math:`c_i'` is the complement of that set (i.e., the set of lines of code
+*not* required). A coverage of 0% means that none of the code is used by any
+platform, whereas a coverage of 100% means that all of the code is used by at
+least one platform.
+
+Measuring coverage can also help us to reason about differences between
+platforms. The *average* coverage (over platforms) allows us to reason about
+the amount of code covered by *all* platforms.
+
+Formally, the average coverage is:
+
+.. math::
+    \textrm{Average Coverage}(a, p, H) = \frac{\sum_{h \in H} \textrm{Coverage}(a, p, h)}
+                                              {\left|H\right|}
+
+An average coverage of 0% means that none of the code is used by any platform,
+whereas an average coverage of 100% means that all of the code is used by all
+platforms.
+
+.. tip::
+    Low average coverage does not always mean the platforms in :math:`H` share
+    little code; low average coverage can result from a high amount of unused
+    code. Presenting coverage alongside average coverage provides the most insight.
+
+The straightforward nature of coverage and average coverage has several
+advantages. First, it is very easy to intuit the impact of a code change upon
+coverage. Second, it is simple to use and understand in hierarchical contexts
+(e.g., the number of used lines for a directory is the sum of the used lines
+over all files in the directory). For these reasons, CBI functionality focused
+on understanding potential improvements to code structure tend to use coverage
+instead of divergence.
