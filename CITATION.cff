@@ -1,4 +1,4 @@
-cff-version: 1.2.0
+cff-version: 2.0.0
 message: "If you use this software, please cite it as below."
 authors:
 - family-names: "Sewall"
@@ -10,15 +10,18 @@ authors:
 - family-names: "Jacobsen"
   given-names: "Douglas"
   orcid: "https://orcid.org/0000-0002-3836-207X"
+- family-names: "Lee"
+  given-names: "Kin Long Kelvin"
+  orcid: "https://orcid.org/0000-0002-1903-9242"
 title: "Code Base Investigator"
-version: 1.2.0
-date-released: "2024-03-28"
-doi: "10.5281/zenodo.10890422"
+version: 2.0.0
+date-released: "2025-05-15"
+doi: "10.5281/zenodo.15422620"
 identifiers:
   - description: Archive of all previous releases.
     type: doi
     value: "10.5281/zenodo.5018973"
   - description: Latest release.
     type: doi
-    value: "10.5281/zenodo.10890422"
+    value: "10.5281/zenodo.15422620"
 url: "https://github.com/intel/code-base-investigator"
